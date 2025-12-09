@@ -6,8 +6,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class DropApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(DropApplication.class, args);
-    }
+	public static void main(String[] args) {
+		SpringApplication.run(DropApplication.class, args);
+	}
 
 }

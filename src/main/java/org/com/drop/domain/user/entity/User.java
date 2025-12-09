@@ -21,8 +21,8 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "users", indexes = {@Index(name = "idx_user_email", columnList = "email")}, uniqueConstraints = {
-    @UniqueConstraint(name = "uq_user_email", columnNames = "email"),
-    @UniqueConstraint(name = "uq_user_nickname", columnNames = "nickname")})
+	@UniqueConstraint(name = "uq_user_email", columnNames = "email"),
+	@UniqueConstraint(name = "uq_user_nickname", columnNames = "nickname")})
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -30,38 +30,38 @@ import lombok.Setter;
 @Builder
 public class User {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @Column(nullable = false)
-    private String email;
+	@Column(nullable = false)
+	private String email;
 
-    @Column(unique = true)
-    private String nickname;
+	@Column(unique = true)
+	private String nickname;
 
-    @Column(nullable = false)
-    private String password;   // 암호화 저장
+	@Column(nullable = false)
+	private String password;   // 암호화 저장
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private LoginType loginType;
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private LoginType loginType;
 
-    private String userProfile;
+	private String userProfile;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserRole role;
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private UserRole role;
 
-    private String kakaoId;  // 소셜로그인 전용
+	private String kakaoId;  // 소셜로그인 전용
 
-    @Column
-    private LocalDateTime deletedAt; // soft-delete 용
+	@Column
+	private LocalDateTime deletedAt; // soft-delete 용
 
-    public enum LoginType {LOCAL, KAKAO}
+	public enum LoginType {LOCAL, KAKAO}
 
-    public enum UserRole {USER, ADMIN}
+	public enum UserRole {USER, ADMIN}
 }
