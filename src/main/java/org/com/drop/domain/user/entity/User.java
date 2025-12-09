@@ -1,21 +1,28 @@
 package org.com.drop.domain.user.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 @Entity
-@Table(
-    name = "users",
-    indexes = {
-        @Index(name = "idx_user_email", columnList = "email")
-    },
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uq_user_email", columnNames = "email"),
-        @UniqueConstraint(name = "uq_user_nickname", columnNames = "nickname")
-    }
-)
+@Table(name = "users", indexes = {@Index(name = "idx_user_email", columnList = "email")}, uniqueConstraints = {
+    @UniqueConstraint(name = "uq_user_email", columnNames = "email"),
+    @UniqueConstraint(name = "uq_user_nickname", columnNames = "nickname")})
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

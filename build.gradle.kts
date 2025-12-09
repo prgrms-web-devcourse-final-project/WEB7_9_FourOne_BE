@@ -2,6 +2,7 @@ plugins {
     java
     id("org.springframework.boot") version "4.0.0"
     id("io.spring.dependency-management") version "1.1.7"
+    id("checkstyle")
 }
 
 group = "org.com"
@@ -32,7 +33,7 @@ dependencies {
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("com.h2database:h2")
-    runtimeOnly("com.mysql:mysql-connector-j:8.1.0")
+    runtimeOnly("com.mysql:mysql-connector-j:9.3.0")
     annotationProcessor("org.projectlombok:lombok")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-security-test")
@@ -42,4 +43,13 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+checkstyle {
+    toolVersion = "8.42"
+
+    configFile = file("${rootDir}/naver-checkstyle-rules.xml")
+
+    configProperties["suppressionFile"] = "${rootDir}/naver-checkstyle-suppressions.xml"
+
+    maxWarnings = 0
 }

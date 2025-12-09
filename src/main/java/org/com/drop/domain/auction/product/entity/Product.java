@@ -1,21 +1,32 @@
 package org.com.drop.domain.auction.product.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
+import java.time.LocalDateTime;
 
 import org.com.drop.domain.user.entity.User;
 
-import java.time.LocalDateTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
-@Table(
-    name = "products",
-    indexes = {
-        @Index(name = "idx_product_category", columnList = "category"),
-        @Index(name = "idx_product_subcategory", columnList = "subcategory"),
-        @Index(name = "idx_product_deleted_at", columnList = "deleted_at")
-    }
-)
+@Table(name = "products", indexes = {@Index(name = "idx_product_category", columnList = "category"),
+    @Index(name = "idx_product_subcategory", columnList = "subcategory"),
+    @Index(name = "idx_product_deleted_at", columnList = "deleted_at")})
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
