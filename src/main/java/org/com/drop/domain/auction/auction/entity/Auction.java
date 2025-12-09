@@ -63,6 +63,6 @@ public class Auction {
 
 	private LocalDateTime deletedAt;
 
-	public enum AuctionStatus {SCHEDULED, LIVE, ENDED, CANCELLED}
+	public enum AuctionStatus { SCHEDULED, LIVE, ENDED, CANCELLED }
 
 }

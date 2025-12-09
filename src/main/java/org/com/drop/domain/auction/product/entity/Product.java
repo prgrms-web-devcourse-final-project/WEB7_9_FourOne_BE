@@ -65,7 +65,7 @@ public class Product {
 
 	private LocalDateTime deletedAt;
 
-	public enum Category {STARGOODS, FIGURE, CDLP, GAME}
+	public enum Category { STARGOODS, FIGURE, CDLP, GAME }
 
-	public enum SubCategory {ACC, STATIONARY, DAILY, ETC, ELECTRONICS, GAME}
+	public enum SubCategory { ACC, STATIONARY, DAILY, ETC, ELECTRONICS, GAME }
 }

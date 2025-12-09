@@ -61,7 +61,7 @@ public class User {
 	@Column
 	private LocalDateTime deletedAt; // soft-delete 용
 
-	public enum LoginType {LOCAL, KAKAO}
+	public enum LoginType { LOCAL, KAKAO }
 
-	public enum UserRole {USER, ADMIN}
+	public enum UserRole { USER, ADMIN }
 }
