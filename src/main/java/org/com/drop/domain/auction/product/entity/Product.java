@@ -2,14 +2,20 @@ package org.com.drop.domain.auction.product.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import org.com.drop.domain.user.entity.User;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
-@Table(name = "products")
+@Table(
+    name = "products",
+    indexes = {
+        @Index(name = "idx_product_category", columnList = "category"),
+        @Index(name = "idx_product_subcategory", columnList = "subcategory"),
+        @Index(name = "idx_product_deleted_at", columnList = "deleted_at")
+    }
+)
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -22,7 +28,7 @@ public class Product {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @Column(name = "seller_id", nullable = false)
+    @JoinColumn(name = "seller_id", nullable = false)
     private User seller;
 
     @Column(nullable = false)
@@ -41,33 +47,14 @@ public class Product {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column
     private LocalDateTime updatedAt;
 
     @Column(nullable = false)
     private Integer bookmarkCount;
 
-    @Column
     private LocalDateTime deletedAt;
 
-    // --- Enum 정의 ---
-    public enum Category {
-        STARGOODS, FIGURE, CDLP, GAME
-    }
+    public enum Category {STARGOODS, FIGURE, CDLP, GAME}
 
-    public enum SubCategory {
-        ACC, STATIONARY, DAILY, ETC, ELECTRONICS, GAME
-    }
-
-    // --- Lifecycle Hooks ---
-    @PrePersist
-    public void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        if (this.bookmarkCount == null) this.bookmarkCount = 0;
-    }
-
-    @PreUpdate
-    public void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
+    public enum SubCategory {ACC, STATIONARY, DAILY, ETC, ELECTRONICS, GAME}
 }

@@ -2,10 +2,20 @@ package org.com.drop.domain.user.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(
+    name = "users",
+    indexes = {
+        @Index(name = "idx_user_email", columnList = "email")
+    },
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uq_user_email", columnNames = "email"),
+        @UniqueConstraint(name = "uq_user_nickname", columnNames = "nickname")
+    }
+)
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -20,7 +30,7 @@ public class User {
     @Column(nullable = false)
     private String email;
 
-    @Column
+    @Column(unique = true)
     private String nickname;
 
     @Column(nullable = false)
@@ -30,8 +40,7 @@ public class User {
     @Column(nullable = false)
     private LoginType loginType;
 
-    @Column
-    private String userProfile;  // 프로필 이미지 URL
+    private String userProfile;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -40,24 +49,12 @@ public class User {
     @Column(nullable = false)
     private UserRole role;
 
-    @Column
     private String kakaoId;  // 소셜로그인 전용
 
     @Column
     private LocalDateTime deletedAt; // soft-delete 용
 
-    // --- Enum 정의 ---
-    public enum LoginType {
-        LOCAL, KAKAO
-    }
+    public enum LoginType {LOCAL, KAKAO}
 
-    public enum UserRole {
-        USER, ADMIN
-    }
-
-    @PrePersist
-    public void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        if (this.role == null) this.role = UserRole.USER;
-    }
+    public enum UserRole {USER, ADMIN}
 }
