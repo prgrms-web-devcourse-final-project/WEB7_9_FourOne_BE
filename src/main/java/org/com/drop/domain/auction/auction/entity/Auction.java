@@ -65,4 +65,20 @@ public class Auction {
 
 	public enum AuctionStatus { SCHEDULED, LIVE, ENDED, CANCELLED }
 
+	public Auction(
+		Product product,
+		Integer startPrice,
+		Integer buyNowPrice,
+		Integer midBidStep,
+		LocalDateTime startAt,
+		LocalDateTime endAt,
+		AuctionStatus status) {
+		this.product = product;
+		this.startPrice = startPrice;
+		this.buyNowPrice = buyNowPrice;
+		this.midBidStep = midBidStep;
+		this.startAt = startAt;
+		this.endAt = endAt;
+		this.status = status;
+	}
 }

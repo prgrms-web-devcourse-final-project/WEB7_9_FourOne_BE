@@ -68,4 +68,19 @@ public class Product {
 	public enum Category { STARGOODS, FIGURE, CDLP, GAME }
 
 	public enum SubCategory { ACC, STATIONARY, DAILY, ETC, ELECTRONICS, GAME }
+
+	public Product(
+		User seller,
+		String name,
+		String description,
+		Category category,
+		SubCategory subcategory) {
+		this.seller = seller;
+		this.name = name;
+		this.description = description;
+		this.category = category;
+		this.subcategory = subcategory;
+		this.createdAt = LocalDateTime.now();
+		this.bookmarkCount = 0;
+	}
 }
