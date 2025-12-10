@@ -1,10 +1,11 @@
 package org.com.drop.global.exception;
 
+import org.com.drop.global.rsData.RsData;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -20,8 +21,29 @@ public class GlobalExceptionHandler {
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
-	public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException exception) {
+	public ResponseEntity<RsData<Void>> handleMethodArgumentNotValid(MethodArgumentNotValidException exception) {
 		BindingResult bindingResult = exception.getBindingResult();
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.validationError(bindingResult));
+		FieldError firstError = exception.getBindingResult().getFieldError();
+
+		ErrorCode errorCode = ErrorCode.INVALID_PARAMETER;
+
+		if (firstError != null) {
+			String field = firstError.getField();
+
+			switch (field) {
+				case "name" -> errorCode = ErrorCode.PRODUCT_INVALID_PRODUCT;
+				default -> errorCode = ErrorCode.INVALID_PARAMETER;
+			}
+		}
+
+		return ResponseEntity
+			.status(errorCode.getStatus())
+			.body(
+				new RsData<>(
+					errorCode.name(),
+					errorCode.getCode(),
+					errorCode.getMessage(),
+					null
+				));
 	}
 }

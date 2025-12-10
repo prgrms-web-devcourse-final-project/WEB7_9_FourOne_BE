@@ -37,8 +37,8 @@ public class ProductController {
 		Product product = productService.addProduct(request, actor);
 		Auction auction = auctionService.addAuction(request, product);
 		return new RsData<>(
-			"200",
 			"SUCCESS",
+			"200",
 			"요청을 성공적으로 처리했습니다.",
 			new AuctionCreateResponse(product, auction)
 		);
