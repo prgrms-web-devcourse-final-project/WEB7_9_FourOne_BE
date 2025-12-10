@@ -58,6 +58,9 @@ public class User {
 
 	private String kakaoId;  // 소셜로그인 전용
 
+	@Column(nullable = false)
+	private Integer penaltyCount = 0;
+
 	@Column
 	private LocalDateTime deletedAt; // soft-delete 용
 
