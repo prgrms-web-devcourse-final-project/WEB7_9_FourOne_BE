@@ -1,7 +1,11 @@
 package org.com.drop.global.initData;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
+import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
+import org.com.drop.domain.auction.product.entity.Product;
+import org.com.drop.domain.auction.product.service.ProductService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class InitData {
 
 	private final UserRepository userRepository;
+	private final ProductService productService;
 	@Autowired
 	@Lazy
 	private InitData self;
@@ -42,6 +47,27 @@ public class InitData {
 			.penaltyCount(0)
 			.build();
 		userRepository.save(user1);
+
+		User user2 = User.builder()
+			.email("user2@example.com")
+			.nickname("유저2")
+			.password("12345678")
+			.loginType(User.LoginType.LOCAL)
+			.role(User.UserRole.USER)
+			.createdAt(LocalDateTime.now())
+			.penaltyCount(0)
+			.build();
+		userRepository.save(user2);
+
+		List<String> images = List.of("img1.png", "img2.png");
+		ProductCreateRequest productCreateRequest = new ProductCreateRequest(
+			"상품명",
+			"설명",
+			Product.Category.STARGOODS,
+			Product.SubCategory.ACC,
+			images
+		);
+		Product product1 = productService.addProduct(productCreateRequest, user1);
 	}
 
 }
