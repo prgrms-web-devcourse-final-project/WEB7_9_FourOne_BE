@@ -210,7 +210,7 @@ jobs:
                             {"type": "mrkdwn", "text": "*Branch/PR*\n${{ github.ref_name || github.event.pull_request.number }}"},
                             {"type": "mrkdwn", "text": "*Author*\n${{ github.actor }}"}
                           ]},
-                          {"type": "section", "text": {"type": "mrkdwn", "text": "🔗 <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|로그 확인>"}}
+                          {"type": "section", "text": {"type": "mrkdwn", "text": "링크: <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}>"}}
                         ]}
                       }
               env:
@@ -229,7 +229,7 @@ jobs:
                             {"type": "mrkdwn", "text": "*Branch/PR*\n${{ github.ref_name || github.event.pull_request.number }}"},
                             {"type": "mrkdwn", "text": "*Author*\n${{ github.actor }}"}
                           ]},
-                          {"type": "section", "text": {"type": "mrkdwn", "text": "🔗 <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|로그 확인>"}}
+                          {"type": "section", "text": {"type": "mrkdwn", "text": "링크: <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}>"}}
                         ]}
                       }
               env:
