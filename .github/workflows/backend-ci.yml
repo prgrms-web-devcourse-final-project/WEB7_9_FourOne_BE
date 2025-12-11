@@ -197,13 +197,35 @@ jobs:
                       build/reports/jacocoFull/xml/jacocoFullTestReport.xml
                   if-no-files-found: warn
 
+            -   name: Extract Coverage Percentage
+                if: always()
+                id: coverage
+                run: |
+                    XML=build/reports/jacoco/xml/jacocoTestReport.xml
+                    if [ ! -f "$XML" ]; then
+                      echo "coverage=0" >> $GITHUB_OUTPUT
+                      exit 0
+                    fi
+                    
+                    MISSED=$(xmllint --xpath "string(//counter[@type='INSTRUCTION']/@missed)" $XML)
+                    COVERED=$(xmllint --xpath "string(//counter[@type='INSTRUCTION']/@covered)" $XML)
+                    
+                    TOTAL=$((MISSED + COVERED))
+                    if [ "$TOTAL" -eq 0 ]; then
+                      PERCENT=0
+                    else
+                      PERCENT=$(echo "scale=2; ($COVERED/$TOTAL)*100" | bc)
+                    fi
+                    
+                    echo "coverage=$PERCENT" >> $GITHUB_OUTPUT
+
+
             -   name: Slack 알림 (성공)
                 if: success()
                 uses: slackapi/slack-github-action@v1
                 with:
                     payload: |
                         {
-                          "text": "✅ DROP Backend CI 성공!",
                           "blocks": [
                             {
                               "type": "header",
@@ -218,12 +240,23 @@ jobs:
                             },
                             {
                               "type": "section",
-                              "text": { "type": "mrkdwn", "text": "링크: <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}>" }
+                              "fields": [
+                                { "type": "mrkdwn", "text": "*Tests*\n:white_check_mark: ${{ steps.publish_unit_test_results.outputs.passed }} passed\n:x: ${{ steps.publish_unit_test_results.outputs.failed }} failed" },
+                                { "type": "mrkdwn", "text": "*Coverage*\n${{ steps.coverage.outputs.coverage }}%" }
+                              ]
+                            },
+                            {
+                              "type": "section",
+                              "text": {
+                                "type": "mrkdwn",
+                                "text": "링크: <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|로그 확인하기>"
+                              }
                             }
                           ]
                         }
                 env:
                     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
 
 
             -   name: Slack 알림 (실패)
@@ -232,7 +265,6 @@ jobs:
                 with:
                     payload: |
                         {
-                          "text": "❌ DROP Backend CI 실패!",
                           "blocks": [
                             {
                               "type": "header",
@@ -247,10 +279,16 @@ jobs:
                             },
                             {
                               "type": "section",
-                              "text": { "type": "mrkdwn", "text": "링크: <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}>" }
+                              "fields": [
+                                { "type": "mrkdwn", "text": "*Tests*\n:white_check_mark: ${{ steps.publish_unit_test_results.outputs.passed }} passed\n:x: ${{ steps.publish_unit_test_results.outputs.failed }} failed" },
+                                { "type": "mrkdwn", "text": "*Coverage*\n${{ steps.coverage.outputs.coverage }}%" }
+                              ]
+                            },
+                            {
+                              "type": "section",
+                              "text": { "type": "mrkdwn", "text": "링크: <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|로그 확인하기>" }
                             }
                           ]
                         }
                 env:
                     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
