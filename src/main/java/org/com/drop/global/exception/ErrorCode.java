@@ -56,7 +56,7 @@ public enum ErrorCode {
 	PRODUCT_BOOKMARK_NOT_FOUND("1202", HttpStatus.NOT_FOUND, "찜한 상품이 아닙니다."),
 	PRODUCT_INVALID_QUESTION("1203", HttpStatus.BAD_REQUEST, "질문이 입력되지 않았습니다."),
 	PRODUCT_INVALID_ANSWER("1204", HttpStatus.BAD_REQUEST, "답변이 입력되지 않았습니다."),
-	PRODUCT_INVALID_PRODUCT("1205", HttpStatus.BAD_REQUEST, "이름, 설명, 카테고리, 시작가, 최소입찰가, 상품 이미지는 필수 항목 입니다."),
+	PRODUCT_INVALID_PRODUCT("1205", HttpStatus.BAD_REQUEST, "이름, 설명, 카테고리, 상품 이미지는 필수 항목 입니다."),
 	PRODUCT_QUESTION_NOT_FOUND("1206", HttpStatus.NOT_FOUND, "질문을 찾을 수 없습니다."),
 	PRODUCT_ANSWER_NOT_FOUND("1207", HttpStatus.NOT_FOUND, "답변을 찾을 수 없습니다."),
 	PRODUCT_ALREADY_ON_AUCTION("1208", HttpStatus.BAD_REQUEST, "이미 경매가 시작된 상품입니다."),
