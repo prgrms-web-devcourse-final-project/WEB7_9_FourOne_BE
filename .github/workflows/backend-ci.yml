@@ -1,0 +1,236 @@
+name: DROP Backend CI
+
+on:
+  pull_request:
+    paths:
+      - "**"
+      - ".github/**"
+    branches: [ main, dev ]
+  push:
+    branches: [ main, dev ]
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+
+    env:
+      SPRING_PROFILES_ACTIVE: test
+      SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+      SPRING_DATASOURCE_USERNAME: sa
+      SPRING_DATASOURCE_PASSWORD: ""
+      INCLUDE_INTEGRATION: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build without tests
+        run: ./gradlew build -x test --no-daemon
+
+      - name: Run Unit Tests
+        run: ./gradlew clean test --no-daemon
+
+      - name: Run Full Tests (Unit + Integration)
+        run: ./gradlew clean fullTest --no-daemon
+
+      - name: Generate JaCoCo Unit Test Report
+        if: always()
+        run: ./gradlew jacocoTestReport --no-daemon
+
+      - name: Generate JaCoCo Full Test Report
+        if: always()
+        run: ./gradlew jacocoFullTestReport --no-daemon
+
+      - name: Publish Unit Test Results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: |
+            build/test-results/test/*.xml
+          check_run: true
+          comment_mode: always
+
+      - name: Publish Full Test Results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: |
+            build/test-results/fullTest/*.xml
+          check_run: true
+          comment_mode: always
+
+      - name: Upload failed-tests.txt (if exists)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-tests
+          path: build/reports/tests/failed-tests.txt
+          if-no-files-found: ignore
+
+      - name: Upsert PR comment with failed tests
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'build/reports/tests/failed-tests.txt';
+            const MARK = '<!-- FAILED-TESTS-SUMMARY -->';
+
+            function buildBody(textBlock) {
+              return [
+                MARK,
+                '### ❌ Failed Tests (from Gradle summary) ✖️',
+                '',
+                '<details><summary>Expand</summary>',
+                '',
+                '```text',
+                textBlock,
+                '```',
+                '',
+                '</details>'
+              ].join('\n');
+            }
+
+            if (!context.payload.pull_request) {
+              core.info('Not a PR event, skip commenting');
+              return;
+            }
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              per_page: 100
+            });
+
+            if (!fs.existsSync(path)) {
+              const existing = comments.find(c => c.user.type === 'Bot' && c.body.includes(MARK));
+              if (existing) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existing.id
+                });
+              }
+              return;
+            }
+
+            const content = fs.readFileSync(path, 'utf8').trim();
+            if (!content || content === 'No failures 🎊') {
+              const existing = comments.find(c => c.user.type === 'Bot' && c.body.includes(MARK));
+              if (existing) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existing.id
+                });
+              }
+              return;
+            }
+
+            const body = buildBody(content);
+            const existing = comments.find(c => c.user.type === 'Bot' && c.body.includes(MARK));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body
+              });
+            }
+
+      - name: Upload JaCoCo Unit Test HTML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-unit-html
+          path: build/reports/jacoco/html
+          if-no-files-found: warn
+
+      - name: Upload JaCoCo Full Test HTML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-full-html
+          path: build/reports/jacocoFull/html
+          if-no-files-found: warn
+
+      - name: Upload JaCoCo XML Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-xml-reports
+          path: |
+            build/reports/jacoco/xml/jacocoTestReport.xml
+            build/reports/jacocoFull/xml/jacocoFullTestReport.xml
+          if-no-files-found: warn
+
+      - name: Slack 알림 (성공)
+        if: success()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "✅ DROP Backend CI 성공! ✨",
+              "blocks": [
+                {"type": "header", "text": {"type": "plain_text", "text": "✅ Backend CI 성공 ✨"}},
+                {"type": "section", "fields": [
+                  {"type": "mrkdwn", "text": "*Branch/PR*\n${{ github.ref_name || github.event.pull_request.number }}"},
+                  {"type": "mrkdwn", "text": "*Author*\n${{ github.actor }}"}
+                ]},
+                {"type": "section", "text": {"type": "mrkdwn", "text": "🔗 <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|로그 확인>"}}
+              ]}
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Slack 알림 (실패)
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "❌ DROP Backend CI 실패",
+              "blocks": [
+                {"type": "header", "text": {"type": "plain_text", "text": "❌ Backend CI 실패"}},
+                {"type": "section", "fields": [
+                  {"type": "mrkdwn", "text": "*Branch/PR*\n${{ github.ref_name || github.event.pull_request.number }}"},
+                  {"type": "mrkdwn", "text": "*Author*\n${{ github.actor }}"}
+                ]},
+                {"type": "section", "text": {"type": "mrkdwn", "text": "🔗 <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|로그 확인>"}}
+              ]}
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
