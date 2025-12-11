@@ -1,9 +1,10 @@
 package org.com.drop.domain.auction.auction.service;
 
+import org.com.drop.domain.auction.auction.dto.AuctionCreateRequest;
 import org.com.drop.domain.auction.auction.entity.Auction;
-import org.com.drop.domain.auction.auction.repository.AuctionRepository;
-import org.com.drop.domain.auction.product.dto.AuctionCreateRequest;
 import org.com.drop.domain.auction.product.entity.Product;
+import org.com.drop.domain.auction.product.service.ProductService;
+import org.com.drop.domain.user.entity.User;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -11,18 +12,17 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class AuctionService {
-	private  final AuctionRepository auctionRepository;
-
-	public Auction addAuction(AuctionCreateRequest request, Product product) {
-		Auction auction = new Auction(
+	private final ProductService productService;
+	public Auction addAuction(AuctionCreateRequest request, User actor) {
+		Product product = productService.findProductById(request.product_id());
+		productService.validUser(product, actor);
+		return new Auction(
 			product,
 			request.startPrice(),
 			request.buyNowPrice(),
-			request.minBidStep(),
+			request.midBidStep(),
 			request.startAt(),
 			request.endAt(),
-			Auction.AuctionStatus.SCHEDULED
-		);
-		return auctionRepository.save(auction);
+			Auction.AuctionStatus.SCHEDULED);
 	}
 }
