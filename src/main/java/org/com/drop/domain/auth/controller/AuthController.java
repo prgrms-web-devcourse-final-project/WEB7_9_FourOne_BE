@@ -1,5 +1,7 @@
 package org.com.drop.domain.auth.controller;
 
+import org.com.drop.domain.auth.dto.LocalLoginRequest;
+import org.com.drop.domain.auth.dto.LocalLoginResponse;
 import org.com.drop.domain.auth.dto.LocalSignUpRequest;
 import org.com.drop.domain.auth.dto.LocalSignUpResponse;
 import org.com.drop.domain.auth.dto.UserDeleteRequest;
@@ -10,6 +12,8 @@ import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
 import org.com.drop.global.rsData.RsData;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -46,6 +50,7 @@ public class AuthController {
 		return ResponseEntity.ok(rsData);
 	}
 
+	// ToDo: Refresh token을 Redis 에 저장하는 로직 추가
 	@PostMapping("/delete")
 	public RsData<UserDeleteResponse> deleteAccount(
 		@AuthenticationPrincipal UserDetails userDetails,
@@ -66,5 +71,32 @@ public class AuthController {
 	private User findUserFromUserDetails(UserDetails userDetails) {
 		return userRepository.findByEmail(userDetails.getUsername())
 			.orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
+	}
+
+	// ToDo: Refresh token을 Redis 에 저장하는 로직 추가
+	@PostMapping("/login")
+	public ResponseEntity<RsData<LocalLoginResponse>> login(
+		@Validated @RequestBody LocalLoginRequest dto) {
+
+		LocalLoginResponse response = authService.login(dto);
+
+		String refreshToken = authService.getJwtProvider().createRefreshToken(response.email());
+
+		ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+			.httpOnly(true)
+			.path("/")
+			.maxAge(7 * 24 * 60 * 60)
+			.build();
+
+		RsData<LocalLoginResponse> body = new RsData<>(
+			"SUCCESS",
+			"200",
+			"요청을 성공적으로 처리했습니다.",
+			response
+		);
+
+		return ResponseEntity.ok()
+			.header(HttpHeaders.SET_COOKIE, cookie.toString())
+			.body(body);
 	}
 }

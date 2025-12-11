@@ -45,4 +45,8 @@ public class JwtProvider {
 			.getBody()
 			.getSubject();
 	}
+
+	public long getAccessTokenValidityInSeconds() {
+		return jwtProperties.getAccessTokenExpire();
+	}
 }
