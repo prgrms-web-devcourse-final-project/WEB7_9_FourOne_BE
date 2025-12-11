@@ -197,40 +197,60 @@ jobs:
                       build/reports/jacocoFull/xml/jacocoFullTestReport.xml
                   if-no-files-found: warn
 
-            - name: Slack 알림 (성공)
-              if: success()
-              uses: slackapi/slack-github-action@v1
-              with:
-                  payload: |
-                      {
-                        "text": "✅ DROP Backend CI 성공!",
-                        "blocks": [
-                          {"type": "header", "text": {"type": "plain_text", "text": "✅ Backend CI 성공"}},
-                          {"type": "section", "fields": [
-                            {"type": "mrkdwn", "text": "*Branch/PR*\n${{ github.ref_name || github.event.pull_request.number }}"},
-                            {"type": "mrkdwn", "text": "*Author*\n${{ github.actor }}"}
-                          ]},
-                          {"type": "section", "text": {"type": "mrkdwn", "text": "링크: <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}>"}}
-                        ]}
-                      }
-              env:
-                  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+            -   name: Slack 알림 (성공)
+                if: success()
+                uses: slackapi/slack-github-action@v1
+                with:
+                    payload: |
+                        {
+                          "text": "✅ DROP Backend CI 성공!",
+                          "blocks": [
+                            {
+                              "type": "header",
+                              "text": { "type": "plain_text", "text": "✅ Backend CI 성공" }
+                            },
+                            {
+                              "type": "section",
+                              "fields": [
+                                { "type": "mrkdwn", "text": "*Branch/PR*\n${{ github.ref_name || github.event.pull_request.number }}" },
+                                { "type": "mrkdwn", "text": "*Author*\n${{ github.actor }}" }
+                              ]
+                            },
+                            {
+                              "type": "section",
+                              "text": { "type": "mrkdwn", "text": "링크: <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}>" }
+                            }
+                          ]
+                        }
+                env:
+                    SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
-            - name: Slack 알림 (실패)
-              if: failure()
-              uses: slackapi/slack-github-action@v1
-              with:
-                  payload: |
-                      {
-                        "text": "❌ DROP Backend CI 실패!",
-                        "blocks": [
-                          {"type": "header", "text": {"type": "plain_text", "text": "❌ Backend CI 실패"}},
-                          {"type": "section", "fields": [
-                            {"type": "mrkdwn", "text": "*Branch/PR*\n${{ github.ref_name || github.event.pull_request.number }}"},
-                            {"type": "mrkdwn", "text": "*Author*\n${{ github.actor }}"}
-                          ]},
-                          {"type": "section", "text": {"type": "mrkdwn", "text": "링크: <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}>"}}
-                        ]}
-                      }
-              env:
-                  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+            -   name: Slack 알림 (실패)
+                if: failure()
+                uses: slackapi/slack-github-action@v1
+                with:
+                    payload: |
+                        {
+                          "text": "❌ DROP Backend CI 실패!",
+                          "blocks": [
+                            {
+                              "type": "header",
+                              "text": { "type": "plain_text", "text": "❌ Backend CI 실패" }
+                            },
+                            {
+                              "type": "section",
+                              "fields": [
+                                { "type": "mrkdwn", "text": "*Branch/PR*\n${{ github.ref_name || github.event.pull_request.number }}" },
+                                { "type": "mrkdwn", "text": "*Author*\n${{ github.actor }}" }
+                              ]
+                            },
+                            {
+                              "type": "section",
+                              "text": { "type": "mrkdwn", "text": "링크: <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}>" }
+                            }
+                          ]
+                        }
+                env:
+                    SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
