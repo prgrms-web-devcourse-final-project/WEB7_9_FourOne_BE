@@ -21,14 +21,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "products", indexes = {@Index(name = "idx_product_category", columnList = "category"),
 	@Index(name = "idx_product_subcategory", columnList = "subcategory"),
 	@Index(name = "idx_product_deleted_at", columnList = "deleted_at")})
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -82,5 +80,13 @@ public class Product {
 		this.subcategory = subcategory;
 		this.createdAt = LocalDateTime.now();
 		this.bookmarkCount = 0;
+	}
+
+	public void update(String name, String description, Category category, SubCategory subcategory) {
+		this.name = name;
+		this.description = description;
+		this.category = category;
+		this.subcategory = subcategory;
+		this.updatedAt = LocalDateTime.now();
 	}
 }
