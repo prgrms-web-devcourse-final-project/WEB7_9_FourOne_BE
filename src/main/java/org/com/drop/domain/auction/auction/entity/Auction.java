@@ -64,7 +64,6 @@ public class Auction {
 	private LocalDateTime deletedAt;
 
 	public enum AuctionStatus { SCHEDULED, LIVE, ENDED, CANCELLED }
-
 	public Auction(
 		Product product,
 		Integer startPrice,
