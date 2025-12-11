@@ -5,20 +5,20 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Component;
 
-// Redis 적용을 위한 더미 파일(임시)
+// Redis 적용 전 더미 파일(임시)
 @Component
 public class RefreshTokenStore {
-	private final Map<String, String> store = new ConcurrentHashMap<>();
+	private static final Map<String, String> store = new ConcurrentHashMap<>();
 
-	public void save(String username, String refreshToken) {
-		store.put(username, refreshToken);
+	public static void delete(String userEmail) {
+		store.remove(userEmail);
 	}
 
-	public String find(String username) {
-		return store.get(username);
+	public void save(String userEmail, String refreshToken) {
+		store.put(userEmail, refreshToken);
 	}
 
-	public void delete(String username) {
-		store.remove(username);
+	public String find(String userEmail) {
+		return store.get(userEmail);
 	}
 }

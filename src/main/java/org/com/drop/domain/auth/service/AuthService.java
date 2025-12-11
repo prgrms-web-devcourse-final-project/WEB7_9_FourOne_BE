@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 
 import org.com.drop.domain.auth.dto.LocalSignUpRequest;
 import org.com.drop.domain.auth.dto.LocalSignUpResponse;
+import org.com.drop.domain.auth.dto.UserDeleteRequest;
+import org.com.drop.domain.auth.dto.UserDeleteResponse;
 import org.com.drop.domain.auth.jwt.JwtProvider;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.entity.User.LoginType;
@@ -48,5 +50,28 @@ public class AuthService {
 		User saved = userRepository.save(user);
 
 		return LocalSignUpResponse.of(saved.getId(), saved.getEmail(), saved.getNickname(), jwtProvider);
+	}
+
+	public UserDeleteResponse deleteAccount(User user, UserDeleteRequest request) {
+
+		if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+			throw new ServiceException(ErrorCode.AUTH_PASSWORD_MISMATCH);
+		}
+
+		if (userHasActiveAuctionsOrTrades(user)) {
+			throw new ServiceException(ErrorCode.USER_HAS_ACTIVE_AUCTIONS);
+		}
+
+		user.setDeletedAt(LocalDateTime.now());
+		userRepository.save(user);
+
+		RefreshTokenStore.delete(user.getEmail());
+
+		return new UserDeleteResponse(user.getDeletedAt().toString());
+	}
+
+	private boolean userHasActiveAuctionsOrTrades(User user) {
+		// TODO: 진행 중인 경매나 입찰이 있는 경우 처리
+		return false;
 	}
 }
