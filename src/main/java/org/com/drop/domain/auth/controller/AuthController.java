@@ -99,4 +99,28 @@ public class AuthController {
 			.header(HttpHeaders.SET_COOKIE, cookie.toString())
 			.body(body);
 	}
+
+	@PostMapping("/logout")
+	public ResponseEntity<RsData<Void>> logout(
+		@AuthenticationPrincipal UserDetails userDetails) {
+
+		authService.logout(userDetails.getUsername());
+
+		ResponseCookie expiredCookie = ResponseCookie.from("refreshToken", "")
+			.httpOnly(true)
+			.path("/")
+			.maxAge(0)
+			.build();
+
+		RsData<Void> body = new RsData<>(
+			"SUCCESS",
+			"200",
+			"요청을 성공적으로 처리했습니다.",
+			null
+		);
+
+		return ResponseEntity.ok()
+			.header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
+			.body(body);
+	}
 }

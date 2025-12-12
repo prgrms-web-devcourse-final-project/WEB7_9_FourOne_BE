@@ -22,13 +22,14 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-// ToDo: 이메일 인증, 검증 관련 로직 추가 후 트랜잭션 처리
+// ToDo: 이메일 인증, 검증 관련 로직 추가 후 트랜잭션 확인
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final RefreshTokenStore refreshTokenStore;
 	@Getter
 	private final JwtProvider jwtProvider;
 
@@ -72,7 +73,7 @@ public class AuthService {
 		user.setDeletedAt(LocalDateTime.now());
 		userRepository.save(user);
 
-		RefreshTokenStore.delete(user.getEmail());
+		refreshTokenStore.delete(user.getEmail());
 
 		return new UserDeleteResponse(user.getDeletedAt().toString());
 	}
@@ -83,7 +84,6 @@ public class AuthService {
 	}
 
 	public LocalLoginResponse login(LocalLoginRequest dto) {
-
 		User user = userRepository.findByEmail(dto.email())
 			.orElseThrow(() -> new ServiceException(ErrorCode.AUTH_UNAUTHORIZED));
 
@@ -102,4 +102,11 @@ public class AuthService {
 			expiresIn
 		);
 	}
+
+	@Transactional
+	public void logout(String email) {
+		refreshTokenStore.delete(email);
+	}
+
+
 }
