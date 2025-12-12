@@ -42,6 +42,8 @@ public class GlobalExceptionHandler {
 				case "category" -> errorCode = ErrorCode.PRODUCT_INVALID_PRODUCT_CATEGORY;
 				case "subCategory" -> errorCode = ErrorCode.PRODUCT_INVALID_PRODUCT_SUB_CATEGORY;
 				case "image" -> errorCode = ErrorCode.PRODUCT_INVALID_PRODUCT_IMAGE;
+				case "question" -> errorCode = ErrorCode.PRODUCT_INVALID_QUESTION;
+				case "answer" -> errorCode = ErrorCode.PRODUCT_INVALID_ANSWER;
 			}
 		}
 		return errorCode;

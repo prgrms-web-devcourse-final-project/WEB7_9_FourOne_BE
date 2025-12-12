@@ -1,7 +1,10 @@
 package org.com.drop.domain.auction.product.qna.controller;
 
+import org.com.drop.domain.auction.product.qna.dto.ProductQnAAnswerRequest;
+import org.com.drop.domain.auction.product.qna.dto.ProductQnAAnswerResponse;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnACreateRequest;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnaCreateResponse;
+import org.com.drop.domain.auction.product.qna.entity.Answer;
 import org.com.drop.domain.auction.product.qna.entity.Question;
 import org.com.drop.domain.auction.product.qna.service.QnAService;
 import org.com.drop.domain.user.entity.User;
@@ -35,6 +38,23 @@ public class QnAController {
 		Question question = qnAService.addQuestion(productId, request, actor);
 		return new RsData<>(
 			new ProductQnaCreateResponse(question)
+		);
+	}
+
+	@PostMapping("/{qnaId}")
+	public RsData<ProductQnAAnswerResponse> addAnswer(
+		@PathVariable
+		Long productId,
+		@PathVariable
+		Long qnaId,
+		@RequestBody
+		@Valid
+		ProductQnAAnswerRequest request) {
+		//TODO : rq 구현 후 수정
+		User actor = userRepository.findById(1L).get();
+		Answer answer = qnAService.addAnswer(productId, qnaId, request, actor);
+		return new RsData<>(
+			new ProductQnAAnswerResponse(answer)
 		);
 	}
 }

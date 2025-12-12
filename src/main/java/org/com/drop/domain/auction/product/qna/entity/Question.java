@@ -46,10 +46,6 @@ public class Question {
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "answer_id")
-	private Answer answer;
-
 	public Question(Product product, User questioner, String question) {
 		this.product = product;
 		this.questioner = questioner;
