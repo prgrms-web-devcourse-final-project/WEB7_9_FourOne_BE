@@ -107,7 +107,7 @@ public class ProductControllerTest {
 		List<ProductImage> productImages = productImageRepository.findAllByProductId(productId)
 			.stream().sorted((a, b) -> a.getId().compareTo(b.getId()))
 			.toList();
-		for	(int i= 0; i< productImages.size(); i++ ) {
+		for	(int i = 0; i < productImages.size(); i++ ) {
 			assertThat(productImages.get(i).getImageUrl()).isEqualTo(images.get(i));
 		}
 
@@ -167,7 +167,7 @@ public class ProductControllerTest {
 		List<ProductImage> productImages = productImageRepository.findAllByProductId(productId)
 			.stream().sorted((a, b) -> a.getId().compareTo(b.getId()))
 			.toList();
-		for	(int i= 0; i< productImages.size(); i++ ) {
+		for	(int i = 0; i < productImages.size(); i++ ) {
 			assertThat(productImages.get(i).getImageUrl()).isEqualTo(updatedImages.get(i));
 		}
 	}
