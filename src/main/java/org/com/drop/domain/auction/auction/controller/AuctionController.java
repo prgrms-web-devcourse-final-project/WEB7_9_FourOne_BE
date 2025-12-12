@@ -34,9 +34,6 @@ public class AuctionController {
 		User actor = userRepository.findById(1L).get();
 		Auction auction = auctionService.addAuction(request, actor);
 		return new RsData<>(
-			"SUCCESS",
-			"200",
-			"요청을 성공적으로 처리했습니다.",
 			new AuctionCreateResponse(auction)
 		);
 	}
