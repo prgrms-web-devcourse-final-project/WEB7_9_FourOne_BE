@@ -10,14 +10,12 @@ import org.com.drop.domain.auction.product.qna.dto.ProductQnAAnswerRequest;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnACreateRequest;
 import org.com.drop.domain.auction.product.qna.entity.Answer;
 import org.com.drop.domain.auction.product.qna.repository.AnswerRepository;
-import org.com.drop.domain.auth.SecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,7 +25,6 @@ import jakarta.transaction.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest
-@Import(SecurityConfig.class)
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
