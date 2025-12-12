@@ -289,157 +289,160 @@ jobs:
                     echo "missed=0" >> $GITHUB_OUTPUT
                   fi
 
-            -   name: Build detailed coverage markdown
-                if: always() && github.event_name == 'pull_request'
-                id: coverage_details
-                continue-on-error: true
-                run: |
-                    # 리포트 경로 결정
-                    XML="build/reports/jacocoFull/xml/jacocoFullTestReport.xml"
-                    if [ ! -f "$XML" ]; then
-                      ALT="build/reports/jacoco/xml/jacocoTestReport.xml"
-                      if [ -f "$ALT" ]; then
+            - name: Build detailed coverage markdown
+              if: always() && github.event_name == 'pull_request'
+              id: coverage_details
+              continue-on-error: true
+              run: |
+                # 리포트 경로 결정
+                XML="build/reports/jacocoFull/xml/jacocoFullTestReport.xml"
+                if [ ! -f "$XML" ]; then
+                    ALT="build/reports/jacoco/xml/jacocoTestReport.xml"
+                    if [ -f "$ALT" ]; then
                         XML="$ALT"
-                      else
+                    else
                         echo "details=No coverage report found." >> $GITHUB_OUTPUT
                         exit 0
-                      fi
                     fi
-                    echo "Using coverage XML: $XML"
+                fi
+                echo "Using coverage XML: $XML"
                     
-                    export XML_PATH="$XML"
+                export XML_PATH="$XML"
                     
-                    # PR 변경 파일 수집 (Java 파일만)
-                    BASE_SHA='${{ github.event.pull_request.base.sha }}'
-                    HEAD_SHA='${{ github.sha }}'
+                # PR 변경 파일 수집 (Java 파일만)
+                BASE_SHA='${{ github.event.pull_request.base.sha }}'
+                HEAD_SHA='${{ github.sha }}'
                     
-                    # 베이스 커밋 확인
-                    if ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
-                      git fetch --no-tags --prune origin "$BASE_SHA":"refs/remotes/origin/base-sha" || true
-                    fi
+                # 베이스 커밋 확인
+                if ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+                  git fetch --no-tags --prune origin "$BASE_SHA":"refs/remotes/origin/base-sha" || true
+                fi
                     
-                    git diff --name-only "$BASE_SHA" "$HEAD_SHA" \
-                      | grep -E '^src/main/java/.*\.java$' > /tmp/changed-java.txt || true
+                git diff --name-only "$BASE_SHA" "$HEAD_SHA" \
+                  | grep -E '^src/main/java/.*\.java$' > /tmp/changed-java.txt || true
                     
-                    echo "Changed Java files:"
-                    cat /tmp/changed-java.txt || true
-                    echo
+                echo "Changed Java files:"
+                cat /tmp/changed-java.txt || true
+                echo
                     
-                    python3 <<EOF > /tmp/coverage_details.md
-                    import os
-                    import sys
-                    import xml.etree.ElementTree as ET
-                    from pathlib import Path
+                python3 <<EOF > /tmp/coverage_details.md
+                import os
+                import sys
+                import xml.etree.ElementTree as ET
+                from pathlib import Path
                   
-                    # XML 경로를 명령줄 인자나 환경변수로 받기
-                    xml_path = os.environ.get('XML_PATH') or sys.argv[1] if len(sys.argv) > 1 else None
+                # XML 경로를 명령줄 인자나 환경변수로 받기
+                xml_path = os.environ.get('XML_PATH') or sys.argv[1] if len(sys.argv) > 1 else None
 
-                    if not xml_path or not os.path.exists(xml_path):
-                        print("### 📊 코드 커버리지 리포트")
-                        print("> 리포트를 생성할 수 없습니다. XML 파일이 없습니다.")
-                        sys.exit(0)
+                if not xml_path or not os.path.exists(xml_path):
+                    print("### 📊 코드 커버리지 리포트")
+                    print("> 리포트를 생성할 수 없습니다. XML 파일이 없습니다.")
+                    sys.exit(0)
                     
-                    try:
-                        root = ET.parse(xml_path).getroot()
+                try:
+                  root = ET.parse(xml_path).getroot()
+                  
+                  def sum_counter(node, ctype):
+                    for c in node.findall("counter"):
+                        if c.get("type") == ctype:
+                            return int(c.get("covered", "0")), int(c.get("missed", "0"))
+                    return 0, 0
     
-                        def sum_counter(node, ctype):
-                            for c in node.findall("counter"):
-                                if c.get("type") == ctype:
-                                    return int(c.get("covered", "0")), int(c.get("missed", "0"))
-                            return 0, 0
+                  # 전체 커버리지
+                  tot_cov, tot_miss = sum_counter(root, "LINE")
+                  tot_pct = (tot_cov / (tot_cov + tot_miss) * 100) if (tot_cov + tot_miss) else 0.0
+                  
+                  # 패키지별 커버리지
+                  pkg_rows = []
+                  for p in root.findall("package"):
+                    pcov, pmiss = sum_counter(p, "LINE")
+                    
+                    if pcov + pmiss == 0:
+                        for c in p.findall("class"):
+                            cc, cm = sum_counter(c, "LINE")
+                            pcov += cc; pmiss += cm
+                    ppct = (pcov / (pcov + pmiss) * 100) if (pcov + pmiss) else 0.0
+                    pkg_rows.append((p.get("name","(default)"), pcov, pmiss, ppct))
+                  pkg_rows.sort(key=lambda r: r[3])
     
-                        # 전체 커버리지
-                        tot_cov, tot_miss = sum_counter(root, "LINE")
-                        tot_pct = (tot_cov / (tot_cov + tot_miss) * 100) if (tot_cov + tot_miss) else 0.0
-                      
-                      # 패키지별 커버리지
-                        pkg_rows = []
-                        for p in root.findall("package"):
-                            pcov, pmiss = sum_counter(p, "LINE")
-                            if pcov + pmiss == 0:
-                                for c in p.findall("class"):
-                                    cc, cm = sum_counter(c, "LINE")
-                                    pcov += cc; pmiss += cm
-                            ppct = (pcov / (pcov + pmiss) * 100) if (pcov + pmiss) else 0.0
-                            pkg_rows.append((p.get("name","(default)"), pcov, pmiss, ppct))
-                        pkg_rows.sort(key=lambda r: r[3])
+                  # 클래스별 커버리지
+                  class_rows = []
+                  for p in root.findall("package"):
+                        for c in p.findall("class"):
+                            cc, cm = sum_counter(c, "LINE")
+                            total = cc + cm
+                            pct = (cc/total*100) if total else 0.0
+                            cname = c.get("name","(unknown)").replace("/", ".")
+                        class_rows.append((cname, cc, cm, pct, total))
+                  class_rows.sort(key=lambda r: (r[3], -r[4]))
     
-                        # 클래스별 커버리지
-                        class_rows = []
-                        for p in root.findall("package"):
-                            for c in p.findall("class"):
-                                cc, cm = sum_counter(c, "LINE")
-                                total = cc + cm
-                                pct = (cc/total*100) if total else 0.0
-                                cname = c.get("name","(unknown)").replace("/", ".")
-                                class_rows.append((cname, cc, cm, pct, total))
-                        class_rows.sort(key=lambda r: (r[3], -r[4]))
-    
-                        # 변경 파일 매핑
-                        changed_rows = []
-                        changed_file_list = Path("/tmp/changed-java.txt")
-                        if changed_file_list.exists():
-                            for line in changed_file_list.read_text().splitlines():
-                                line = line.strip()
-                                if not line: continue
-                                if line.startswith("src/main/java/"):
-                                    rel = line[len("src/main/java/"):]
-                                    if rel.endswith(".java"):
-                                        rel = rel[:-5]
-                                    fqn = rel.replace("/", ".")
+                  # 변경 파일 매핑
+                  changed_rows = []
+                  changed_file_list = Path("/tmp/changed-java.txt")
+                  
+                  if changed_file_list.exists():
+                        for line in changed_file_list.read_text().splitlines():
+                            line = line.strip()
+                            if not line: continue
+                            if line.startswith("src/main/java/"):
+                                rel = line[len("src/main/java/"):]
+                                if rel.endswith(".java"):
+                                    rel = rel[:-5]
+                                fqn = rel.replace("/", ".")
                                     
-                                    matches = [r for r in class_rows if r[0].startswith(fqn)]
-                                    if matches:
-                                        cov = sum(m[1] for m in matches)
-                                        miss = sum(m[2] for m in matches)
-                                        total = cov + miss
-                                        pct = (cov/total*100) if total else 0.0
-                                        changed_rows.append((line, fqn, cov, miss, pct, total))
-                                    else:
-                                        changed_rows.append((line, fqn, 0, 0, 0.0, 0))
-                            changed_rows.sort(key=lambda r: (r[4], -r[5]))
+                                matches = [r for r in class_rows if r[0].startswith(fqn)]
+                                if matches:
+                                    cov = sum(m[1] for m in matches)
+                                    miss = sum(m[2] for m in matches)
+                                    total = cov + miss
+                                    pct = (cov/total*100) if total else 0.0
+                                    changed_rows.append((line, fqn, cov, miss, pct, total))
+                                else:
+                                    changed_rows.append((line, fqn, 0, 0, 0.0, 0))
+                        changed_rows.sort(key=lambda r: (r[4], -r[5]))
     
-                        def fmt_pct(x): return f"{x:.2f}%"
+                  def fmt_pct(x): return f"{x:.2f}%"
     
-                        print("### 📊 코드 커버리지 리포트\\n")
-                        print(f"**전체 라인 커버리지:** {fmt_pct(tot_pct)} ({tot_cov} covered / {tot_cov+tot_miss} lines)\\n")
+                  print("### 📊 코드 커버리지 리포트\\n")
+                  print(f"**전체 라인 커버리지:** {fmt_pct(tot_pct)} ({tot_cov} covered / {tot_cov+tot_miss} lines)\\n")
     
-                        if pkg_rows:
-                            print("<details><summary><b>패키지별 커버리지 (낮은 순)</b></summary>\\n")
-                            print("| 패키지 | 라인 % | 커버됨 | 놓침 |")
-                            print("|---|---:|---:|---:|")
-                            for (name, cov, miss, pct) in pkg_rows:
-                                print(f"| \`{name}\` | {fmt_pct(pct)} | {cov} | {miss} |")
-                            print("\\n</details>\\n")
+                  if pkg_rows:
+                    print("<details><summary><b>패키지별 커버리지 (낮은 순)</b></summary>\\n")
+                    print("| 패키지 | 라인 % | 커버됨 | 놓침 |")
+                    print("|---|---:|---:|---:|")
+                    for (name, cov, miss, pct) in pkg_rows:
+                        print(f"| \`{name}\` | {fmt_pct(pct)} | {cov} | {miss} |")
+                    print("\\n</details>\\n")
     
-                        print("<details open><summary><b>커버리지가 낮은 클래스 (Top 15)</b></summary>\\n")
-                        print("| 클래스 | 라인 % | 커버됨 | 놓침 |")
-                        print("|---|---:|---:|---:|")
-                        for (cname, cov, miss, pct, total) in class_rows[:15]:
-                            print(f"| \`{cname}\` | {fmt_pct(pct)} | {cov} | {miss} |")
+                  print("<details open><summary><b>커버리지가 낮은 클래스 (Top 15)</b></summary>\\n")
+                  print("| 클래스 | 라인 % | 커버됨 | 놓침 |")
+                  print("|---|---:|---:|---:|")
+                  for (cname, cov, miss, pct, total) in class_rows[:15]:
+                        print(f"| \`{cname}\` | {fmt_pct(pct)} | {cov} | {miss} |")
+                  print("\\n</details>\\n")
+    
+                  if changed_rows:
+                        print("<details open><summary><b>이 PR에서 변경된 파일들</b></summary>\\n")
+                        print("| 파일 (PR) | 클래스 | 라인 % | 커버됨 | 놓침 |")
+                        print("|---|---|---:|---:|---:|")
+                        for (src, fqn, cov, miss, pct, total) in changed_rows:
+                            print(f"| \`{src}\` | \`{fqn}\` | {fmt_pct(pct)} | {cov} | {miss} |")
+                            
                         print("\\n</details>\\n")
+                  else:
+                        print("> 이 PR에는 Java 소스 파일 변경이 없습니다.\\n")
     
-                        if changed_rows:
-                            print("<details open><summary><b>이 PR에서 변경된 파일들</b></summary>\\n")
-                            print("| 파일 (PR) | 클래스 | 라인 % | 커버됨 | 놓침 |")
-                            print("|---|---|---:|---:|---:|")
-                            for (src, fqn, cov, miss, pct, total) in changed_rows:
-                                print(f"| \`{src}\` | \`{fqn}\` | {fmt_pct(pct)} | {cov} | {miss} |")
-                            print("\\n</details>\\n")
-                        else:
-                            print("> 이 PR에는 Java 소스 파일 변경이 없습니다.\\n")
-    
-                    except Exception as e:
-                        print(f"### 📊 코드 커버리지 리포트")
-                        print(f"> 오류 발생: {e}")
-                        print("> 기본 리포트만 표시됩니다.")
-                        EOF
+                except Exception as e:
+                    print(f"### 📊 코드 커버리지 리포트")
+                    print(f"> 오류 발생: {e}")
+                    print("> 기본 리포트만 표시됩니다.")
+                EOF
                       
-                      {
-                          echo 'details<<EOF'
-                          cat /tmp/coverage_details.md
-                          echo 'EOF'
-                      } >> $GITHUB_OUTPUT
+                    {
+                        echo 'details<<EOF'
+                        cat /tmp/coverage_details.md
+                        echo 'EOF'
+                    } >> $GITHUB_OUTPUT
 
             - name: Upsert PR coverage comment
               if: always() && github.event_name == 'pull_request'
