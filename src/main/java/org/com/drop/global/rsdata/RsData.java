@@ -1,4 +1,4 @@
-package org.com.drop.global.rsData;
+package org.com.drop.global.rsdata;
 
 import lombok.Getter;
 

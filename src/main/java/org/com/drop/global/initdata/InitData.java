@@ -1,4 +1,4 @@
-package org.com.drop.global.initData;
+package org.com.drop.global.initdata;
 
 import java.time.LocalDateTime;
 import java.util.List;

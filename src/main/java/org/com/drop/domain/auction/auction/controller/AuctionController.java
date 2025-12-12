@@ -6,7 +6,7 @@ import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.service.AuctionService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
-import org.com.drop.global.rsData.RsData;
+import org.com.drop.global.rsdata.RsData;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
