@@ -65,24 +65,4 @@ public class ProductController {
 		productService.deleteProduct(productId, actor);
 		return new RsData<>(null);
 	}
-
-	// @PostMapping("/{productId}/qna")
-	// public RsData<ProductQnaCreateResponse> addQna(
-	// 	@PathVariable
-	// 	@NotNull
-	// 	Long productId,
-	// 	@RequestBody
-	// 	@Valid
-	// 	ProductQnACreateRequest request) {
-	// 	//TODO : rq 구현 후 수정
-	// 	User actor = userRepository.findById(1L).get();
-	// 	Question question = productService.addQuestion(request, actor);
-	// 	return new RsData<>(
-	// 		"SUCCESS",
-	// 		"200",
-	// 		"요청을 성공적으로 처리했습니다.",
-	// 		new ProductQnaCreateResponse(question)
-	// 	);
-	// }
-
 }

@@ -1,4 +1,4 @@
-package org.com.drop.domain.auction.product.dto;
+package org.com.drop.domain.auction.product.qna.dto;
 
 import java.time.LocalDateTime;
 

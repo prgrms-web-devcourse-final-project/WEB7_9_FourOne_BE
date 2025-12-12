@@ -1,7 +1,8 @@
-package org.com.drop.domain.auction.product.entity;
+package org.com.drop.domain.auction.product.qna.entity;
 
 import java.time.LocalDateTime;
 
+import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.user.entity.User;
 
 import jakarta.persistence.Column;
@@ -21,12 +22,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "product_qnas_anwer", indexes = {@Index(name = "idx_product_id", columnList = "product_id")})
+@Table(name = "product_qnas", indexes = {@Index(name = "idx_product_id", columnList = "product_id")})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class Answer {
+public class Question {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -37,14 +38,22 @@ public class Answer {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "question_user_id", nullable = false)
-	private User answerer;
+	private User questioner;
 
 	@Column(nullable = false, columnDefinition = "TEXT")
-	private String answer;
+	private String question;
 
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;
-	@Column
-	private LocalDateTime deletedAt;
-}
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "answer_id")
+	private Answer answer;
+
+	public Question(Product product, User questioner, String question) {
+		this.product = product;
+		this.questioner = questioner;
+		this.question = question;
+		this.createdAt = LocalDateTime.now();
+	}
+}
