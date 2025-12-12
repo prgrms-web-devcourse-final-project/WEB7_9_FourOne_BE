@@ -324,20 +324,24 @@ public class QnaControllerTest {
 
 					assertThat(jsonPath("$.data.totalCount").value(questions.size()));
 
-					for (Question q : questions){
+					for (Question q : questions) {
 						assertThat(jsonPath("$.data.productQnAResponses.qnaId").value(q.getId()));
-						assertThat(jsonPath("$.data.productQnAResponses.questionerId").value(q.getQuestioner().getId()));
+						assertThat(jsonPath("$.data.productQnAResponses.questionerId")
+							.value(q.getQuestioner().getId()));
 						assertThat(jsonPath("$.data.productQnAResponses.question").value(q.getQuestion()));
 						assertThat(jsonPath("$.data.productQnAResponses.questionedAt").value(q.getCreatedAt()));
 
 						List<Answer> answers = answerRepository.findByQuestion(q);
 
-						for (Answer a : answers){
-							assertThat(jsonPath("$.data.productQnAResponses.answers.qnaId").value(a.getQuestion().getId()));
+						for (Answer a : answers) {
+							assertThat(jsonPath("$.data.productQnAResponses.answers.qnaId")
+								.value(a.getQuestion().getId()));
 							assertThat(jsonPath("$.data.productQnAResponses.answers.answer").value(a.getAnswer()));
-							assertThat(jsonPath("$.data.productQnAResponses.answers.answererId").value(a.getAnswerer().getId()));
+							assertThat(jsonPath("$.data.productQnAResponses.answers.answererId")
+								.value(a.getAnswerer().getId()));
 							assertThat(jsonPath("$.data.productQnAResponses.answers.answer").value(a.getAnswer()));
-							assertThat(jsonPath("$.data.productQnAResponses.answers.answeredAt").value(a.getCreatedAt()));
+							assertThat(jsonPath("$.data.productQnAResponses.answers.answeredAt")
+								.value(a.getCreatedAt()));
 						}
 
 					}
