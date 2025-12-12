@@ -312,51 +312,59 @@ public class QnaControllerTest {
 					assertThat(jsonPath("$.data.totalCount").value(questions.size()));
 
 					for (int i = 0; i < questions.size(); i++) {
-						Question q = questions.get(i);
+						Question question  = questions.get(i);
 						resultActions.andExpect(
 							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.qnaId".formatted(i))
-								.value(q.getId())
+								.value(question .getId())
 						);
 						resultActions.andExpect(
-							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.questionerId".formatted(i))
-								.value(q.getQuestioner().getId())
+							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.questionerId"
+								.formatted(i))
+								.value(question .getQuestioner().getId())
 						);
 						resultActions.andExpect(
-							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.question".formatted(i))
-								.value(q.getQuestion())
+							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.question"
+								.formatted(i))
+								.value(question .getQuestion())
 						);
 						resultActions.andExpect(
-							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.questionedAt".formatted(i))
-								.value(q.getCreatedAt().toString())
+							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.questionedAt"
+								.formatted(i))
+								.value(question .getCreatedAt().toString())
 						);
-						List<Answer> answers = answerRepository.findByQuestion(q);
+						List<Answer> answers = answerRepository.findByQuestion(question);
 
 						for (int j = 0; j < answers.size(); j++) {
-							Answer a = answers.get(j);
+							Answer answer = answers.get(j);
 
 							resultActions.andExpect(
-								jsonPath("$.data.productQnAResponses[%d].answers[%d].qnaId".formatted(i, j))
-									.value(a.getQuestion().getId())
+								jsonPath("$.data.productQnAResponses[%d].answers[%d].qnaId"
+									.formatted(i, j))
+									.value(answer.getQuestion().getId())
 							);
 
 							resultActions.andExpect(
-								jsonPath("$.data.productQnAResponses[%d].answers[%d].answerId".formatted(i, j))
-									.value(a.getId())
+								jsonPath("$.data.productQnAResponses[%d].answers[%d].answerId"
+									.formatted(i, j))
+									.value(answer.getId())
 							);
 
 							resultActions.andExpect(
-								jsonPath("$.data.productQnAResponses[%d].answers[%d].answererId".formatted(i, j))
-									.value(a.getAnswerer().getId())
+								jsonPath("$.data.productQnAResponses[%d].answers[%d].answererId"
+									.formatted(i, j))
+									.value(answer.getAnswerer().getId())
 							);
 
 							resultActions.andExpect(
-								jsonPath("$.data.productQnAResponses[%d].answers[%d].answer".formatted(i, j))
-									.value(a.getAnswer())
+								jsonPath("$.data.productQnAResponses[%d].answers[%d].answer"
+									.formatted(i, j))
+									.value(answer.getAnswer())
 							);
 
 							resultActions.andExpect(
-								jsonPath("$.data.productQnAResponses[%d].answers[%d].answeredAt".formatted(i, j))
-									.value(a.getCreatedAt().toString())
+								jsonPath("$.data.productQnAResponses[%d].answers[%d].answeredAt"
+									.formatted(i, j))
+									.value(answer.getCreatedAt().toString())
 							);
 						}
 
