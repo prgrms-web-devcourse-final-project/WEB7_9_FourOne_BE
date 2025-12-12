@@ -5,12 +5,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import org.com.drop.config.TestSecurityConfig;
 import org.com.drop.domain.auction.product.controller.ProductController;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnAAnswerRequest;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnACreateRequest;
 import org.com.drop.domain.auction.product.qna.entity.Answer;
 import org.com.drop.domain.auction.product.qna.repository.AnswerRepository;
+import org.com.drop.domain.auth.SecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ import jakarta.transaction.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest
-@Import(TestSecurityConfig.class)
+@Import(SecurityConfig.class)
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
