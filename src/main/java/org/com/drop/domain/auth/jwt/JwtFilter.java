@@ -42,6 +42,7 @@ public class JwtFilter extends OncePerRequestFilter {
 				SecurityContextHolder.getContext().setAuthentication(auth);
 
 			} catch (Exception e) {
+				// 토큰 invalid → 그냥 다음 필터로 넘김(401은 컨트롤러 단에서)
 			}
 		}
 
