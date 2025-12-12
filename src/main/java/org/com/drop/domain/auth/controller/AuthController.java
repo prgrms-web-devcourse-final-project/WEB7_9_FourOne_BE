@@ -13,7 +13,7 @@ import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
-import org.com.drop.global.rsData.RsData;
+import org.com.drop.global.rsdata.RsData;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -40,12 +40,7 @@ public class AuthController {
 	private final UserRepository userRepository;
 
 	private <T> RsData<T> createSuccessRsData(T data) {
-		return new RsData<>(
-			"SUCCESS",
-			"200",
-			"요청을 성공적으로 처리했습니다.",
-			data
-		);
+		return new RsData<>(data);
 	}
 
 	@PostMapping("/local/signup")

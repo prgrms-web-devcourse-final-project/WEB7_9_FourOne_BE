@@ -35,6 +35,7 @@ public class GlobalExceptionHandler {
 
 		if (firstError != null) {
 			String field = firstError.getField();
+			String code = firstError.getCode();
 
 			switch (field) {
 				case "name" -> errorCode = ErrorCode.PRODUCT_INVALID_PRODUCT_NAME;
@@ -42,6 +43,11 @@ public class GlobalExceptionHandler {
 				case "category" -> errorCode = ErrorCode.PRODUCT_INVALID_PRODUCT_CATEGORY;
 				case "subCategory" -> errorCode = ErrorCode.PRODUCT_INVALID_PRODUCT_SUB_CATEGORY;
 				case "image" -> errorCode = ErrorCode.PRODUCT_INVALID_PRODUCT_IMAGE;
+				case "email" -> errorCode = ErrorCode.AUTH_INVALID_EMAIL;
+				case "password" -> errorCode = ErrorCode.AUTH_INVALID_PASSWORD;
+				case "nickname" -> errorCode = ErrorCode.AUTH_INVALID_NICKNAME;
+
+				default -> errorCode = ErrorCode.INVALID_PARAMETER;
 			}
 		}
 		return errorCode;
