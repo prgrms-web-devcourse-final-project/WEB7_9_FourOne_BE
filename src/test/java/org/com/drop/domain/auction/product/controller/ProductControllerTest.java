@@ -308,7 +308,7 @@ public class ProductControllerTest {
 	@Nested
 	class BookmarkTest {
 		@Nested
-		class create {
+		class Create {
 			@Test
 			@DisplayName("북마크 등록 - 성공")
 			void t4() throws Exception {
