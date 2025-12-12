@@ -46,8 +46,6 @@ public class GlobalExceptionHandler {
 				case "email" -> errorCode = ErrorCode.AUTH_INVALID_EMAIL;
 				case "password" -> errorCode = ErrorCode.AUTH_INVALID_PASSWORD;
 				case "nickname" -> errorCode = ErrorCode.AUTH_INVALID_NICKNAME;
-
-				default -> errorCode = ErrorCode.INVALID_PARAMETER;
 			}
 		}
 		return errorCode;
