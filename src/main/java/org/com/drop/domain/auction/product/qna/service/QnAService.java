@@ -12,22 +12,26 @@ import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class QnAService {
 	private final QuestionRepository questionRepository;
 	private final AnswerRepository answerRepository;
 	private final ProductService productService;
 
+	@Transactional
 	public Question addQuestion(Long productId, ProductQnACreateRequest request, User actor) {
 		Product product = productService.findProductById(productId);
 		Question question = new Question(product, actor, request.question());
 		return questionRepository.save(question);
 	}
 
+	@Transactional
 	public Answer addAnswer(Long productId, Long qnaId, ProductQnAAnswerRequest request, User actor) {
 		Product product = productService.findProductById(productId);
 		Question question = questionFindById(qnaId);
@@ -45,6 +49,7 @@ public class QnAService {
 			.orElseThrow(() -> new ServiceException(ErrorCode.PRODUCT_ANSWER_NOT_FOUND));
 	}
 
+	@Transactional
 	public void deleteAnswer( Long qnaId, User actor) {
 		Answer answer = answerFindById(qnaId);
 		if (!answer.getAnswerer().equals(actor)) {
