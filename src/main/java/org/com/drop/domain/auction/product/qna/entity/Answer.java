@@ -64,4 +64,3 @@ public class Answer {
 		deletedAt = LocalDateTime.now();
 	}
 }
-

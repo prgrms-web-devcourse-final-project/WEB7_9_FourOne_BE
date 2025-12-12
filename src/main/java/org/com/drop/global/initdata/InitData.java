@@ -107,5 +107,4 @@ public class InitData {
 		qnAService.addQuestion(1L, new ProductQnACreateRequest("질문1"), user1);
 		qnAService.addAnswer(1L, 1L, new ProductQnAAnswerRequest("답변"), user1);
 	}
-
 }
