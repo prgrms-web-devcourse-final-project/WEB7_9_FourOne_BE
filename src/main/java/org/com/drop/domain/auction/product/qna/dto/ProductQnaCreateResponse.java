@@ -1,8 +1,8 @@
-package org.com.drop.domain.auction.product.dto;
+package org.com.drop.domain.auction.product.qna.dto;
 
 import java.time.LocalDateTime;
 
-import org.com.drop.domain.auction.product.entity.Question;
+import org.com.drop.domain.auction.product.qna.entity.Question;
 
 public record ProductQnaCreateResponse(
 	Long qnaId,

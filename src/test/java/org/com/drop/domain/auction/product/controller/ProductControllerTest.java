@@ -9,14 +9,11 @@ import java.util.List;
 import java.util.Optional;
 
 import org.com.drop.config.TestSecurityConfig;
-import org.com.drop.domain.auction.auction.service.AuctionService;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.entity.ProductImage;
 import org.com.drop.domain.auction.product.repository.ProductImageRepository;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
-import org.com.drop.domain.auction.product.service.ProductService;
-import org.com.drop.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -60,12 +57,6 @@ public class ProductControllerTest {
 	private ProductRepository productRepository;
 	@Autowired
 	private ProductImageRepository productImageRepository;
-	@Autowired
-	private UserRepository userRepository;
-	@Autowired
-	private ProductService productService;
-	@Autowired
-	private AuctionService auctionService;
 
 	void setUp(String name, String description, Product.Category category, Product.SubCategory subCategory,
 		List<String> images) throws Exception {
@@ -81,10 +72,10 @@ public class ProductControllerTest {
 	}
 
 	@Nested
-	class product {
+	class ProductTest {
 
 		@Nested
-		class exhibit {
+		class Exhibit {
 			@Test
 			@DisplayName("상품 출품 - 성공")
 			void t1() throws Exception {
@@ -145,7 +136,7 @@ public class ProductControllerTest {
 		}
 
 		@Nested
-		class update {
+		class Update {
 			@Test
 			@DisplayName("상품 수정 - 성공")
 			void t2() throws Exception {
@@ -256,7 +247,7 @@ public class ProductControllerTest {
 		}
 
 		@Nested
-		class delete {
+		class Delete {
 			@Test
 			@DisplayName("상품 삭제 - 성공")
 			void t3() throws Exception {

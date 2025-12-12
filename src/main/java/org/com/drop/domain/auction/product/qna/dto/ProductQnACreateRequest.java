@@ -1,4 +1,4 @@
-package org.com.drop.domain.auction.product.dto;
+package org.com.drop.domain.auction.product.qna.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
