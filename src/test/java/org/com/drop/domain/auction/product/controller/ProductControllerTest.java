@@ -9,11 +9,14 @@ import java.util.List;
 import java.util.Optional;
 
 import org.com.drop.config.TestSecurityConfig;
+import org.com.drop.domain.auction.auction.service.AuctionService;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.entity.ProductImage;
 import org.com.drop.domain.auction.product.repository.ProductImageRepository;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
+import org.com.drop.domain.auction.product.service.ProductService;
+import org.com.drop.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +57,12 @@ public class ProductControllerTest {
 	private ProductRepository productRepository;
 	@Autowired
 	private ProductImageRepository productImageRepository;
+	@Autowired
+	private UserRepository userRepository;
+	@Autowired
+	private ProductService productService;
+	@Autowired
+	private AuctionService auctionService;
 
 	void setUp(String name, String description, Product.Category category, Product.SubCategory subCategory,
 		List<String> images) throws Exception {
@@ -86,8 +95,8 @@ public class ProductControllerTest {
 			.andExpect(handler().handlerType(ProductController.class))
 			.andExpect(handler().methodName("addProduct"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.status").value("SUCCESS"))
-			.andExpect(jsonPath("$.code").value(200))
+			.andExpect(jsonPath("$.code").value("SUCCESS"))
+			.andExpect(jsonPath("$.status").value(200))
 			.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
 
 		resultActions
@@ -121,9 +130,9 @@ public class ProductControllerTest {
 			.andExpect(handler().handlerType(ProductController.class))
 			.andExpect(handler().methodName("addProduct"))
 			.andExpect(status().is(400))
-			.andExpect(jsonPath("$.status").value("PRODUCT_INVALID_PRODUCT"))
-			.andExpect(jsonPath("$.code").value(1205))
-			.andExpect(jsonPath("$.message").value("이름, 설명, 카테고리, 상품 이미지는 필수 항목 입니다."));
+			.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_PRODUCT_NAME"))
+			.andExpect(jsonPath("$.status").value(1205))
+			.andExpect(jsonPath("$.message").value("상품명은 필수 항목 입니다."));
 	}
 
 	@Test
@@ -143,8 +152,8 @@ public class ProductControllerTest {
 			.andExpect(handler().handlerType(ProductController.class))
 			.andExpect(handler().methodName("updateProduct"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.status").value("SUCCESS"))
-			.andExpect(jsonPath("$.code").value(200))
+			.andExpect(jsonPath("$.code").value("SUCCESS"))
+			.andExpect(jsonPath("$.status").value(200))
 			.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
 
 		resultActions
@@ -180,8 +189,8 @@ public class ProductControllerTest {
 			.andExpect(handler().handlerType(ProductController.class))
 			.andExpect(handler().methodName("updateProduct"))
 			.andExpect(status().isNotFound())
-			.andExpect(jsonPath("$.status").value("PRODUCT_NOT_FOUND"))
-			.andExpect(jsonPath("$.code").value(404))
+			.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
+			.andExpect(jsonPath("$.status").value(1200))
 			.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
 	}
 
@@ -192,7 +201,7 @@ public class ProductControllerTest {
 		//TODO: 로그인 구현 후 인증 확인 수정 필요
 		ResultActions resultActions = mvc
 			.perform(
-				put("/api/v1/products/%d".formatted(wrongProductId))
+				put("/api/v1/products/%d".formatted(productId))
 					.contentType(MediaType.APPLICATION_JSON)
 					.content(jsonContent)
 			)
@@ -202,9 +211,36 @@ public class ProductControllerTest {
 			.andExpect(handler().handlerType(ProductController.class))
 			.andExpect(handler().methodName("updateProduct"))
 			.andExpect(status().is(400))
-			.andExpect(jsonPath("$.status").value("PRODUCT_INVALID_PRODUCT"))
-			.andExpect(jsonPath("$.code").value(1205))
-			.andExpect(jsonPath("$.message").value("이름, 설명, 카테고리, 상품 이미지는 필수 항목 입니다."));
+			.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_PRODUCT_NAME"))
+			.andExpect(jsonPath("$.status").value(1205))
+			.andExpect(jsonPath("$.message").value("상품명은 필수 항목 입니다."));
+	}
+
+	@Test
+	@DisplayName("상품 수정 - 실패 (경매 이미 시작)")
+	void t2_3() throws Exception {
+		setUp(updatedName, description, category, subCategory, images);
+		try {
+			Thread.sleep(6000); // 경매 만료되게 6초 대기
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+		//TODO: 로그인 구현 후 인증 확인 수정 필요
+		ResultActions resultActions = mvc
+			.perform(
+				put("/api/v1/products/%d".formatted(productId))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(jsonContent)
+			)
+			.andDo(print());
+
+		resultActions
+			.andExpect(handler().handlerType(ProductController.class))
+			.andExpect(handler().methodName("updateProduct"))
+			.andExpect(status().is(400))
+			.andExpect(jsonPath("$.code").value("PRODUCT_ALREADY_ON_AUCTION"))
+			.andExpect(jsonPath("$.status").value(1212))
+			.andExpect(jsonPath("$.message").value("이미 경매가 시작된 상품입니다."));
 	}
 
 	@Test
@@ -221,13 +257,13 @@ public class ProductControllerTest {
 			.andExpect(handler().handlerType(ProductController.class))
 			.andExpect(handler().methodName("deleteProduct"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.status").value("SUCCESS"))
-			.andExpect(jsonPath("$.code").value(200))
+			.andExpect(jsonPath("$.code").value("SUCCESS"))
+			.andExpect(jsonPath("$.status").value(200))
 			.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
 
 		Optional<Product> product = productRepository.findById(productId);
 		List<ProductImage> productImages = productImageRepository.findAllByProductId(productId);
-		assertThat(product.isPresent()).isEqualTo(false);
+		assertThat(product.get().getDeletedAt()).isNotNull();
 		assertThat(productImages.size()).isEqualTo(0);
 	}
 
@@ -245,8 +281,8 @@ public class ProductControllerTest {
 			.andExpect(handler().handlerType(ProductController.class))
 			.andExpect(handler().methodName("deleteProduct"))
 			.andExpect(status().isNotFound())
-			.andExpect(jsonPath("$.status").value("PRODUCT_NOT_FOUND"))
-			.andExpect(jsonPath("$.code").value(404))
+			.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
+			.andExpect(jsonPath("$.status").value(1200))
 			.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
 	}
 
@@ -256,16 +292,16 @@ public class ProductControllerTest {
 		//TODO: 로그인 구현 후 인증 확인 수정 필요
 		ResultActions resultActions = mvc
 			.perform(
-				delete("/api/v1/products/%d".formatted(wrongProductId))
+				delete("/api/v1/products/%d".formatted(productId))
 			)
 			.andDo(print());
 
 		resultActions
 			.andExpect(handler().handlerType(ProductController.class))
 			.andExpect(handler().methodName("deleteProduct"))
-			.andExpect(status().isNotFound())
-			.andExpect(jsonPath("$.status").value("PRODUCT_NOT_FOUND"))
-			.andExpect(jsonPath("$.code").value(404))
-			.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
+			.andExpect(status().is(400))
+			.andExpect(jsonPath("$.code").value("PRODUCT_ALREADY_ON_AUCTION"))
+			.andExpect(jsonPath("$.status").value(1212))
+			.andExpect(jsonPath("$.message").value("이미 경매가 시작된 상품입니다."));
 	}
 }

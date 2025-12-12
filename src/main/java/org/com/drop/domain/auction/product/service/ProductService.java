@@ -33,13 +33,15 @@ public class ProductService {
 	}
 
 	public void validAuction(Product product) {
-		Optional<Auction> auction = auctionRepository.findByProduct(product);
+
+		Optional<Auction> auction = auctionRepository.findByProductId(product.getId());
+
 		if (auction.isPresent()
-			&& auction.get().getStartAt().isAfter(LocalDateTime.now())
-		) {
+			&& auction.get().getStartAt().isBefore(LocalDateTime.now())) {
 			throw new ServiceException(ErrorCode.PRODUCT_ALREADY_ON_AUCTION);
 		}
 	}
+
 
 	public Product addProduct(ProductCreateRequest request, User actor) {
 		Product product = new Product(
@@ -74,7 +76,8 @@ public class ProductService {
 
 
 	public Product findProductById(Long id) {
-		return productRepository.findById(id).orElseThrow(() -> new ServiceException(ErrorCode.PRODUCT_NOT_FOUND));
+		return productRepository.findByIdAndDeletedAtIsNull(id)
+			.orElseThrow(() -> new ServiceException(ErrorCode.PRODUCT_NOT_FOUND));
 	}
 
 	public Product updateProduct(Long productId, ProductCreateRequest request, User actor) {
@@ -92,7 +95,8 @@ public class ProductService {
 		validUser(product, actor);
 		validAuction(product);
 		deleteProductImage(product, actor);
-		productRepository.delete(product);
+		product.setDeleted();
+		productRepository.save(product);
 	}
 
 	public void deleteProductImage(Product product, User actor) {

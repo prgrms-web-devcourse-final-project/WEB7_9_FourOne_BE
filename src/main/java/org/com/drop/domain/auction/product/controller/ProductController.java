@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -37,9 +36,6 @@ public class ProductController {
 		User actor = userRepository.findById(1L).get();
 		Product product = productService.addProduct(request, actor);
 		return new RsData<>(
-			"SUCCESS",
-			"200",
-			"요청을 성공적으로 처리했습니다.",
 			new ProductCreateResponse(product)
 		);
 	}
@@ -47,7 +43,6 @@ public class ProductController {
 	@PutMapping("/{productId}")
 	public RsData<ProductCreateResponse> updateProduct(
 		@PathVariable
-		@NotNull
 		Long productId,
 		@RequestBody
 		@Valid
@@ -56,9 +51,6 @@ public class ProductController {
 		User actor = userRepository.findById(1L).get();
 		Product product = productService.updateProduct(productId, request, actor);
 		return new RsData<>(
-			"SUCCESS",
-			"200",
-			"요청을 성공적으로 처리했습니다.",
 			new ProductCreateResponse(product)
 		);
 	}
@@ -66,18 +58,31 @@ public class ProductController {
 	@DeleteMapping("/{productId}")
 	public RsData<Void> deleteProduct(
 		@PathVariable
-		@NotNull
 		Long productId
 	) {
 		//TODO : rq 구현 후 수정
 		User actor = userRepository.findById(1L).get();
 		productService.deleteProduct(productId, actor);
-		return new RsData(
-			"SUCCESS",
-			"200",
-			"요청을 성공적으로 처리했습니다.",
-			null
-		);
+		return new RsData<>(null);
 	}
+
+	// @PostMapping("/{productId}/qna")
+	// public RsData<ProductQnaCreateResponse> addQna(
+	// 	@PathVariable
+	// 	@NotNull
+	// 	Long productId,
+	// 	@RequestBody
+	// 	@Valid
+	// 	ProductQnACreateRequest request) {
+	// 	//TODO : rq 구현 후 수정
+	// 	User actor = userRepository.findById(1L).get();
+	// 	Question question = productService.addQuestion(request, actor);
+	// 	return new RsData<>(
+	// 		"SUCCESS",
+	// 		"200",
+	// 		"요청을 성공적으로 처리했습니다.",
+	// 		new ProductQnaCreateResponse(question)
+	// 	);
+	// }
 
 }

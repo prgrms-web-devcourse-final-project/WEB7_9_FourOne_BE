@@ -89,4 +89,8 @@ public class Product {
 		this.subcategory = subcategory;
 		this.updatedAt = LocalDateTime.now();
 	}
+
+	public void setDeleted() {
+		this.deletedAt = LocalDateTime.now();
+	}
 }
