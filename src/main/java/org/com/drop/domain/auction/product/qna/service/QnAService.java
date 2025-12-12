@@ -62,6 +62,7 @@ public class QnAService {
 		answer.delete();
 	}
 
+	@Transactional
 	public List<ProductQnAResponse> getQna(Long productId) {
 		Product product = productService.findProductById(productId);
 		List<Question> question = questionRepository.findByProductOrderById(product);
