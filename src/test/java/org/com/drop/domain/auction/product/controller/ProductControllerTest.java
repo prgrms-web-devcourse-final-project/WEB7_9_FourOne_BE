@@ -36,7 +36,7 @@ import tools.jackson.databind.ObjectMapper;
 @Transactional
 public class ProductControllerTest {
 
-	private final Long productId = 1L;
+	private final Long productId = 2L;
 	private final Long wrongProductId = Long.MAX_VALUE;
 	private final Long auctionId = 2L;
 	private final Long expirationAuctionId = 1L;
@@ -308,7 +308,7 @@ public class ProductControllerTest {
 				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
-						delete("/api/v1/products/%d".formatted(productId))
+						delete("/api/v1/products/%d".formatted(expirationAuctionId))
 					)
 					.andDo(print());
 
