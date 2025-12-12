@@ -10,6 +10,7 @@ import org.com.drop.domain.auction.product.qna.service.QnAService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.rsdata.RsData;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -56,5 +57,18 @@ public class QnAController {
 		return new RsData<>(
 			new ProductQnAAnswerResponse(answer)
 		);
+	}
+
+	@DeleteMapping("/{qnaId}")
+	public RsData<Void> deleteAnswer(
+		@PathVariable
+		Long productId,
+		@PathVariable
+		Long qnaId
+	) {
+		//TODO : rq 구현 후 수정
+		User actor = userRepository.findById(1L).get();
+		qnAService.deleteAnswer(qnaId, actor);
+		return new RsData<>(null);
 	}
 }

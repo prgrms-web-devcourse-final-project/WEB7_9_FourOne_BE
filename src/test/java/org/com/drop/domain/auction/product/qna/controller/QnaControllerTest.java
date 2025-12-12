@@ -1,12 +1,16 @@
 package org.com.drop.domain.auction.product.qna.controller;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import org.com.drop.config.TestSecurityConfig;
+import org.com.drop.domain.auction.product.controller.ProductController;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnAAnswerRequest;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnACreateRequest;
+import org.com.drop.domain.auction.product.qna.entity.Answer;
+import org.com.drop.domain.auction.product.qna.repository.AnswerRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,8 +35,10 @@ public class QnaControllerTest {
 
 	private final Long productId = 1L;
 	private final Long questionId = 1L;
+	private final Long answerId = 1L;
 	private final Long wrongProductId = Long.MAX_VALUE;
 	private final Long wrongQuestionId = Long.MAX_VALUE;
+	private final Long wrongAnswerId = Long.MAX_VALUE;
 	private final String question = "테스트 질의 내용";
 	private final String answer = "테스트 답변 내용";
 	private String jsonContent;
@@ -41,6 +47,8 @@ public class QnaControllerTest {
 	private MockMvc mvc;
 	@Autowired
 	private ObjectMapper objectMapper;
+	@Autowired
+	private AnswerRepository answerRepository;
 
 	void setUp(Object testRequestDto) throws Exception {
 		jsonContent = objectMapper.writeValueAsString(testRequestDto);
@@ -238,6 +246,50 @@ public class QnaControllerTest {
 						.andExpect(jsonPath("$.code").value("PRODUCT_QUESTION_NOT_FOUND"))
 						.andExpect(jsonPath("$.status").value(1210))
 						.andExpect(jsonPath("$.message").value("질문을 찾을 수 없습니다."));
+				}
+			}
+
+			@Nested
+			class Delete {
+				@Test
+				@DisplayName("답변 삭제 - 성공")
+				void t3() throws Exception {
+					//TODO: 로그인 구현 후 인증 확인 수정 필요
+					ResultActions resultActions = mvc
+						.perform(
+							delete("/api/v1/products/%d/qna/%d".formatted(productId, answerId))
+						)
+						.andDo(print());
+
+					resultActions
+						.andExpect(handler().handlerType(QnAController.class))
+						.andExpect(handler().methodName("deleteAnswer"))
+						.andExpect(status().isOk())
+						.andExpect(jsonPath("$.code").value("SUCCESS"))
+						.andExpect(jsonPath("$.status").value(200))
+						.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
+
+					Answer answer1 = answerRepository.findById(productId).get();
+					assertThat(answer1.getDeletedAt()).isNotNull();
+				}
+
+				@Test
+				@DisplayName("상품 삭제 - 실패 (상품 없음)")
+				void t3_1() throws Exception {
+					//TODO: 로그인 구현 후 인증 확인 수정 필요
+					ResultActions resultActions = mvc
+						.perform(
+							delete("/api/v1/products/%d".formatted(wrongProductId))
+						)
+						.andDo(print());
+
+					resultActions
+						.andExpect(handler().handlerType(ProductController.class))
+						.andExpect(handler().methodName("deleteProduct"))
+						.andExpect(status().isNotFound())
+						.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
+						.andExpect(jsonPath("$.status").value(1200))
+						.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
 				}
 			}
 		}

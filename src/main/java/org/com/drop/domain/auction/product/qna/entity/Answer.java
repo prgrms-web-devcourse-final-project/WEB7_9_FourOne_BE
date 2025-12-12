@@ -59,5 +59,9 @@ public class Answer {
 		this.answer = answer;
 		this.createdAt = LocalDateTime.now();
 	}
+
+	public void delete() {
+		deletedAt = LocalDateTime.now();
+	}
 }
 
