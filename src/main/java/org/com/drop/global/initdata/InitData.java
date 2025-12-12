@@ -7,6 +7,8 @@ import org.com.drop.domain.auction.auction.dto.AuctionCreateRequest;
 import org.com.drop.domain.auction.auction.service.AuctionService;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
 import org.com.drop.domain.auction.product.entity.Product;
+import org.com.drop.domain.auction.product.qna.dto.ProductQnACreateRequest;
+import org.com.drop.domain.auction.product.qna.service.QnAService;
 import org.com.drop.domain.auction.product.service.ProductService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
@@ -26,6 +28,7 @@ public class InitData {
 	private final UserRepository userRepository;
 	private final ProductService productService;
 	private final AuctionService auctionService;
+	private final QnAService qnAService;
 	@Autowired
 	@Lazy
 	private InitData self;
@@ -100,7 +103,7 @@ public class InitData {
 			LocalDateTime.now().plusDays(10)
 		);
 		auctionService.addAuction(auctionCreateRequest2, user1);
-
+		qnAService.addQuestion(1L, new ProductQnACreateRequest("질문1"), user1);
 	}
 
 }

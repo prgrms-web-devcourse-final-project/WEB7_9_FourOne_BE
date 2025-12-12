@@ -37,6 +37,10 @@ public class Answer {
 	private Product product;
 
 	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "question_id", nullable = false)
+	private Question question;
+
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "question_user_id", nullable = false)
 	private User answerer;
 
@@ -47,5 +51,13 @@ public class Answer {
 	private LocalDateTime createdAt;
 	@Column
 	private LocalDateTime deletedAt;
+
+	public Answer(Product product, Question question, User answerer, String answer) {
+		this.product = product;
+		this.question = question;
+		this.answerer = answerer;
+		this.answer = answer;
+		this.createdAt = LocalDateTime.now();
+	}
 }
 
