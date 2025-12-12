@@ -15,11 +15,13 @@ import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ProductService {
 
 	private final ProductRepository productRepository;
@@ -42,7 +44,7 @@ public class ProductService {
 		}
 	}
 
-
+	@Transactional
 	public Product addProduct(ProductCreateRequest request, User actor) {
 		Product product = new Product(
 			actor,
@@ -54,6 +56,7 @@ public class ProductService {
 		return productRepository.save(product);
 	}
 
+	@Transactional
 	public List<ProductImage> addProductImages(Product product, List<String> imageUrls) {
 
 		List<ProductImage> images = imageUrls.stream()
@@ -80,6 +83,7 @@ public class ProductService {
 			.orElseThrow(() -> new ServiceException(ErrorCode.PRODUCT_NOT_FOUND));
 	}
 
+	@Transactional
 	public Product updateProduct(Long productId, ProductCreateRequest request, User actor) {
 		Product product = findProductById(productId);
 		validUser(product, actor);
@@ -90,6 +94,7 @@ public class ProductService {
 		return product;
 	}
 
+	@Transactional
 	public void deleteProduct(Long productId, User actor) {
 		Product product = findProductById(productId);
 		validUser(product, actor);
@@ -99,6 +104,7 @@ public class ProductService {
 		productRepository.save(product);
 	}
 
+	@Transactional
 	public void deleteProductImage(Product product, User actor) {
 		if (product.getSeller().getId().equals(actor.getId())) {
 			productImageRepository.deleteByProduct(product);
