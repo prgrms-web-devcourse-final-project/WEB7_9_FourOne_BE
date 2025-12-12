@@ -17,4 +17,10 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
 	public void delete(String email) {
 		System.out.println("Redis에서 Refresh Token 삭제");
 	}
+
+	@Override
+	public boolean exists(String email, String refreshToken) {
+		System.out.println("Redis에 Refresh Token 확인");
+		return false;
+	}
 }

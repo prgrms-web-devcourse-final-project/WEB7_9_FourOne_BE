@@ -4,6 +4,7 @@ import org.com.drop.domain.auth.dto.LocalLoginRequest;
 import org.com.drop.domain.auth.dto.LocalLoginResponse;
 import org.com.drop.domain.auth.dto.LocalSignUpRequest;
 import org.com.drop.domain.auth.dto.LocalSignUpResponse;
+import org.com.drop.domain.auth.dto.TokenRefreshResponse;
 import org.com.drop.domain.auth.dto.UserDeleteRequest;
 import org.com.drop.domain.auth.dto.UserDeleteResponse;
 import org.com.drop.domain.auth.service.AuthService;
@@ -23,6 +24,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -34,18 +37,21 @@ public class AuthController {
 	private final AuthService authService;
 	private final UserRepository userRepository;
 
+	private <T> RsData<T> createSuccessRsData(T data) {
+		return new RsData<>(
+			"SUCCESS",
+			"200",
+			"요청을 성공적으로 처리했습니다.",
+			data
+		);
+	}
+
 	@PostMapping("/local/signup")
 	public ResponseEntity<RsData<LocalSignUpResponse>> signup(
 		@Valid @RequestBody LocalSignUpRequest dto) {
 
 		LocalSignUpResponse response = authService.signup(dto);
-
-		RsData<LocalSignUpResponse> rsData = new RsData<>(
-			"SUCCESS",
-			"200",
-			"요청을 성공적으로 처리했습니다.",
-			response
-		);
+		RsData<LocalSignUpResponse> rsData = createSuccessRsData(response);
 
 		return ResponseEntity.ok(rsData);
 	}
@@ -60,12 +66,7 @@ public class AuthController {
 
 		UserDeleteResponse response = authService.deleteAccount(user, request);
 
-		return new RsData<>(
-			"SUCCESS",
-			"200",
-			"요청을 성공적으로 처리했습니다.",
-			response
-		);
+		return createSuccessRsData(response);
 	}
 
 	private User findUserFromUserDetails(UserDetails userDetails) {
@@ -88,12 +89,7 @@ public class AuthController {
 			.maxAge(7 * 24 * 60 * 60)
 			.build();
 
-		RsData<LocalLoginResponse> body = new RsData<>(
-			"SUCCESS",
-			"200",
-			"요청을 성공적으로 처리했습니다.",
-			response
-		);
+		RsData<LocalLoginResponse> body = createSuccessRsData(response);
 
 		return ResponseEntity.ok()
 			.header(HttpHeaders.SET_COOKIE, cookie.toString())
@@ -112,15 +108,38 @@ public class AuthController {
 			.maxAge(0)
 			.build();
 
-		RsData<Void> body = new RsData<>(
-			"SUCCESS",
-			"200",
-			"요청을 성공적으로 처리했습니다.",
-			null
-		);
+		RsData<Void> body = createSuccessRsData(null);
 
 		return ResponseEntity.ok()
 			.header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
 			.body(body);
+	}
+
+	@PostMapping("/refresh")
+	public RsData<TokenRefreshResponse> refresh(HttpServletRequest request) {
+
+		String refreshToken = extractRefreshTokenFromCookie(request);
+
+		if (refreshToken == null || refreshToken.isBlank()) {
+			throw new ServiceException(ErrorCode.AUTH_TOKEN_MISSING);
+		}
+
+		TokenRefreshResponse response = authService.refresh(refreshToken);
+
+		return createSuccessRsData(response);
+	}
+
+	private String extractRefreshTokenFromCookie(HttpServletRequest request) {
+		Cookie[] cookies = request.getCookies();
+		if (cookies == null) {
+			return null;
+		}
+
+		for (Cookie cookie : cookies) {
+			if ("refreshToken".equals(cookie.getName())) {
+				return cookie.getValue();
+			}
+		}
+		return null;
 	}
 }

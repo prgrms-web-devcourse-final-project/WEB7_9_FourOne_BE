@@ -6,6 +6,7 @@ import org.com.drop.domain.auth.dto.LocalLoginRequest;
 import org.com.drop.domain.auth.dto.LocalLoginResponse;
 import org.com.drop.domain.auth.dto.LocalSignUpRequest;
 import org.com.drop.domain.auth.dto.LocalSignUpResponse;
+import org.com.drop.domain.auth.dto.TokenRefreshResponse;
 import org.com.drop.domain.auth.dto.UserDeleteRequest;
 import org.com.drop.domain.auth.dto.UserDeleteResponse;
 import org.com.drop.domain.auth.jwt.JwtProvider;
@@ -108,5 +109,23 @@ public class AuthService {
 		refreshTokenStore.delete(email);
 	}
 
+	public TokenRefreshResponse refresh(String refreshToken) {
+		String email;
 
+		try {
+			email = jwtProvider.getUsername(refreshToken);
+		} catch (Exception e) {
+			throw new ServiceException(ErrorCode.AUTH_TOKEN_INVALID);
+		}
+
+		if (!refreshTokenStore.exists(email, refreshToken)) {
+			throw new ServiceException(ErrorCode.AUTH_TOKEN_INVALID);
+		}
+
+		String newAccessToken = jwtProvider.createAccessToken(email);
+
+		long expiresIn = jwtProvider.getAccessTokenValidityInSeconds();
+
+		return new TokenRefreshResponse(newAccessToken, expiresIn);
+	}
 }
