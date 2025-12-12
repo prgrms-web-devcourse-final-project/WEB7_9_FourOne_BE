@@ -81,10 +81,10 @@ public class ProductControllerTest {
 	}
 
 	@Nested
-	class product {
+	class ProductTest {
 
 		@Nested
-		class exhibit {
+		class Exhibit {
 			@Test
 			@DisplayName("상품 출품 - 성공")
 			void t1() throws Exception {
@@ -145,7 +145,7 @@ public class ProductControllerTest {
 		}
 
 		@Nested
-		class update {
+		class Update {
 			@Test
 			@DisplayName("상품 수정 - 성공")
 			void t2() throws Exception {
@@ -256,7 +256,7 @@ public class ProductControllerTest {
 		}
 
 		@Nested
-		class delete {
+		class Delete {
 			@Test
 			@DisplayName("상품 삭제 - 성공")
 			void t3() throws Exception {
