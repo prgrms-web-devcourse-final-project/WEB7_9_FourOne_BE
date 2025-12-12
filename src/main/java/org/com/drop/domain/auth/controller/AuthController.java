@@ -1,5 +1,6 @@
 package org.com.drop.domain.auth.controller;
 
+import org.com.drop.domain.auth.dto.GetCurrentUserInfoResponse;
 import org.com.drop.domain.auth.dto.LocalLoginRequest;
 import org.com.drop.domain.auth.dto.LocalLoginResponse;
 import org.com.drop.domain.auth.dto.LocalSignUpRequest;
@@ -19,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -141,5 +143,15 @@ public class AuthController {
 			}
 		}
 		return null;
+	}
+
+	@GetMapping("/me")
+	public RsData<GetCurrentUserInfoResponse> me(
+		@AuthenticationPrincipal UserDetails userDetails) {
+
+		User user = findUserFromUserDetails(userDetails);
+		GetCurrentUserInfoResponse response = authService.getMe(user);
+
+		return createSuccessRsData(response);
 	}
 }
