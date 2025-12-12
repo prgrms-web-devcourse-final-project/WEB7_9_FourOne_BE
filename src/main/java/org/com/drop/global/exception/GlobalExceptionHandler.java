@@ -1,6 +1,5 @@
 package org.com.drop.global.exception;
 
-import org.com.drop.global.rsData.RsData;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +20,16 @@ public class GlobalExceptionHandler {
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
-	public ResponseEntity<RsData<Void>> handleMethodArgumentNotValid(MethodArgumentNotValidException exception) {
-		BindingResult bindingResult = exception.getBindingResult();
-		FieldError firstError = exception.getBindingResult().getFieldError();
+	public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException exception) {
+		ErrorCode errorCode = getErrorCode(exception.getBindingResult());
+
+		return ResponseEntity
+			.status(errorCode.getStatus())
+			.body(ErrorResponse.errorResponse(errorCode));
+	}
+
+	public ErrorCode getErrorCode(BindingResult bindingResult) {
+		FieldError firstError = bindingResult.getFieldError();
 
 		ErrorCode errorCode = ErrorCode.INVALID_PARAMETER;
 
@@ -31,19 +37,13 @@ public class GlobalExceptionHandler {
 			String field = firstError.getField();
 
 			switch (field) {
-				case "name" -> errorCode = ErrorCode.PRODUCT_INVALID_PRODUCT;
-				default -> errorCode = ErrorCode.INVALID_PARAMETER;
+				case "name" -> errorCode = ErrorCode.PRODUCT_INVALID_PRODUCT_NAME;
+				case "description" -> errorCode = ErrorCode.PRODUCT_INVALID_PRODUCT_DESCRIPTION;
+				case "category" -> errorCode = ErrorCode.PRODUCT_INVALID_PRODUCT_CATEGORY;
+				case "subCategory" -> errorCode = ErrorCode.PRODUCT_INVALID_PRODUCT_SUB_CATEGORY;
+				case "image" -> errorCode = ErrorCode.PRODUCT_INVALID_PRODUCT_IMAGE;
 			}
 		}
-
-		return ResponseEntity
-			.status(errorCode.getStatus())
-			.body(
-				new RsData<>(
-					errorCode.name(),
-					errorCode.getCode(),
-					errorCode.getMessage(),
-					null
-				));
+		return errorCode;
 	}
 }
