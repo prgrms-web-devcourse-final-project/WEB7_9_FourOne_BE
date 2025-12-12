@@ -39,4 +39,17 @@ public class QnAService {
 		return questionRepository.findById(qnaId)
 			.orElseThrow(() -> new ServiceException(ErrorCode.PRODUCT_QUESTION_NOT_FOUND));
 	}
+
+	public Answer answerFindById(Long answerId) {
+		return answerRepository.findById(answerId)
+			.orElseThrow(() -> new ServiceException(ErrorCode.PRODUCT_ANSWER_NOT_FOUND));
+	}
+
+	public void deleteAnswer( Long qnaId, User actor) {
+		Answer answer = answerFindById(qnaId);
+		if (!answer.getAnswerer().equals(actor)) {
+			throw new ServiceException(ErrorCode.USER_INACTIVE_USER);
+		}
+		answer.delete();
+	}
 }

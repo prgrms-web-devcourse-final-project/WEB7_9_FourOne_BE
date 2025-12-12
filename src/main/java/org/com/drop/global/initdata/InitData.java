@@ -7,6 +7,7 @@ import org.com.drop.domain.auction.auction.dto.AuctionCreateRequest;
 import org.com.drop.domain.auction.auction.service.AuctionService;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
 import org.com.drop.domain.auction.product.entity.Product;
+import org.com.drop.domain.auction.product.qna.dto.ProductQnAAnswerRequest;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnACreateRequest;
 import org.com.drop.domain.auction.product.qna.service.QnAService;
 import org.com.drop.domain.auction.product.service.ProductService;
@@ -104,6 +105,7 @@ public class InitData {
 		);
 		auctionService.addAuction(auctionCreateRequest2, user1);
 		qnAService.addQuestion(1L, new ProductQnACreateRequest("질문1"), user1);
+		qnAService.addAnswer(1L, 1L, new ProductQnAAnswerRequest("답변"), user1);
 	}
 
 }
