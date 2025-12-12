@@ -3,6 +3,8 @@ package org.com.drop.global.initdata;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.com.drop.domain.admin.guide.entity.Guide;
+import org.com.drop.domain.admin.guide.repository.GuideRepository;
 import org.com.drop.domain.auction.auction.dto.AuctionCreateRequest;
 import org.com.drop.domain.auction.auction.service.AuctionService;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
@@ -30,6 +32,7 @@ public class InitData {
 	private final ProductService productService;
 	private final AuctionService auctionService;
 	private final QnAService qnAService;
+	private final GuideRepository  guideRepository;
 	@Autowired
 	@Lazy
 	private InitData self;
@@ -105,6 +108,9 @@ public class InitData {
 		);
 		auctionService.addAuction(auctionCreateRequest2, user1);
 		qnAService.addQuestion(1L, new ProductQnACreateRequest("질문1"), user1);
-		qnAService.addAnswer(1L, 1L, new ProductQnAAnswerRequest("답변"), user1);
+		qnAService.addAnswer(1L, 1L, new ProductQnAAnswerRequest("답변1"), user1);
+		qnAService.addAnswer(1L, 1L, new ProductQnAAnswerRequest("답변2"), user1);
+		guideRepository.save(new Guide("안내사항1"));
+		guideRepository.save(new Guide("안내사항2"));
 	}
 }
