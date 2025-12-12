@@ -81,7 +81,7 @@ public class InitData {
 		);
 		Product product2 = productService.addProduct(productCreateRequest2, user1);
 
-		AuctionCreateRequest auctionCreateRequest = new AuctionCreateRequest(
+		AuctionCreateRequest auctionCreateRequest1 = new AuctionCreateRequest(
 			product1.getId(),
 			1000,
 			100000,
@@ -89,7 +89,17 @@ public class InitData {
 			LocalDateTime.now().plusSeconds(5),
 			LocalDateTime.now().plusSeconds(10)
 		);
-		auctionService.addAuction(auctionCreateRequest, user1);
+		auctionService.addAuction(auctionCreateRequest1, user1);
+
+		AuctionCreateRequest auctionCreateRequest2 = new AuctionCreateRequest(
+			product2.getId(),
+			1000,
+			100000,
+			10,
+			LocalDateTime.now().plusDays(5),
+			LocalDateTime.now().plusDays(10)
+		);
+		auctionService.addAuction(auctionCreateRequest2, user1);
 
 	}
 
