@@ -72,7 +72,7 @@ public class AuthService {
 			throw new ServiceException(ErrorCode.USER_HAS_ACTIVE_AUCTIONS);
 		}
 
-		user.setDeletedAt(LocalDateTime.now());
+		user.markAsDeleted();
 		userRepository.save(user);
 
 		refreshTokenStore.delete(user.getEmail());
