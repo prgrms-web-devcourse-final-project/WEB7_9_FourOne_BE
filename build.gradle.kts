@@ -59,6 +59,9 @@ dependencies {
 
 	// Email
 	implementation ("org.springframework.boot:spring-boot-starter-mail")
+
+	// Redis
+	implementation ("org.springframework.boot:spring-boot-starter-data-redis")
 }
 
 /** ===========================

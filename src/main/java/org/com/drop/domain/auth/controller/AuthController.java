@@ -8,6 +8,10 @@ import org.com.drop.domain.auth.dto.LocalSignUpResponse;
 import org.com.drop.domain.auth.dto.TokenRefreshResponse;
 import org.com.drop.domain.auth.dto.UserDeleteRequest;
 import org.com.drop.domain.auth.dto.UserDeleteResponse;
+import org.com.drop.domain.auth.email.dto.EmailSendRequest;
+import org.com.drop.domain.auth.email.dto.EmailSendResponse;
+import org.com.drop.domain.auth.email.dto.EmailVerifyRequest;
+import org.com.drop.domain.auth.email.dto.EmailVerifyResponse;
 import org.com.drop.domain.auth.service.AuthService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.rsdata.RsData;
@@ -50,7 +54,26 @@ public class AuthController {
 		return ResponseEntity.created(null).body(rsData);
 	}
 
-	// ToDo: Refresh token을 Redis 에 저장하는 로직 추가
+	@PostMapping("/email/send-code")
+	public ResponseEntity<RsData<EmailSendResponse>> sendVerificationCode(
+		@Valid @RequestBody EmailSendRequest dto) {
+
+		EmailSendResponse response = authService.sendVerificationCode(dto.email());
+		RsData<EmailSendResponse> rsData = createSuccessRsData(202, response);
+
+		return ResponseEntity.ok(rsData);
+	}
+
+	@PostMapping("/email/verify-code")
+	public ResponseEntity<RsData<EmailVerifyResponse>> verifyCode(
+		@Valid @RequestBody EmailVerifyRequest dto){
+
+		EmailVerifyResponse response = authService.verifyCode(dto.email(), dto.code());
+		RsData<EmailVerifyResponse> rsData = createSuccessRsData(200, response);
+
+		return ResponseEntity.ok(rsData);
+	}
+
 	@PostMapping("/delete")
 	public RsData<UserDeleteResponse> deleteAccount(
 		@LoginUser User user,
@@ -61,14 +84,13 @@ public class AuthController {
 		return createSuccessRsData(200, response);
 	}
 
-	// ToDo: Refresh token을 Redis 에 저장하는 로직 추가
 	@PostMapping("/login")
 	public ResponseEntity<RsData<LocalLoginResponse>> login(
 		@Validated @RequestBody LocalLoginRequest dto) {
 
 		LocalLoginResponse response = authService.login(dto);
 
-		String refreshToken = authService.getJwtProvider().createRefreshToken(response.email());
+		String refreshToken = authService.createRefreshToken(response.email());
 
 		ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
 			.httpOnly(true)

@@ -10,7 +10,12 @@ import org.com.drop.domain.auth.dto.LocalSignUpResponse;
 import org.com.drop.domain.auth.dto.TokenRefreshResponse;
 import org.com.drop.domain.auth.dto.UserDeleteRequest;
 import org.com.drop.domain.auth.dto.UserDeleteResponse;
+import org.com.drop.domain.auth.email.dto.EmailSendResponse;
+import org.com.drop.domain.auth.email.dto.EmailVerifyResponse;
+import org.com.drop.domain.auth.email.service.EmailService;
 import org.com.drop.domain.auth.jwt.JwtProvider;
+import org.com.drop.domain.auth.store.RefreshTokenStore;
+import org.com.drop.domain.auth.store.VerificationCodeStore;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.entity.User.LoginType;
 import org.com.drop.domain.user.entity.User.UserRole;
@@ -24,7 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 // ToDo: 이메일 인증, 검증 관련 로직 추가 후 트랜잭션 확인
@@ -35,11 +39,17 @@ public class AuthService {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final RefreshTokenStore refreshTokenStore;
-	@Getter
 	private final JwtProvider jwtProvider;
+	private final EmailService emailService;
+	private final VerificationCodeStore verificationCodeStore;
 
 	@Transactional
 	public LocalSignUpResponse signup(LocalSignUpRequest dto) {
+
+		if (!verificationCodeStore.isVerified(dto.email())) {
+			throw ErrorCode.AUTH_NOT_VERIFIED
+				.serviceException("email=%s", dto.email());
+		}
 
 		if (userRepository.existsByEmail(dto.email())) {
 			throw ErrorCode.AUTH_DUPLICATE_EMAIL
@@ -62,8 +72,52 @@ public class AuthService {
 			.build();
 
 		User saved = userRepository.save(user);
+		verificationCodeStore.removeVerifiedMark(dto.email());
 
 		return LocalSignUpResponse.of(saved.getId(), saved.getEmail(), saved.getNickname());
+	}
+
+	public EmailSendResponse sendVerificationCode(String email) {
+		if (userRepository.existsByEmail(email)) {
+			throw ErrorCode.AUTH_DUPLICATE_EMAIL
+				.serviceException("email=%s (이미 등록된 이메일)", email);
+		}
+
+		String code = generateRandomCode();
+
+		try {
+			verificationCodeStore.saveCode(email, code);
+		} catch (Exception e) {
+			throw ErrorCode.AUTH_EMAIL_SEND_FAILED
+				.serviceException("Redis 저장 실패로 인한 이메일 발송 실패: email=%s", email);
+		}
+
+		emailService.sendVerificationEmail(email, code);
+		return EmailSendResponse.now();
+	}
+
+	public String createRefreshToken(String email) {
+		return jwtProvider.createRefreshToken(email);
+	}
+
+	public EmailVerifyResponse verifyCode(String email, String submittedCode) {
+
+		String storedCode = verificationCodeStore.getCode(email);
+
+		if (storedCode == null) {
+			throw ErrorCode.AUTH_CODE_EXPIRED
+				.serviceException("인증 코드가 만료되었거나 존재하지 않습니다. email=%s", email);
+		}
+
+		if (!storedCode.equals(submittedCode)) {
+			throw ErrorCode.AUTH_CODE_MISMATCH
+				.serviceException("인증 코드가 일치하지 않습니다. email=%s", email);
+		}
+
+		verificationCodeStore.removeCode(email);
+		verificationCodeStore.markAsVerified(email);
+
+		return EmailVerifyResponse.now();
 	}
 
 	@Transactional
@@ -162,5 +216,10 @@ public class AuthService {
 
 	public GetCurrentUserInfoResponse getMe(User user) {
 		return GetCurrentUserInfoResponse.of(user);
+	}
+
+	private String generateRandomCode() {
+		int code = (int) (Math.random() * (900000)) + 100000;
+		return String.valueOf(code);
 	}
 }

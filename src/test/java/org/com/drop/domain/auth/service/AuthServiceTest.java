@@ -15,6 +15,7 @@ import org.com.drop.domain.auth.dto.TokenRefreshResponse;
 import org.com.drop.domain.auth.dto.UserDeleteRequest;
 import org.com.drop.domain.auth.dto.UserDeleteResponse;
 import org.com.drop.domain.auth.jwt.JwtProvider;
+import org.com.drop.domain.auth.store.RefreshTokenStore;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;

@@ -35,7 +35,8 @@ public enum ErrorCode {
 	AUTH_TOKEN_INVALID("1014", HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다. 다시 로그인해 주세요."),
 	AUTH_ACCESS_TOKEN_CREATE_FAILED("1015", HttpStatus.INTERNAL_SERVER_ERROR, "새로운 액세스 토큰 발급에 실패했습니다. 서버 오류가 발생했습니다."),
 	AUTH_ACCESS_DENIED("1016", HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
-	AUTH_PASSWORD_MISMATCH("1017", HttpStatus.BAD_REQUEST, "비밀번호가 일치하지 않습니다."),
+	AUTH_PASSWORD_MISMATCH("1017", HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다."),
+	AUTH_NOT_VERIFIED("1018", HttpStatus.FORBIDDEN, "이메일 인증이 완료되지 않았습니다. 인증을 먼저 진행해주세요."),
 
 	//users
 	USER_NOT_FOUND("1100", HttpStatus.NOT_FOUND, "해당 사용자를 찾을 수 없습니다."),
