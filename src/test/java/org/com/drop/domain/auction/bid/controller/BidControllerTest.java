@@ -72,10 +72,9 @@ class BidControllerTest {
 		// given
 		Long auctionId = 12345L;
 		Long userId = 987L;
-
-		// 너희 예외 핸들러(@RestControllerAdvice)가 ServiceException을 공통 응답으로 바꾼다고 가정
-		given(bidService.placeBid(eq(auctionId), eq(userId), any(BidRequestDto.class)))
-			.willThrow(new ServiceException(ErrorCode.AUCTION_BID_AMOUNT_TOO_LOW));
+		// 서비스에서 예외 던지도록 설정
+		given(bidService.placeBid(auctionId, userId, new BidRequestDto(10000L)))
+			.willThrow(new ServiceException(ErrorCode.AUCTION_BID_AMOUNT_TOO_LOW, "입찰 금액이 현재 최고가보다 낮거나 최소 입찰 단위를 충족하지 못했습니다."));
 
 		// when & then
 		mockMvc.perform(
