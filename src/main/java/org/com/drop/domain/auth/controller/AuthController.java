@@ -10,9 +10,9 @@ import org.com.drop.domain.auth.dto.UserDeleteRequest;
 import org.com.drop.domain.auth.dto.UserDeleteResponse;
 import org.com.drop.domain.auth.service.AuthService;
 import org.com.drop.domain.user.entity.User;
-import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.rsdata.RsData;
+import org.com.drop.global.security.auth.LoginUser;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +36,7 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
 	private final AuthService authService;
-	private final UserRepository userRepository;
+	static final int CACHE_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 	private <T> RsData<T> createSuccessRsData(T data) {
 		return new RsData<>(data);
@@ -55,22 +55,12 @@ public class AuthController {
 	// ToDo: Refresh token을 Redis 에 저장하는 로직 추가
 	@PostMapping("/delete")
 	public RsData<UserDeleteResponse> deleteAccount(
-		@AuthenticationPrincipal UserDetails userDetails,
+		@LoginUser User user,
 		@Validated @RequestBody UserDeleteRequest request) {
-
-		User user = findUserFromUserDetails(userDetails);
 
 		UserDeleteResponse response = authService.deleteAccount(user, request);
 
 		return createSuccessRsData(response);
-	}
-
-	private User findUserFromUserDetails(UserDetails userDetails) {
-		return userRepository.findByEmail(userDetails.getUsername())
-			.orElseThrow(() ->
-				ErrorCode.USER_NOT_FOUND
-					.serviceException("email=%s", userDetails.getUsername())
-			);
 	}
 
 	// ToDo: Refresh token을 Redis 에 저장하는 로직 추가
@@ -85,7 +75,7 @@ public class AuthController {
 		ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
 			.httpOnly(true)
 			.path("/")
-			.maxAge(7 * 24 * 60 * 60)
+			.maxAge(CACHE_TTL_SECONDS)
 			.build();
 
 		RsData<LocalLoginResponse> body = createSuccessRsData(response);
@@ -146,9 +136,8 @@ public class AuthController {
 
 	@GetMapping("/me")
 	public RsData<GetCurrentUserInfoResponse> me(
-		@AuthenticationPrincipal UserDetails userDetails) {
+		@LoginUser User user) {
 
-		User user = findUserFromUserDetails(userDetails);
 		GetCurrentUserInfoResponse response = authService.getMe(user);
 
 		return createSuccessRsData(response);
