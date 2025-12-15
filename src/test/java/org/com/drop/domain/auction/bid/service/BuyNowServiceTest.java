@@ -18,6 +18,7 @@ import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -44,11 +45,9 @@ class BuyNowServiceTest {
 
 	LocalDateTime now = LocalDateTime.now();
 
-
-
-
+	@DisplayName("즉시구매가_설정되지_않으면_예외가_발생한다")
 	@Test
-	void 즉시구매가_설정되지_않으면_예외가_발생한다() {
+	void throwsExceptionWhenBuyNowPriceIsNotSet() {
 		User seller = createDummyUser("seller");
 		User buyer = createDummyUser("buyer");
 		Product product = createDummyProduct(seller, "즉구없음");
@@ -70,12 +69,13 @@ class BuyNowServiceTest {
 			.hasMessageContaining("즉시 구매가 불가능한 상품입니다.");
 	}
 
+	@DisplayName("즉시구매_성공하면_경매가_ENDED되고_Winner가_생성된다")
 	@Test
-	void 즉시구매_성공하면_경매가_ENDED되고_Winner가_생성된다() {
+	void endsAuctionAndCreatesWinnerWhenBuyNowSucceeds() {
 		LocalDateTime now = LocalDateTime.now();
 
 		User seller = userRepository.save(createDummyUser("seller"));
-		User buyer  = userRepository.save(createDummyUser("buyer"));
+		User buyer = userRepository.save(createDummyUser("buyer"));
 
 		Product product = productRepository.save(createDummyProduct(seller, "즉구성공"));
 
@@ -106,8 +106,9 @@ class BuyNowServiceTest {
 		assertThat(winner.getUser().getId()).isEqualTo(buyer.getId());
 	}
 
+	@DisplayName("즉시구매를_두번_호출하면_두번째는_예외이고_winner는_하나만_존재한다")
 	@Test
-	void 즉시구매를_두번_호출하면_두번째는_예외이고_Winner는_하나만_존재한다() {
+	void throwsExceptionOnSecondBuyNowAndCreatesOnlyOneWinner() {
 		User seller = createDummyUser("seller");
 		User buyer = createDummyUser("buyer");
 		Product product = createDummyProduct(seller, "즉구중복");
@@ -137,7 +138,6 @@ class BuyNowServiceTest {
 			ErrorCode.AUCTION_BUY_NOW_NOT_AVAILABLE,
 			ErrorCode.AUCTION_NOT_LIVE
 		);
-
 
 		// countByAuctionId 있으면 그게 베스트
 		List<Winner> winners = winnerRepository.findAllByAuction_Id(auction.getId());

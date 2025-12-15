@@ -19,6 +19,7 @@ import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -52,8 +53,9 @@ class WinnerServiceTest {
 	private ProductRepository productRepository;
 
 
+	@DisplayName("경매종료시_최고입찰자가_낙찰된다")
 	@Test
-	void 경매종료시_최고입찰자가_낙찰된다() {
+	void createsWinnerWithHighestBidWhenAuctionEnds() {
 		// given
 		User seller = createDummyUser("seller");
 		User bidder1 = createDummyUser("bidder1");
@@ -104,8 +106,9 @@ class WinnerServiceTest {
 		assertThat(winner.getFinalPrice()).isEqualTo(12_000);
 	}
 
+	@DisplayName("입찰이_없으면_Winner없이_경매만_ENDED상태가_된다")
 	@Test
-	void 입찰이_없으면_Winner없이_경매만_ENDED상태가_된다() {
+	void endsAuctionWithoutWinnerWhenNoBidsExist() {
 		// given
 		User seller = createDummyUser("seller");
 		Product product = createDummyProduct(seller, "입찰없음테스트상품");
@@ -137,8 +140,9 @@ class WinnerServiceTest {
 
 	}
 
+	@DisplayName("종료시간이_안지나면_경매는_종료되지_않고_Winner도_생성되지_않는다")
 	@Test
-	void 종료시간이_안지나면_경매는_종료되지_않고_Winner도_생성되지_않는다() {
+	void doesNotEndAuctionOrCreateWinnerBeforeEndTime() {
 		// given
 		User seller = createDummyUser("seller");
 		User bidder = createDummyUser("bidder");
@@ -181,8 +185,9 @@ class WinnerServiceTest {
 
 	}
 
+	@DisplayName("존재하지않는_경매ID면_AUCTION_NOT_FOUND_예외가_발생한다")
 	@Test
-	void 존재하지않는_경매ID면_AUCTION_NOT_FOUND_예외가_발생한다() {
+	void throwsAuctionNotFoundWhenAuctionIdDoesNotExist() {
 		// given
 		Long invalidAuctionId = 999999L; // 존재하지 않는 ID라고 가정
 
@@ -192,8 +197,9 @@ class WinnerServiceTest {
 			.hasMessageContaining(ErrorCode.AUCTION_NOT_FOUND.getMessage());
 	}
 
+	@DisplayName("finalizeAuction을_두번_호출해도_Winner는_한번만_생성된다")
 	@Test
-	void finalizeAuction을_두번_호출해도_Winner는_한번만_생성된다() {
+	void createsWinnerOnlyOnceWhenFinalizeAuctionCalledTwice() {
 		// given
 		User seller = createDummyUser("seller");
 		User bidder1 = createDummyUser("bidder1");

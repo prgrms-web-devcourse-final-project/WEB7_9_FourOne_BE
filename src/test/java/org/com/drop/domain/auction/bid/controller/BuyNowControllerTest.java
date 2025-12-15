@@ -11,6 +11,7 @@ import org.com.drop.domain.auction.bid.service.BuyNowService;
 import org.com.drop.domain.auth.jwt.JwtProvider;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -33,8 +34,9 @@ class BuyNowControllerTest {
 
 
 
+	@DisplayName("즉시구매_요청시_200과_ResponseCustom_OK_형태로_데이터를_반환한다")
 	@Test
-	void 즉시구매_요청시_200과_ResponseCustom_OK_형태로_데이터를_반환한다() throws Exception {
+	void returns200AndResponseCustomOkWhenBuyNowRequested() throws Exception {
 		// given
 		Long auctionId = 12345L;
 		Long userId = 987L;
@@ -63,8 +65,9 @@ class BuyNowControllerTest {
 			.andExpect(jsonPath("$.data.winTime").value("2025-12-05T15:50:00"));
 	}
 
+	@DisplayName("즉시구매가 설정되지 않은 경매면 400과 ErrorResponse를 반환한다")
 	@Test
-	void 즉시구매가_설정되지_않은_경매면_400과_ErrorResponse를_반환한다() throws Exception {
+	void returns400AndErrorResponseWhenBuyNowPriceIsNotSet() throws Exception {
 		// given
 		Long auctionId = 12345L;
 		Long userId = 987L;
