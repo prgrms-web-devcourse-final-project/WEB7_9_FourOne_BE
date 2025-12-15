@@ -19,7 +19,7 @@ public record AuctionCreateResponse(
 			auction.getProduct().getId(),
 			auction.getStartPrice(),
 			auction.getBuyNowPrice(),
-			auction.getMidBidStep(),
+			auction.getMinBidStep(),
 			auction.getStartAt(),
 			auction.getEndAt()
 		);
