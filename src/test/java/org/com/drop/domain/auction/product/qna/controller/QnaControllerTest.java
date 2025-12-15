@@ -87,7 +87,7 @@ public class QnaControllerTest {
 						.andExpect(handler().methodName("addQna"))
 						.andExpect(status().isOk())
 						.andExpect(jsonPath("$.code").value("SUCCESS"))
-						.andExpect(jsonPath("$.status").value(200))
+						.andExpect(jsonPath("$.httpStatus").value(200))
 						.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
 
 					resultActions
@@ -118,7 +118,7 @@ public class QnaControllerTest {
 						.andExpect(handler().methodName("addQna"))
 						.andExpect(status().is(400))
 						.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_QUESTION"))
-						.andExpect(jsonPath("$.status").value(1203))
+						.andExpect(jsonPath("$.httpStatus").value(1203))
 						.andExpect(jsonPath("$.message").value("질문이 입력되지 않았습니다."));
 				}
 
@@ -142,7 +142,7 @@ public class QnaControllerTest {
 						.andExpect(handler().methodName("addQna"))
 						.andExpect(status().is(404))
 						.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
-						.andExpect(jsonPath("$.status").value(1200))
+						.andExpect(jsonPath("$.httpStatus").value(1200))
 						.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
 				}
 			}
@@ -172,7 +172,7 @@ public class QnaControllerTest {
 						.andExpect(handler().methodName("addAnswer"))
 						.andExpect(status().isOk())
 						.andExpect(jsonPath("$.code").value("SUCCESS"))
-						.andExpect(jsonPath("$.status").value(200))
+						.andExpect(jsonPath("$.httpStatus").value(200))
 						.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
 
 					resultActions
@@ -203,7 +203,7 @@ public class QnaControllerTest {
 						.andExpect(handler().methodName("addAnswer"))
 						.andExpect(status().is(400))
 						.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_ANSWER"))
-						.andExpect(jsonPath("$.status").value(1204))
+						.andExpect(jsonPath("$.httpStatus").value(1204))
 						.andExpect(jsonPath("$.message").value("답변이 입력되지 않았습니다."));
 				}
 
@@ -227,7 +227,7 @@ public class QnaControllerTest {
 						.andExpect(handler().methodName("addAnswer"))
 						.andExpect(status().is(404))
 						.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
-						.andExpect(jsonPath("$.status").value(1200))
+						.andExpect(jsonPath("$.httpStatus").value(1200))
 						.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
 				}
 
@@ -251,7 +251,7 @@ public class QnaControllerTest {
 						.andExpect(handler().methodName("addAnswer"))
 						.andExpect(status().is(404))
 						.andExpect(jsonPath("$.code").value("PRODUCT_QUESTION_NOT_FOUND"))
-						.andExpect(jsonPath("$.status").value(1210))
+						.andExpect(jsonPath("$.httpStatus").value(1210))
 						.andExpect(jsonPath("$.message").value("질문을 찾을 수 없습니다."));
 				}
 			}
@@ -273,7 +273,7 @@ public class QnaControllerTest {
 						.andExpect(handler().methodName("deleteAnswer"))
 						.andExpect(status().isOk())
 						.andExpect(jsonPath("$.code").value("SUCCESS"))
-						.andExpect(jsonPath("$.status").value(200))
+						.andExpect(jsonPath("$.httpStatus").value(200))
 						.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
 
 					Answer answer1 = answerRepository.findById(productId).get();
@@ -295,7 +295,7 @@ public class QnaControllerTest {
 						.andExpect(handler().methodName("deleteProduct"))
 						.andExpect(status().isNotFound())
 						.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
-						.andExpect(jsonPath("$.status").value(1200))
+						.andExpect(jsonPath("$.httpStatus").value(1200))
 						.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
 				}
 			}
