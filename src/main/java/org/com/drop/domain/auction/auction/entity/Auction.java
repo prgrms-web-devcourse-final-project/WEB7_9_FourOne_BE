@@ -47,7 +47,7 @@ public class Auction {
 	private Integer buyNowPrice;
 
 	@Column(nullable = false)
-	private Integer midBidStep;
+	private Integer minBidStep;
 
 	@Column(nullable = false)
 	private LocalDateTime startAt;
@@ -62,18 +62,29 @@ public class Auction {
 	private LocalDateTime deletedAt;
 
 	public enum AuctionStatus { SCHEDULED, LIVE, ENDED, CANCELLED }
+
+	public void end(LocalDateTime now) {
+		if (this.status != AuctionStatus.LIVE) {
+			throw new IllegalStateException("LIVE 상태의 경매만 종료할 수 있습니다.");
+		}
+		this.status = AuctionStatus.ENDED;
+		this.endAt = now;
+	}
+
+
+
 	public Auction(
 		Product product,
 		Integer startPrice,
 		Integer buyNowPrice,
-		Integer midBidStep,
+		Integer minBidStep,
 		LocalDateTime startAt,
 		LocalDateTime endAt,
 		AuctionStatus status) {
 		this.product = product;
 		this.startPrice = startPrice;
 		this.buyNowPrice = buyNowPrice;
-		this.midBidStep = midBidStep;
+		this.minBidStep = minBidStep;
 		this.startAt = startAt;
 		this.endAt = endAt;
 		this.status = status;
