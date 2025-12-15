@@ -1,7 +1,9 @@
 package org.com.drop.domain.auction.product.controller;
 
+import org.com.drop.domain.auction.product.dto.BookmarkCreateResponse;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
 import org.com.drop.domain.auction.product.dto.ProductCreateResponse;
+import org.com.drop.domain.auction.product.entity.BookMark;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.service.ProductService;
 import org.com.drop.domain.user.entity.User;
@@ -65,4 +67,29 @@ public class ProductController {
 		productService.deleteProduct(productId, actor);
 		return new RsData<>(null);
 	}
+
+	@PostMapping("/{productId}/bookmarks")
+	public RsData<BookmarkCreateResponse> addBookmark(
+		@PathVariable
+		Long productId) {
+		//TODO : rq 구현 후 수정
+		User actor = userRepository.findById(1L).get();
+		BookMark bookMark = productService.addBookmark(productId, actor);
+		return new RsData<>(
+			new BookmarkCreateResponse(bookMark)
+		);
+	}
+
+	@DeleteMapping("/{productId}/bookmarks")
+	public RsData<BookmarkCreateResponse> deleteBookmark(
+		@PathVariable
+		Long productId) {
+		//TODO : rq 구현 후 수정
+		User actor = userRepository.findById(1L).get();
+		productService.deleteBookmark(productId, actor);
+		return new RsData<>(
+			null
+		);
+	}
+
 }
