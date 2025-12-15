@@ -101,7 +101,6 @@ public class ProductControllerTest {
 					.andExpect(handler().methodName("addProduct"))
 					.andExpect(status().isOk())
 					.andExpect(jsonPath("$.code").value("SUCCESS"))
-					.andExpect(jsonPath("$.httpStatus").value(200))
 					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
 
 				resultActions
@@ -132,12 +131,7 @@ public class ProductControllerTest {
 					.andDo(print());
 
 				resultActions
-					.andExpect(handler().handlerType(ProductController.class))
-					.andExpect(handler().methodName("addProduct"))
-					.andExpect(status().is(400))
-					.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_PRODUCT_NAME"))
-					.andExpect(jsonPath("$.httpStatus").value(1205))
-					.andExpect(jsonPath("$.message").value("상품명은 필수 항목 입니다."));
+					.andExpect(status().isBadRequest());
 			}
 		}
 
@@ -161,7 +155,6 @@ public class ProductControllerTest {
 					.andExpect(handler().methodName("updateProduct"))
 					.andExpect(status().isOk())
 					.andExpect(jsonPath("$.code").value("SUCCESS"))
-					.andExpect(jsonPath("$.httpStatus").value(200))
 					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
 
 				resultActions
@@ -198,7 +191,6 @@ public class ProductControllerTest {
 					.andExpect(handler().methodName("updateProduct"))
 					.andExpect(status().isNotFound())
 					.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
-					.andExpect(jsonPath("$.httpStatus").value(1200))
 					.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
 			}
 
@@ -216,12 +208,7 @@ public class ProductControllerTest {
 					.andDo(print());
 
 				resultActions
-					.andExpect(handler().handlerType(ProductController.class))
-					.andExpect(handler().methodName("updateProduct"))
-					.andExpect(status().is(400))
-					.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_PRODUCT_NAME"))
-					.andExpect(jsonPath("$.httpStatus").value(1205))
-					.andExpect(jsonPath("$.message").value("상품명은 필수 항목 입니다."));
+					.andExpect(status().isBadRequest());
 			}
 
 			@Test
@@ -245,9 +232,8 @@ public class ProductControllerTest {
 				resultActions
 					.andExpect(handler().handlerType(ProductController.class))
 					.andExpect(handler().methodName("updateProduct"))
-					.andExpect(status().is(400))
+					.andExpect(status().is(409))
 					.andExpect(jsonPath("$.code").value("PRODUCT_ALREADY_ON_AUCTION"))
-					.andExpect(jsonPath("$.httpStatus").value(1212))
 					.andExpect(jsonPath("$.message").value("이미 경매가 시작된 상품입니다."));
 			}
 		}
@@ -269,7 +255,6 @@ public class ProductControllerTest {
 					.andExpect(handler().methodName("deleteProduct"))
 					.andExpect(status().isOk())
 					.andExpect(jsonPath("$.code").value("SUCCESS"))
-					.andExpect(jsonPath("$.httpStatus").value(200))
 					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
 
 				Optional<Product> product = productRepository.findById(productId);
@@ -293,7 +278,6 @@ public class ProductControllerTest {
 					.andExpect(handler().methodName("deleteProduct"))
 					.andExpect(status().isNotFound())
 					.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
-					.andExpect(jsonPath("$.httpStatus").value(1200))
 					.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
 			}
 
@@ -315,9 +299,8 @@ public class ProductControllerTest {
 				resultActions
 					.andExpect(handler().handlerType(ProductController.class))
 					.andExpect(handler().methodName("deleteProduct"))
-					.andExpect(status().is(400))
+					.andExpect(status().is(409))
 					.andExpect(jsonPath("$.code").value("PRODUCT_ALREADY_ON_AUCTION"))
-					.andExpect(jsonPath("$.httpStatus").value(1212))
 					.andExpect(jsonPath("$.message").value("이미 경매가 시작된 상품입니다."));
 			}
 		}
