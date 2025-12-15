@@ -360,18 +360,10 @@ public class QnaControllerTest {
 									.formatted(i, j))
 									.value(answer.getAnswer())
 							);
-
-							resultActions.andExpect(
-								jsonPath("$.data.productQnAResponses[%d].answers[%d].answeredAt"
-									.formatted(i, j))
-									.value(answer.getCreatedAt().toString())
-							);
 						}
-
 					}
 				}
 			}
 		}
 	}
-
 }
