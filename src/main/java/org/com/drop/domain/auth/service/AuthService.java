@@ -16,10 +16,12 @@ import org.com.drop.domain.user.entity.User.LoginType;
 import org.com.drop.domain.user.entity.User.UserRole;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.Getter;
@@ -80,9 +82,15 @@ public class AuthService {
 		user.markAsDeleted();
 		userRepository.save(user);
 
-		refreshTokenStore.delete(user.getEmail());
+		deleteRefreshTokenAsync(user.getEmail());
 
 		return new UserDeleteResponse(user.getDeletedAt().toString());
+	}
+
+	@Async
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public void deleteRefreshTokenAsync(String email) {
+		refreshTokenStore.delete(email);
 	}
 
 	private boolean userHasActiveAuctionsOrTrades(User user) {
@@ -114,7 +122,6 @@ public class AuthService {
 		);
 	}
 
-	@Transactional
 	public void logout() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
