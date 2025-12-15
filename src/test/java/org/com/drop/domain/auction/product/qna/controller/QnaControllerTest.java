@@ -5,11 +5,17 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.List;
+
 import org.com.drop.domain.auction.product.controller.ProductController;
+import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnAAnswerRequest;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnACreateRequest;
 import org.com.drop.domain.auction.product.qna.entity.Answer;
+import org.com.drop.domain.auction.product.qna.entity.Question;
 import org.com.drop.domain.auction.product.qna.repository.AnswerRepository;
+import org.com.drop.domain.auction.product.qna.repository.QuestionRepository;
+import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -45,7 +51,11 @@ public class QnaControllerTest {
 	@Autowired
 	private ObjectMapper objectMapper;
 	@Autowired
+	private QuestionRepository questionRepository;
+	@Autowired
 	private AnswerRepository answerRepository;
+	@Autowired
+	private ProductRepository productRepository;
 
 	void setUp(Object testRequestDto) throws Exception {
 		jsonContent = objectMapper.writeValueAsString(testRequestDto);
@@ -274,6 +284,54 @@ public class QnaControllerTest {
 						.andExpect(status().isNotFound())
 						.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
 						.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
+				}
+			}
+
+			@Nested
+			class Read {
+				@Test
+				@DisplayName("QnA 조회 - 성공")
+				void t4() throws Exception {
+					ResultActions resultActions = mvc
+						.perform(
+							get("/api/v1/products/%d/qna".formatted(productId))
+						)
+						.andDo(print());
+
+					resultActions
+						.andExpect(handler().handlerType(QnAController.class))
+						.andExpect(handler().methodName("getQna"))
+						.andExpect(status().isOk())
+						.andExpect(jsonPath("$.code").value("SUCCESS"))
+						.andExpect(jsonPath("$.status").value(200))
+						.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
+
+					Product product = productRepository.findById(productId).get();
+					List<Question> questions = questionRepository.findByProductOrderById(product);
+
+					assertThat(jsonPath("$.data.totalCount").value(questions.size()));
+
+					for (Question q : questions) {
+						assertThat(jsonPath("$.data.productQnAResponses.qnaId").value(q.getId()));
+						assertThat(jsonPath("$.data.productQnAResponses.questionerId")
+							.value(q.getQuestioner().getId()));
+						assertThat(jsonPath("$.data.productQnAResponses.question").value(q.getQuestion()));
+						assertThat(jsonPath("$.data.productQnAResponses.questionedAt").value(q.getCreatedAt()));
+
+						List<Answer> answers = answerRepository.findByQuestion(q);
+
+						for (Answer a : answers) {
+							assertThat(jsonPath("$.data.productQnAResponses.answers.qnaId")
+								.value(a.getQuestion().getId()));
+							assertThat(jsonPath("$.data.productQnAResponses.answers.answer").value(a.getAnswer()));
+							assertThat(jsonPath("$.data.productQnAResponses.answers.answererId")
+								.value(a.getAnswerer().getId()));
+							assertThat(jsonPath("$.data.productQnAResponses.answers.answer").value(a.getAnswer()));
+							assertThat(jsonPath("$.data.productQnAResponses.answers.answeredAt")
+								.value(a.getCreatedAt()));
+						}
+
+					}
 				}
 			}
 		}

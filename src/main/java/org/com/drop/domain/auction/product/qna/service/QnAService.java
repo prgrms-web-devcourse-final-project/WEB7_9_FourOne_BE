@@ -1,8 +1,12 @@
 package org.com.drop.domain.auction.product.qna.service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnAAnswerRequest;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnACreateRequest;
+import org.com.drop.domain.auction.product.qna.dto.ProductQnAResponse;
 import org.com.drop.domain.auction.product.qna.entity.Answer;
 import org.com.drop.domain.auction.product.qna.entity.Question;
 import org.com.drop.domain.auction.product.qna.repository.AnswerRepository;
@@ -70,5 +74,19 @@ public class QnAService {
 		}
 
 		answer.delete();
+	}
+
+	@Transactional
+	public List<ProductQnAResponse> getQna(Long productId) {
+		Product product = productService.findProductById(productId);
+		List<Question> question = questionRepository.findByProductOrderById(product);
+		List<ProductQnAResponse> response = new ArrayList<>();
+		for (Question q : question) {
+			List<Answer> answers = answerRepository.findByQuestion(q);
+			response.add(
+				new ProductQnAResponse(q, answers)
+			);
+		}
+		return response;
 	}
 }
