@@ -17,14 +17,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "users", indexes = {@Index(name = "idx_user_email", columnList = "email")}, uniqueConstraints = {
 	@UniqueConstraint(name = "uq_user_email", columnNames = "email"),
 	@UniqueConstraint(name = "uq_user_nickname", columnNames = "nickname")})
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -41,7 +39,7 @@ public class User {
 	private String nickname;
 
 	@Column(nullable = false)
-	private String password;   // 암호화 저장
+	private String password;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
@@ -58,10 +56,17 @@ public class User {
 
 	private String kakaoId;  // 소셜로그인 전용
 
+	@Column(nullable = false, columnDefinition = "integer default 0")
+	private Integer penaltyCount = 0;
+
 	@Column
 	private LocalDateTime deletedAt; // soft-delete 용
 
 	public enum LoginType { LOCAL, KAKAO }
 
 	public enum UserRole { USER, ADMIN }
+
+	public void markAsDeleted() {
+		this.deletedAt = LocalDateTime.now();
+	}
 }

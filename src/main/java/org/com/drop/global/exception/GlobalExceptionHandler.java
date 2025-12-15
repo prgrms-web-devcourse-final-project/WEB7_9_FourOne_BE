@@ -2,13 +2,13 @@ package org.com.drop.global.exception;
 
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class GlobalExceptionHandler {
@@ -16,12 +16,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(ServiceException.class)
 	public ResponseEntity<ErrorResponse> handleServiceException(ServiceException exception) {
 		ErrorCode errorCode = exception.getErrorCode();
+		log.error(exception.getMessage(), exception);
 		return ResponseEntity.status(errorCode.getStatus()).body(ErrorResponse.errorResponse(errorCode));
-	}
-
-	@ExceptionHandler(MethodArgumentNotValidException.class)
-	public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException exception) {
-		BindingResult bindingResult = exception.getBindingResult();
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.validationError(bindingResult));
 	}
 }

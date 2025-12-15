@@ -21,7 +21,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "auctions", indexes = {@Index(name = "idx_auction_product_id", columnList = "productId"),
@@ -29,7 +28,6 @@ import lombok.Setter;
 	@Index(name = "idx_auction_end_at", columnList = "endAt"),
 	@Index(name = "idx_auction_status", columnList = "status")})
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -64,5 +62,20 @@ public class Auction {
 	private LocalDateTime deletedAt;
 
 	public enum AuctionStatus { SCHEDULED, LIVE, ENDED, CANCELLED }
-
+	public Auction(
+		Product product,
+		Integer startPrice,
+		Integer buyNowPrice,
+		Integer midBidStep,
+		LocalDateTime startAt,
+		LocalDateTime endAt,
+		AuctionStatus status) {
+		this.product = product;
+		this.startPrice = startPrice;
+		this.buyNowPrice = buyNowPrice;
+		this.midBidStep = midBidStep;
+		this.startAt = startAt;
+		this.endAt = endAt;
+		this.status = status;
+	}
 }
