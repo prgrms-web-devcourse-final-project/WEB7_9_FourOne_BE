@@ -8,13 +8,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.Optional;
 
-import org.com.drop.domain.auction.auction.service.AuctionService;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
+import org.com.drop.domain.auction.product.entity.BookMark;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.entity.ProductImage;
+import org.com.drop.domain.auction.product.repository.BookmarkRepository;
 import org.com.drop.domain.auction.product.repository.ProductImageRepository;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
-import org.com.drop.domain.auction.product.service.ProductService;
+import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -60,9 +61,7 @@ public class ProductControllerTest {
 	@Autowired
 	private UserRepository userRepository;
 	@Autowired
-	private ProductService productService;
-	@Autowired
-	private AuctionService auctionService;
+	private BookmarkRepository bookmarkRepository;
 
 	void setUp(String name, String description, Product.Category category, Product.SubCategory subCategory,
 		List<String> images) throws Exception {
@@ -303,6 +302,147 @@ public class ProductControllerTest {
 					.andExpect(jsonPath("$.code").value("PRODUCT_ALREADY_ON_AUCTION"))
 					.andExpect(jsonPath("$.message").value("이미 경매가 시작된 상품입니다."));
 			}
+		}
+	}
+
+	@Nested
+	class BookmarkTest {
+		@Nested
+		class Create {
+			@Test
+			@DisplayName("북마크 등록 - 성공")
+			void t4() throws Exception {
+				//TODO: 로그인 구현 후 인증 확인 수정 필요
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products/%d/bookmarks".formatted(productId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("addBookmark"))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.code").value("SUCCESS"))
+					.andExpect(jsonPath("$.status").value(200))
+					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
+
+				resultActions
+					.andExpect(jsonPath("$.data.bookmarkedId").isNotEmpty())
+					.andExpect(jsonPath("$.data.productId").value(productId))
+					.andExpect(jsonPath("$.data.bookmarkedAt").isNotEmpty());
+			}
+
+			@Test
+			@DisplayName("북마크 등록 - 실패 (상품 없음)")
+			void t4_1() throws Exception {
+				//TODO: 로그인 구현 후 인증 확인 수정 필요
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products/%d/bookmarks".formatted(wrongProductId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("addBookmark"))
+					.andExpect(status().isNotFound())
+					.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
+					.andExpect(jsonPath("$.httpStatus").value(404))
+					.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
+			}
+
+			@Test
+			@DisplayName("북마크 등록 - 실패 (이미 등록)")
+			void t4_2() throws Exception {
+				ResultActions resultActions0 = mvc
+					.perform(
+						post("/api/v1/products/%d/bookmarks".formatted(productId))
+					).andDo(print());
+				//TODO: 로그인 구현 후 인증 확인 수정 필요
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products/%d/bookmarks".formatted(productId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("addBookmark"))
+					.andExpect(status().is(409))
+					.andExpect(jsonPath("$.code").value("PRODUCT_ALREADY_BOOKMARKED"))
+					.andExpect(jsonPath("$.httpStatus").value(409))
+					.andExpect(jsonPath("$.message").value("이미 찜한 상품입니다."));
+			}
+		}
+
+		@Nested
+		class Delete {
+			@Test
+			@DisplayName("북마크 삭제 - 성공")
+			void t5() throws Exception {
+				ResultActions resultActions0 = mvc
+					.perform(
+						post("/api/v1/products/%d/bookmarks".formatted(productId))
+					).andDo(print());
+				//TODO: 로그인 구현 후 인증 확인 수정 필요
+				ResultActions resultActions = mvc
+					.perform(
+						delete("/api/v1/products/%d/bookmarks".formatted(productId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("deleteBookmark"))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.code").value("SUCCESS"))
+					.andExpect(jsonPath("$.status").value(200))
+					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
+
+				Product product = productRepository.findById(productId).get();
+				User user = userRepository.findById(1L).get();
+				Optional<BookMark> bookMark = bookmarkRepository.findByProductAndUser(product, user);
+				assertThat(bookMark.isPresent()).isFalse();
+			}
+
+			@Test
+			@DisplayName("북마크 삭제 - 실패 (상품 없음)")
+			void t5_1() throws Exception {
+				//TODO: 로그인 구현 후 인증 확인 수정 필요
+				ResultActions resultActions = mvc
+					.perform(
+						delete("/api/v1/products/%d/bookmarks".formatted(wrongProductId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("deleteBookmark"))
+					.andExpect(status().isNotFound())
+					.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
+					.andExpect(jsonPath("$.httpStatus").value(404))
+					.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
+			}
+
+			@Test
+			@DisplayName("북마크 삭제 - 실패 (등록 이력 없음)")
+			void t5_2() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						delete("/api/v1/products/%d/bookmarks".formatted(productId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("deleteBookmark"))
+					.andExpect(status().is(404))
+					.andExpect(jsonPath("$.code").value("USER_BOOKMARK_NOT_FOUND"))
+					.andExpect(jsonPath("$.httpStatus").value(404))
+					.andExpect(jsonPath("$.message").value("찜한 상품이 아닙니다."));
+			}
+
 		}
 	}
 
