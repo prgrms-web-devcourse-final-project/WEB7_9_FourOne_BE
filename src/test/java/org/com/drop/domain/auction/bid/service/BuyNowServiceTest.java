@@ -57,18 +57,17 @@ class BuyNowServiceTest {
 			new Auction(
 				product,
 				10_000,                 // startPrice
-				null,                 // buyNowPrice
+				null,                   // buyNowPrice
 				1_000,                  // bidUnit
-				LocalDateTime.now().minusMinutes(20), // startAt
-				LocalDateTime.now().minusMinutes(1),  // endAt (이미 종료됨)
+				LocalDateTime.now().minusMinutes(5), // 시작됨
+				LocalDateTime.now().plusMinutes(10), // 아직 안 끝남
 				Auction.AuctionStatus.LIVE
 			)
 		);
 
 		assertThatThrownBy(() -> buyNowService.buyNow(auction.getId(), buyer.getId()))
 			.isInstanceOf(ServiceException.class)
-			.extracting("errorCode")
-			.isEqualTo(ErrorCode.AUCTION_BUY_NOW_NOT_AVAILABLE);
+			.hasMessageContaining("즉시 구매가 불가능한 상품입니다.");
 	}
 
 	@Test
