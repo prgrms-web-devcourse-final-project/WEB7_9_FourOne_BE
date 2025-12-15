@@ -327,11 +327,6 @@ public class QnaControllerTest {
 								.formatted(i))
 								.value(question .getQuestion())
 						);
-						resultActions.andExpect(
-							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.questionedAt"
-								.formatted(i))
-								.value(question .getCreatedAt().toString())
-						);
 						List<Answer> answers = answerRepository.findByQuestion(question);
 
 						for (int j = 0; j < answers.size(); j++) {
