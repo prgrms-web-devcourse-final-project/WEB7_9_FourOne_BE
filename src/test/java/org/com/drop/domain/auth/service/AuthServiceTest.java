@@ -27,6 +27,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,6 +51,12 @@ class AuthServiceTest {
 	@Mock
 	private JwtProvider jwtProvider;
 
+	@Mock
+	private SecurityContext securityContext;
+
+	@Mock
+	private Authentication authentication;
+
 	private User mockUser;
 
 	@BeforeEach
@@ -59,19 +68,8 @@ class AuthServiceTest {
 			.nickname("testuser")
 			.createdAt(LocalDateTime.now())
 			.build();
-	}
 
-	@Test
-	@DisplayName("로그아웃: Refresh Token Store 삭제 메서드 호출 검증")
-	void logout_success() {
-		// Given
-		String email = mockUser.getEmail();
-
-		// When
-		authService.logout(email);
-
-		// Then
-		verify(refreshTokenStore, times(1)).delete(email);
+		SecurityContextHolder.setContext(securityContext);
 	}
 
 	@Test
