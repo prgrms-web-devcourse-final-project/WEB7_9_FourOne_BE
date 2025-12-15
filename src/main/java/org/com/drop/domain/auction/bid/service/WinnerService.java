@@ -27,12 +27,12 @@ public class WinnerService {
 	public void finalizeAuction(Long auctionId) {
 
 		Auction auction = auctionRepository.findById(auctionId)
-			.orElseThrow(() -> new ServiceException(ErrorCode.AUCTION_NOT_FOUND,"요청하신 상품 ID를 찾을 수 없습니다."));
+			.orElseThrow(() -> new ServiceException(ErrorCode.AUCTION_NOT_FOUND, "요청하신 상품 ID를 찾을 수 없습니다."));
 
 		LocalDateTime now = LocalDateTime.now();
 
-		if (auction.getStatus()== Auction.AuctionStatus.ENDED ||
-			auction.getStatus() == Auction.AuctionStatus.CANCELLED) {
+		if (auction.getStatus() == Auction.AuctionStatus.ENDED
+			|| auction.getStatus() == Auction.AuctionStatus.CANCELLED) {
 			return;
 		}
 
@@ -49,7 +49,9 @@ public class WinnerService {
 
 		Bid topBid = topBidOpt.get();
 
-		if (winnerRepository.existsByAuction_Id(auctionId)) return;
+		if (winnerRepository.existsByAuction_Id(auctionId)) {
+			return;
+		}
 
 		Winner winner = Winner.builder()
 			.auction(auction)

@@ -32,13 +32,13 @@ public class BidService {
 			.orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND, "해당 사용자를 찾을 수 없습니다."));
 
 		Auction auction = auctionRepository.findById(auctionId)
-			.orElseThrow(() -> new ServiceException(ErrorCode.AUCTION_NOT_FOUND,"요청하신 상품 ID를 찾을 수 없습니다." ));
+			.orElseThrow(() -> new ServiceException(ErrorCode.AUCTION_NOT_FOUND, "요청하신 상품 ID를 찾을 수 없습니다." ));
 
 		Long bidAmount = requestDto.bidAmount();
 		LocalDateTime now = LocalDateTime.now();
 
 		if (auction.getStatus() != Auction.AuctionStatus.LIVE) {
-			throw new ServiceException(ErrorCode.AUCTION_NOT_LIVE,"진행 중인 경매가 아닙니다." );
+			throw new ServiceException(ErrorCode.AUCTION_NOT_LIVE, "진행 중인 경매가 아닙니다." );
 		}
 
 		if (auction.getEndAt().isBefore(now)) {
@@ -56,7 +56,8 @@ public class BidService {
 		long minRequired = highest + auction.getMinBidStep();
 
 		if (bidAmount < minRequired) {
-			throw new ServiceException(ErrorCode.AUCTION_BID_AMOUNT_TOO_LOW,"입찰 금액이 현재 최고가보다 낮거나 최소 입찰 단위를 충족하지 못했습니다." );
+			throw new ServiceException(ErrorCode.AUCTION_BID_AMOUNT_TOO_LOW,
+				"입찰 금액이 현재 최고가보다 낮거나 최소 입찰 단위를 충족하지 못했습니다." );
 		}
 
 		Bid bid = Bid.builder()
