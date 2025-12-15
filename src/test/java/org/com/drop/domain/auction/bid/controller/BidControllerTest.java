@@ -60,7 +60,7 @@ class BidControllerTest {
 					.queryParam("userId", String.valueOf(userId))
 					.contentType(String.valueOf(MediaType.APPLICATION_JSON))
 					.content("""
-						    { "bidAmount": 11000 }
+						{ "bidAmount": 11000 }
 						""")
 			)
 			.andExpect(status().isOk())
@@ -87,7 +87,7 @@ class BidControllerTest {
 					.queryParam("userId", String.valueOf(userId))
 					.contentType(String.valueOf(MediaType.APPLICATION_JSON))
 					.content("""
-						    { "bidAmount": 10000 }
+							{ "bidAmount": 10000 }
 						""")
 			)
 			.andExpect(status().isBadRequest())
