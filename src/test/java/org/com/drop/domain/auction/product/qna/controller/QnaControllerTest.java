@@ -1,6 +1,7 @@
 package org.com.drop.domain.auction.product.qna.controller;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -34,6 +36,7 @@ import tools.jackson.databind.ObjectMapper;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
+@WithMockUser(username = "test@drop.com", roles = {"USER"})
 public class QnaControllerTest {
 
 	private final Long productId = 1L;
@@ -73,12 +76,12 @@ public class QnaControllerTest {
 					ProductQnACreateRequest productQnACreateRequest = new ProductQnACreateRequest(question);
 					setUp(productQnACreateRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna".formatted(productId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -103,12 +106,12 @@ public class QnaControllerTest {
 					ProductQnACreateRequest productQnACreateRequest = new ProductQnACreateRequest("");
 					setUp(productQnACreateRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna".formatted(productId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -124,12 +127,12 @@ public class QnaControllerTest {
 					ProductQnACreateRequest productQnACreateRequest = new ProductQnACreateRequest(question);
 					setUp(productQnACreateRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna".formatted(wrongProductId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -153,12 +156,12 @@ public class QnaControllerTest {
 					ProductQnAAnswerRequest productQnAAnswerRequest = new ProductQnAAnswerRequest(answer);
 					setUp(productQnAAnswerRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna/%d".formatted(productId, questionId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -183,12 +186,12 @@ public class QnaControllerTest {
 					ProductQnAAnswerRequest productQnAAnswerRequest = new ProductQnAAnswerRequest("");
 					setUp(productQnAAnswerRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna/%d".formatted(productId, questionId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -204,12 +207,12 @@ public class QnaControllerTest {
 					ProductQnAAnswerRequest productQnAAnswerRequest = new ProductQnAAnswerRequest(answer);
 					setUp(productQnAAnswerRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna/%d".formatted(wrongProductId, questionId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -227,12 +230,12 @@ public class QnaControllerTest {
 					ProductQnAAnswerRequest productQnAAnswerRequest = new ProductQnAAnswerRequest(answer);
 					setUp(productQnAAnswerRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna/%d".formatted(productId, wrongQuestionId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -250,10 +253,10 @@ public class QnaControllerTest {
 				@Test
 				@DisplayName("답변 삭제 - 성공")
 				void t3() throws Exception {
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							delete("/api/v1/products/%d/qna/%d".formatted(productId, answerId))
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -271,10 +274,10 @@ public class QnaControllerTest {
 				@Test
 				@DisplayName("상품 삭제 - 실패 (상품 없음)")
 				void t3_1() throws Exception {
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							delete("/api/v1/products/%d".formatted(wrongProductId))
+								.with(csrf())
 						)
 						.andDo(print());
 

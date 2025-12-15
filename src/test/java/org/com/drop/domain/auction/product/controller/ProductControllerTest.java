@@ -1,6 +1,7 @@
 package org.com.drop.domain.auction.product.controller;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -17,6 +18,7 @@ import org.com.drop.domain.auction.product.repository.ProductImageRepository;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -35,6 +38,7 @@ import tools.jackson.databind.ObjectMapper;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
+@WithMockUser(username = "test@drop.com", roles = {"USER"})
 public class ProductControllerTest {
 
 	private final Long productId = 2L;
@@ -49,6 +53,7 @@ public class ProductControllerTest {
 	private final List<String> images = List.of("img1.png", "img2.png");
 	private final List<String> updatedImages = List.of("UpdatedImg1.png", "UpdatedImg2.png");
 	private String jsonContent;
+	private Long testUserId;
 
 	@Autowired
 	private MockMvc mvc;
@@ -62,6 +67,16 @@ public class ProductControllerTest {
 	private UserRepository userRepository;
 	@Autowired
 	private BookmarkRepository bookmarkRepository;
+
+	@BeforeEach
+	void setupUser() {
+		Optional<User> userOptional = userRepository.findByEmail("test@drop.com");
+		if (userOptional.isEmpty()) {
+			testUserId = 1L;
+		} else {
+			testUserId = userOptional.get().getId();
+		}
+	}
 
 	void setUp(String name, String description, Product.Category category, Product.SubCategory subCategory,
 		List<String> images) throws Exception {
@@ -86,12 +101,12 @@ public class ProductControllerTest {
 			void t1() throws Exception {
 				setUp(name, description, category, subCategory, images);
 
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						post("/api/v1/products")
 							.contentType(MediaType.APPLICATION_JSON)
 							.content(jsonContent)
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -120,12 +135,12 @@ public class ProductControllerTest {
 			@DisplayName("상품 출품 - 실패 - 필수값(이름) 누락")
 			void t1_1() throws Exception {
 				setUp("", description, category, subCategory, images);
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						post("/api/v1/products")
 							.contentType(MediaType.APPLICATION_JSON)
 							.content(jsonContent)
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -140,12 +155,12 @@ public class ProductControllerTest {
 			@DisplayName("상품 수정 - 성공")
 			void t2() throws Exception {
 				setUp(updatedName, description, category, subCategory, updatedImages);
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						put("/api/v1/products/%d".formatted(auctionId))
 							.contentType(MediaType.APPLICATION_JSON)
 							.content(jsonContent)
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -176,12 +191,12 @@ public class ProductControllerTest {
 			@DisplayName("상품 수정 - 실패 (잘못된 상품 id)")
 			void t2_1() throws Exception {
 				setUp(updatedName, description, category, subCategory, images);
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						put("/api/v1/products/%d".formatted(wrongProductId))
 							.contentType(MediaType.APPLICATION_JSON)
 							.content(jsonContent)
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -197,12 +212,12 @@ public class ProductControllerTest {
 			@DisplayName("상품 수정 - 실패 (필수값(이름) 누락)")
 			void t2_2() throws Exception {
 				setUp("", description, category, subCategory, images);
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						put("/api/v1/products/%d".formatted(productId))
 							.contentType(MediaType.APPLICATION_JSON)
 							.content(jsonContent)
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -219,12 +234,12 @@ public class ProductControllerTest {
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
 				}
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						put("/api/v1/products/%d".formatted(expirationAuctionId))
 							.contentType(MediaType.APPLICATION_JSON)
 							.content(jsonContent)
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -242,10 +257,10 @@ public class ProductControllerTest {
 			@Test
 			@DisplayName("상품 삭제 - 성공")
 			void t3() throws Exception {
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						delete("/api/v1/products/%d".formatted(productId))
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -265,10 +280,10 @@ public class ProductControllerTest {
 			@Test
 			@DisplayName("상품 삭제 - 실패 (상품 없음)")
 			void t3_1() throws Exception {
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						delete("/api/v1/products/%d".formatted(wrongProductId))
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -288,10 +303,10 @@ public class ProductControllerTest {
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
 				}
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						delete("/api/v1/products/%d".formatted(expirationAuctionId))
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -312,10 +327,10 @@ public class ProductControllerTest {
 			@Test
 			@DisplayName("북마크 등록 - 성공")
 			void t4() throws Exception {
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						post("/api/v1/products/%d/bookmarks".formatted(productId))
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -336,10 +351,10 @@ public class ProductControllerTest {
 			@Test
 			@DisplayName("북마크 등록 - 실패 (상품 없음)")
 			void t4_1() throws Exception {
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						post("/api/v1/products/%d/bookmarks".formatted(wrongProductId))
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -359,10 +374,10 @@ public class ProductControllerTest {
 					.perform(
 						post("/api/v1/products/%d/bookmarks".formatted(productId))
 					).andDo(print());
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						post("/api/v1/products/%d/bookmarks".formatted(productId))
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -385,10 +400,10 @@ public class ProductControllerTest {
 					.perform(
 						post("/api/v1/products/%d/bookmarks".formatted(productId))
 					).andDo(print());
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						delete("/api/v1/products/%d/bookmarks".formatted(productId))
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -409,10 +424,10 @@ public class ProductControllerTest {
 			@Test
 			@DisplayName("북마크 삭제 - 실패 (상품 없음)")
 			void t5_1() throws Exception {
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						delete("/api/v1/products/%d/bookmarks".formatted(wrongProductId))
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -431,6 +446,7 @@ public class ProductControllerTest {
 				ResultActions resultActions = mvc
 					.perform(
 						delete("/api/v1/products/%d/bookmarks".formatted(productId))
+							.with(csrf())
 					)
 					.andDo(print());
 
