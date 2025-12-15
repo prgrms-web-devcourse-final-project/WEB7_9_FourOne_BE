@@ -2,6 +2,9 @@ package org.com.drop.global.exception;
 
 import org.springframework.http.HttpStatus;
 
+import lombok.Getter;
+
+@Getter
 public enum ErrorCode {
 
 	//public
@@ -94,22 +97,21 @@ public enum ErrorCode {
 	private final String code;
 	private final HttpStatus status;
 	private final String message;
+	private final String field;
+
 
 	ErrorCode(String code, HttpStatus status, String message) {
+		this(code, status, message, null);
+	}
+
+	ErrorCode(String code, HttpStatus status, String message, String field) {
 		this.code = code;
 		this.status = status;
 		this.message = message;
+		this.field = field;
 	}
 
-	public String getCode() {
-		return code;
-	}
-
-	public HttpStatus getStatus() {
-		return status;
-	}
-
-	public String getMessage() {
-		return message;
+	public ServiceException serviceException(String message, Object... args) {
+		return new ServiceException(this, message, args);
 	}
 }

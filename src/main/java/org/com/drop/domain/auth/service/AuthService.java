@@ -16,7 +16,6 @@ import org.com.drop.domain.user.entity.User.LoginType;
 import org.com.drop.domain.user.entity.User.UserRole;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
-import org.com.drop.global.exception.ServiceException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,11 +38,13 @@ public class AuthService {
 	public LocalSignUpResponse signup(LocalSignUpRequest dto) {
 
 		if (userRepository.existsByEmail(dto.email())) {
-			throw new ServiceException(ErrorCode.AUTH_DUPLICATE_EMAIL);
+			throw ErrorCode.AUTH_DUPLICATE_EMAIL
+				.serviceException("email=%s", dto.email());
 		}
 
 		if (userRepository.existsByNickname(dto.nickname())) {
-			throw new ServiceException(ErrorCode.AUTH_DUPLICATE_NICKNAME);
+			throw ErrorCode.AUTH_DUPLICATE_NICKNAME
+				.serviceException("nickname=%s", dto.nickname());
 		}
 
 		User user = User.builder()
@@ -65,11 +66,13 @@ public class AuthService {
 	public UserDeleteResponse deleteAccount(User user, UserDeleteRequest request) {
 
 		if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-			throw new ServiceException(ErrorCode.AUTH_PASSWORD_MISMATCH);
+			throw ErrorCode.AUTH_PASSWORD_MISMATCH
+				.serviceException("userId=%d", user.getId());
 		}
 
 		if (userHasActiveAuctionsOrTrades(user)) {
-			throw new ServiceException(ErrorCode.USER_HAS_ACTIVE_AUCTIONS);
+			throw ErrorCode.USER_HAS_ACTIVE_AUCTIONS
+				.serviceException("userId=%d", user.getId());
 		}
 
 		user.markAsDeleted();
@@ -87,10 +90,14 @@ public class AuthService {
 
 	public LocalLoginResponse login(LocalLoginRequest dto) {
 		User user = userRepository.findByEmail(dto.email())
-			.orElseThrow(() -> new ServiceException(ErrorCode.AUTH_UNAUTHORIZED));
+			.orElseThrow(() ->
+				ErrorCode.AUTH_UNAUTHORIZED
+					.serviceException("email=%s", dto.email())
+			);
 
 		if (!passwordEncoder.matches(dto.password(), user.getPassword())) {
-			throw new ServiceException(ErrorCode.AUTH_UNAUTHORIZED);
+			throw ErrorCode.AUTH_UNAUTHORIZED
+				.serviceException("userId=%d (password mismatch)", user.getId());
 		}
 
 		String accessToken = jwtProvider.createAccessToken(user.getEmail());
@@ -116,11 +123,16 @@ public class AuthService {
 		try {
 			email = jwtProvider.getUsername(refreshToken);
 		} catch (Exception e) {
-			throw new ServiceException(ErrorCode.AUTH_TOKEN_INVALID);
+			throw ErrorCode.AUTH_TOKEN_INVALID
+				.serviceException("refreshToken parsing failed");
 		}
 
 		if (!refreshTokenStore.exists(email, refreshToken)) {
-			throw new ServiceException(ErrorCode.AUTH_TOKEN_INVALID);
+			throw ErrorCode.AUTH_TOKEN_INVALID
+				.serviceException(
+					"refreshToken not found in store, email=%s",
+					email
+				);
 		}
 
 		String newAccessToken = jwtProvider.createAccessToken(email);

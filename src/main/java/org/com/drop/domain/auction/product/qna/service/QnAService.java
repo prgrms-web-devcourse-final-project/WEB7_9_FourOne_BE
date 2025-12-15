@@ -14,7 +14,6 @@ import org.com.drop.domain.auction.product.qna.repository.QuestionRepository;
 import org.com.drop.domain.auction.product.service.ProductService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.exception.ErrorCode;
-import org.com.drop.global.exception.ServiceException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,20 +44,35 @@ public class QnAService {
 
 	public Question questionFindById(Long qnaId) {
 		return questionRepository.findById(qnaId)
-			.orElseThrow(() -> new ServiceException(ErrorCode.PRODUCT_QUESTION_NOT_FOUND));
+			.orElseThrow(() ->
+				ErrorCode.PRODUCT_QUESTION_NOT_FOUND
+					.serviceException("qnaId=%d", qnaId)
+			);
 	}
 
 	public Answer answerFindById(Long answerId) {
 		return answerRepository.findById(answerId)
-			.orElseThrow(() -> new ServiceException(ErrorCode.PRODUCT_ANSWER_NOT_FOUND));
+			.orElseThrow(() ->
+				ErrorCode.PRODUCT_ANSWER_NOT_FOUND
+					.serviceException("answerId=%d", answerId)
+			);
 	}
 
+
 	@Transactional
-	public void deleteAnswer( Long qnaId, User actor) {
+	public void deleteAnswer(Long qnaId, User actor) {
+
 		Answer answer = answerFindById(qnaId);
+
 		if (!answer.getAnswerer().equals(actor)) {
-			throw new ServiceException(ErrorCode.USER_INACTIVE_USER);
+			throw ErrorCode.USER_INACTIVE_USER
+				.serviceException(
+					"actorId=%d, answererId=%d",
+					actor.getId(),
+					answer.getAnswerer().getId()
+				);
 		}
+
 		answer.delete();
 	}
 

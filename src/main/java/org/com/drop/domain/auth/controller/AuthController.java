@@ -12,7 +12,6 @@ import org.com.drop.domain.auth.service.AuthService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
-import org.com.drop.global.exception.ServiceException;
 import org.com.drop.global.rsdata.RsData;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -68,7 +67,10 @@ public class AuthController {
 
 	private User findUserFromUserDetails(UserDetails userDetails) {
 		return userRepository.findByEmail(userDetails.getUsername())
-			.orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND));
+			.orElseThrow(() ->
+				ErrorCode.USER_NOT_FOUND
+					.serviceException("email=%s", userDetails.getUsername())
+			);
 	}
 
 	// ToDo: Refresh token을 Redis 에 저장하는 로직 추가
@@ -118,13 +120,15 @@ public class AuthController {
 		String refreshToken = extractRefreshTokenFromCookie(request);
 
 		if (refreshToken == null || refreshToken.isBlank()) {
-			throw new ServiceException(ErrorCode.AUTH_TOKEN_MISSING);
+			throw ErrorCode.AUTH_TOKEN_MISSING
+				.serviceException("refreshToken is null or blank");
 		}
 
 		TokenRefreshResponse response = authService.refresh(refreshToken);
 
 		return createSuccessRsData(response);
 	}
+
 
 	private String extractRefreshTokenFromCookie(HttpServletRequest request) {
 		Cookie[] cookies = request.getCookies();
