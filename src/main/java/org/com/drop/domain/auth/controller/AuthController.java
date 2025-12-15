@@ -36,8 +36,8 @@ public class AuthController {
 	private final AuthService authService;
 	static final int CACHE_TTL_SECONDS = 7 * 24 * 60 * 60;
 
-	private <T> RsData<T> createSuccessRsData(T data) {
-		return new RsData<>(data);
+	private <T> RsData<T> createSuccessRsData(int status, T data) {
+		return new RsData<>(status, data);
 	}
 
 	@PostMapping("/local/signup")
@@ -45,9 +45,9 @@ public class AuthController {
 		@Valid @RequestBody LocalSignUpRequest dto) {
 
 		LocalSignUpResponse response = authService.signup(dto);
-		RsData<LocalSignUpResponse> rsData = createSuccessRsData(response);
+		RsData<LocalSignUpResponse> rsData = createSuccessRsData(201, response);
 
-		return ResponseEntity.ok(rsData);
+		return ResponseEntity.created(null).body(rsData);
 	}
 
 	// ToDo: Refresh token을 Redis 에 저장하는 로직 추가
@@ -58,7 +58,7 @@ public class AuthController {
 
 		UserDeleteResponse response = authService.deleteAccount(user, request);
 
-		return createSuccessRsData(response);
+		return createSuccessRsData(200, response);
 	}
 
 	// ToDo: Refresh token을 Redis 에 저장하는 로직 추가
@@ -76,7 +76,7 @@ public class AuthController {
 			.maxAge(CACHE_TTL_SECONDS)
 			.build();
 
-		RsData<LocalLoginResponse> body = createSuccessRsData(response);
+		RsData<LocalLoginResponse> body = createSuccessRsData(200, response);
 
 		return ResponseEntity.ok()
 			.header(HttpHeaders.SET_COOKIE, cookie.toString())
@@ -95,7 +95,7 @@ public class AuthController {
 			.maxAge(0)
 			.build();
 
-		RsData<Void> body = createSuccessRsData(null);
+		RsData<Void> body = createSuccessRsData(200, null);
 
 		return ResponseEntity.ok()
 			.header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
@@ -109,7 +109,7 @@ public class AuthController {
 
 		TokenRefreshResponse response = authService.refresh(refreshToken);
 
-		return createSuccessRsData(response);
+		return createSuccessRsData(200, response);
 	}
 
 	@GetMapping("/me")
@@ -118,6 +118,6 @@ public class AuthController {
 
 		GetCurrentUserInfoResponse response = authService.getMe(user);
 
-		return createSuccessRsData(response);
+		return createSuccessRsData(200, response);
 	}
 }
