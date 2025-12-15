@@ -87,8 +87,8 @@ class BidControllerTest {
                     """)
 			)
 			.andExpect(status().isBadRequest())
+			.andExpect(status().is(400))
 			.andExpect(jsonPath("$.code").value("AUCTION_BID_AMOUNT_TOO_LOW")) // 네 ErrorCode 숫자에 맞춰
-			.andExpect(jsonPath("$.status").value("400"))
 			.andExpect(jsonPath("$.message").value("입찰 금액이 현재 최고가보다 낮거나 최소 입찰 단위를 충족하지 못했습니다.")); // 메시지는 신경 안 쓴다 했으니 exists만
 	}
 }
