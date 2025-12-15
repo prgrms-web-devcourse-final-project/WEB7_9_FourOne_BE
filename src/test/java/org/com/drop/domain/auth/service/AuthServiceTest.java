@@ -14,8 +14,10 @@ import org.com.drop.domain.auth.dto.LocalSignUpResponse;
 import org.com.drop.domain.auth.dto.TokenRefreshResponse;
 import org.com.drop.domain.auth.dto.UserDeleteRequest;
 import org.com.drop.domain.auth.dto.UserDeleteResponse;
+import org.com.drop.domain.auth.email.service.EmailService;
 import org.com.drop.domain.auth.jwt.JwtProvider;
 import org.com.drop.domain.auth.store.RefreshTokenStore;
+import org.com.drop.domain.auth.store.VerificationCodeStore;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
@@ -57,6 +59,12 @@ class AuthServiceTest {
 
 	@Mock
 	private Authentication authentication;
+
+	@Mock
+	private EmailService emailService;
+
+	@Mock
+	private VerificationCodeStore verificationCodeStore;
 
 	private User mockUser;
 
@@ -102,6 +110,8 @@ class AuthServiceTest {
 		@DisplayName("성공: 유효한 정보로 회원가입")
 		void signup_success() {
 			// Given
+			when(verificationCodeStore.isVerified(anyString())).thenReturn(true);
+
 			when(userRepository.existsByEmail(anyString())).thenReturn(false);
 			when(userRepository.existsByNickname(anyString())).thenReturn(false);
 			when(passwordEncoder.encode(anyString())).thenReturn("hashedPassword");
@@ -116,24 +126,49 @@ class AuthServiceTest {
 			assertEquals(mockUser.getNickname(), response.nickname());
 
 			// Verify
+			verify(verificationCodeStore, times(1)).isVerified(validRequest.email());
+			verify(verificationCodeStore, times(1)).removeVerifiedMark(validRequest.email());
 			verify(userRepository, times(1)).existsByEmail(validRequest.email());
 			verify(userRepository, times(1)).existsByNickname(validRequest.nickname());
 			verify(userRepository, times(1)).save(any(User.class));
 		}
 
 		@Test
+		@DisplayName("실패: 이메일 인증 미완료")
+		void signup_fail_notVerified() {
+			// Given
+			when(verificationCodeStore.isVerified(anyString())).thenReturn(false);
+
+			// When & Then
+			ServiceException exception = assertThrows(ServiceException.class,
+				() -> authService.signup(validRequest)
+			);
+			assertEquals(ErrorCode.AUTH_CODE_EXPIRED, exception.getErrorCode());
+
+			// Verify
+			verify(verificationCodeStore, times(1)).isVerified(validRequest.email());
+			verify(userRepository, never()).existsByEmail(anyString());
+			verify(userRepository, never()).save(any(User.class));
+		}
+
+		@Test
 		@DisplayName("실패: 이메일 중복 시 ServiceException 발생")
 		void signup_fail_duplicateEmail() {
 			// Given
+			when(verificationCodeStore.isVerified(anyString())).thenReturn(true);
+
 			when(userRepository.existsByEmail(anyString())).thenReturn(true);
 
 			// When & Then
 			ServiceException exception = assertThrows(ServiceException.class,
 				() -> authService.signup(validRequest)
 			);
+
 			assertEquals(ErrorCode.AUTH_DUPLICATE_EMAIL, exception.getErrorCode());
 
 			// Verify
+			verify(verificationCodeStore, times(1)).isVerified(anyString());
+			verify(userRepository, times(1)).existsByEmail(anyString());
 			verify(userRepository, never()).save(any(User.class));
 		}
 
@@ -141,6 +176,8 @@ class AuthServiceTest {
 		@DisplayName("실패: 닉네임 중복 시 ServiceException 발생")
 		void signup_fail_duplicateNickname() {
 			// Given
+			when(verificationCodeStore.isVerified(anyString())).thenReturn(true);
+
 			when(userRepository.existsByEmail(anyString())).thenReturn(false);
 			when(userRepository.existsByNickname(anyString())).thenReturn(true);
 
@@ -148,7 +185,12 @@ class AuthServiceTest {
 			ServiceException exception = assertThrows(ServiceException.class,
 				() -> authService.signup(validRequest)
 			);
+
 			assertEquals(ErrorCode.AUTH_DUPLICATE_NICKNAME, exception.getErrorCode());
+
+			verify(verificationCodeStore, times(1)).isVerified(anyString());
+			verify(userRepository, times(1)).existsByEmail(anyString());
+			verify(userRepository, times(1)).existsByNickname(anyString());
 		}
 	}
 
@@ -320,6 +362,118 @@ class AuthServiceTest {
 				() -> authService.refresh(validRefreshToken)
 			);
 			assertEquals(ErrorCode.AUTH_TOKEN_INVALID, exception.getErrorCode());
+		}
+	}
+
+	@Nested
+	@DisplayName("인증 코드 발송")
+	class SendVerificationCodeTests {
+		private final String testEmail = "send_test@drop.com";
+
+		@Test
+		@DisplayName("성공: 코드 생성, Redis 저장, 이메일 발송 검증")
+		void sendCode_success() {
+			// Given
+			when(userRepository.existsByEmail(testEmail)).thenReturn(false);
+
+			// When
+			authService.sendVerificationCode(testEmail);
+
+			// Then
+			verify(userRepository, times(1)).existsByEmail(testEmail);
+			verify(verificationCodeStore, times(1)).saveCode(eq(testEmail), anyString());
+			verify(emailService, times(1)).sendVerificationEmail(eq(testEmail), anyString());
+		}
+
+		@Test
+		@DisplayName("실패: 이미 등록된 이메일")
+		void sendCode_fail_duplicateEmail() {
+			// Given
+			when(userRepository.existsByEmail(testEmail)).thenReturn(true);
+
+			// When & Then
+			ServiceException exception = assertThrows(ServiceException.class,
+				() -> authService.sendVerificationCode(testEmail)
+			);
+			assertEquals(ErrorCode.AUTH_DUPLICATE_EMAIL, exception.getErrorCode());
+
+			// Verify
+			verify(verificationCodeStore, never()).saveCode(anyString(), anyString());
+			verify(emailService, never()).sendVerificationEmail(anyString(), anyString());
+		}
+
+		@Test
+		@DisplayName("실패: Redis 저장 실패 시 예외 변환")
+		void sendCode_fail_redisError() {
+			// Given
+			when(userRepository.existsByEmail(testEmail)).thenReturn(false);
+			doThrow(new RuntimeException("Redis connection error"))
+				.when(verificationCodeStore).saveCode(eq(testEmail), anyString());
+
+			// When & Then
+			ServiceException exception = assertThrows(ServiceException.class,
+				() -> authService.sendVerificationCode(testEmail)
+			);
+			assertEquals(ErrorCode.AUTH_EMAIL_SEND_FAILED, exception.getErrorCode());
+
+			// Verify
+			verify(emailService, never()).sendVerificationEmail(anyString(), anyString());
+		}
+	}
+
+	@Nested
+	@DisplayName("인증 코드 검증")
+	class VerifyCodeTests {
+		private final String testEmail = "verify_test@drop.com";
+		private final String validCode = "123456";
+		private final String wrongCode = "000000";
+
+		@Test
+		@DisplayName("성공: 코드 일치 시 Redis 코드 삭제 및 Verified 마크")
+		void verifyCode_success() {
+			// Given
+			when(verificationCodeStore.getCode(testEmail)).thenReturn(validCode);
+
+			// When
+			authService.verifyCode(testEmail, validCode);
+
+			// Then
+			verify(verificationCodeStore, times(1)).removeCode(testEmail);
+			verify(verificationCodeStore, times(1)).markAsVerified(testEmail);
+		}
+
+		@Test
+		@DisplayName("실패: 코드가 만료되었거나 존재하지 않음")
+		void verifyCode_fail_codeExpired() {
+			// Given
+			when(verificationCodeStore.getCode(testEmail)).thenReturn(null); // 만료/부재
+
+			// When & Then
+			ServiceException exception = assertThrows(ServiceException.class,
+				() -> authService.verifyCode(testEmail, validCode)
+			);
+			assertEquals(ErrorCode.AUTH_CODE_EXPIRED, exception.getErrorCode());
+
+			// Verify
+			verify(verificationCodeStore, never()).removeCode(anyString());
+			verify(verificationCodeStore, never()).markAsVerified(anyString());
+		}
+
+		@Test
+		@DisplayName("실패: 코드가 일치하지 않음")
+		void verifyCode_fail_codeMismatch() {
+			// Given
+			when(verificationCodeStore.getCode(testEmail)).thenReturn(validCode);
+
+			// When & Then
+			ServiceException exception = assertThrows(ServiceException.class,
+				() -> authService.verifyCode(testEmail, wrongCode)
+			);
+			assertEquals(ErrorCode.AUTH_CODE_MISMATCH, exception.getErrorCode());
+
+			// Verify
+			verify(verificationCodeStore, never()).removeCode(anyString());
+			verify(verificationCodeStore, never()).markAsVerified(anyString());
 		}
 	}
 }

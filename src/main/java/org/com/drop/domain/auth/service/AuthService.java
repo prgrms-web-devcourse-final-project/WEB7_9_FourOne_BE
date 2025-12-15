@@ -47,7 +47,7 @@ public class AuthService {
 	public LocalSignUpResponse signup(LocalSignUpRequest dto) {
 
 		if (!verificationCodeStore.isVerified(dto.email())) {
-			throw ErrorCode.AUTH_NOT_VERIFIED
+			throw ErrorCode.AUTH_CODE_EXPIRED
 				.serviceException("email=%s", dto.email());
 		}
 
