@@ -15,7 +15,6 @@ import org.com.drop.domain.auction.product.repository.ProductImageRepository;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.exception.ErrorCode;
-import org.com.drop.global.exception.ServiceException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,17 +32,30 @@ public class ProductService {
 
 	public void validUser(Product product, User actor) {
 		if (!product.getSeller().getId().equals(actor.getId())) {
-			throw new ServiceException(ErrorCode.USER_INACTIVE_USER);
+			throw ErrorCode.USER_INACTIVE_USER
+				.serviceException(
+					"productId=%d, sellerId=%d, actorId=%d",
+					product.getId(),
+					product.getSeller().getId(),
+					actor.getId()
+				);
 		}
 	}
 
 	public void validAuction(Product product) {
 
-		Optional<Auction> auction = auctionRepository.findByProductId(product.getId());
+		Optional<Auction> auction =
+			auctionRepository.findByProductId(product.getId());
 
 		if (auction.isPresent()
 			&& auction.get().getStartAt().isBefore(LocalDateTime.now())) {
-			throw new ServiceException(ErrorCode.PRODUCT_ALREADY_ON_AUCTION);
+
+			throw ErrorCode.PRODUCT_ALREADY_ON_AUCTION
+				.serviceException(
+					"productId=%d, auctionStartAt=%s",
+					product.getId(),
+					auction.get().getStartAt()
+				);
 		}
 	}
 
@@ -83,7 +95,10 @@ public class ProductService {
 
 	public Product findProductById(Long id) {
 		return productRepository.findByIdAndDeletedAtIsNull(id)
-			.orElseThrow(() -> new ServiceException(ErrorCode.PRODUCT_NOT_FOUND));
+			.orElseThrow(() ->
+				ErrorCode.PRODUCT_NOT_FOUND
+					.serviceException("productId=%d", id)
+			);
 	}
 
 	@Transactional

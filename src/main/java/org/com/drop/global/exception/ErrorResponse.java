@@ -9,8 +9,8 @@ public record ErrorResponse(
 ) {
 	public static ErrorResponse errorResponse(ErrorCode errorCode) {
 		return ErrorResponse.builder()
-			.code(errorCode.name())
-			.status(String.valueOf(errorCode.getCode()))
+			.code(errorCode.getCode())
+			.status(String.valueOf(errorCode.getStatus().value()))
 			.message(errorCode.getMessage())
 			.build();
 	}
