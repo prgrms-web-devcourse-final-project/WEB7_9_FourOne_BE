@@ -294,7 +294,7 @@ public class QnaControllerTest {
 				void t4() throws Exception {
 					ResultActions resultActions = mvc
 						.perform(
-							get("/api/v1/products/%d/qna".formatted(productId))
+							get("/api/v1/products/%d/qna?page=0&size=10&sort=id,asc".formatted(productId))
 						)
 						.andDo(print());
 
