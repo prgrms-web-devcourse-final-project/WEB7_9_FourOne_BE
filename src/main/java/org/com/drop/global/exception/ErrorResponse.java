@@ -4,13 +4,13 @@ import lombok.Builder;
 @Builder
 public record ErrorResponse(
 	String code,
-	String status,
+	int httpStatus,
 	String message
 ) {
 	public static ErrorResponse errorResponse(ErrorCode errorCode) {
 		return ErrorResponse.builder()
 			.code(errorCode.name())
-			.status(String.valueOf(errorCode.getCode()))
+			.httpStatus(errorCode.getStatus().value())
 			.message(errorCode.getMessage())
 			.build();
 	}

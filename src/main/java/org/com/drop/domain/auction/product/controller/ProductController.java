@@ -1,7 +1,9 @@
 package org.com.drop.domain.auction.product.controller;
 
+import org.com.drop.domain.auction.product.dto.BookmarkCreateResponse;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
 import org.com.drop.domain.auction.product.dto.ProductCreateResponse;
+import org.com.drop.domain.auction.product.entity.BookMark;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.service.ProductService;
 import org.com.drop.domain.user.entity.User;
@@ -66,23 +68,28 @@ public class ProductController {
 		return new RsData<>(null);
 	}
 
-	// @PostMapping("/{productId}/qna")
-	// public RsData<ProductQnaCreateResponse> addQna(
-	// 	@PathVariable
-	// 	@NotNull
-	// 	Long productId,
-	// 	@RequestBody
-	// 	@Valid
-	// 	ProductQnACreateRequest request) {
-	// 	//TODO : rq 구현 후 수정
-	// 	User actor = userRepository.findById(1L).get();
-	// 	Question question = productService.addQuestion(request, actor);
-	// 	return new RsData<>(
-	// 		"SUCCESS",
-	// 		"200",
-	// 		"요청을 성공적으로 처리했습니다.",
-	// 		new ProductQnaCreateResponse(question)
-	// 	);
-	// }
+	@PostMapping("/{productId}/bookmarks")
+	public RsData<BookmarkCreateResponse> addBookmark(
+		@PathVariable
+		Long productId) {
+		//TODO : rq 구현 후 수정
+		User actor = userRepository.findById(1L).get();
+		BookMark bookMark = productService.addBookmark(productId, actor);
+		return new RsData<>(
+			new BookmarkCreateResponse(bookMark)
+		);
+	}
+
+	@DeleteMapping("/{productId}/bookmarks")
+	public RsData<BookmarkCreateResponse> deleteBookmark(
+		@PathVariable
+		Long productId) {
+		//TODO : rq 구현 후 수정
+		User actor = userRepository.findById(1L).get();
+		productService.deleteBookmark(productId, actor);
+		return new RsData<>(
+			null
+		);
+	}
 
 }

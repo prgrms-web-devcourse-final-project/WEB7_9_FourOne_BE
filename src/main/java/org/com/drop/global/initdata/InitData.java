@@ -3,10 +3,15 @@ package org.com.drop.global.initdata;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.com.drop.domain.admin.guide.entity.Guide;
+import org.com.drop.domain.admin.guide.repository.GuideRepository;
 import org.com.drop.domain.auction.auction.dto.AuctionCreateRequest;
 import org.com.drop.domain.auction.auction.service.AuctionService;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
 import org.com.drop.domain.auction.product.entity.Product;
+import org.com.drop.domain.auction.product.qna.dto.ProductQnAAnswerRequest;
+import org.com.drop.domain.auction.product.qna.dto.ProductQnACreateRequest;
+import org.com.drop.domain.auction.product.qna.service.QnAService;
 import org.com.drop.domain.auction.product.service.ProductService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
@@ -26,6 +31,8 @@ public class InitData {
 	private final UserRepository userRepository;
 	private final ProductService productService;
 	private final AuctionService auctionService;
+	private final QnAService qnAService;
+	private final GuideRepository  guideRepository;
 	@Autowired
 	@Lazy
 	private InitData self;
@@ -81,7 +88,7 @@ public class InitData {
 		);
 		Product product2 = productService.addProduct(productCreateRequest2, user1);
 
-		AuctionCreateRequest auctionCreateRequest = new AuctionCreateRequest(
+		AuctionCreateRequest auctionCreateRequest1 = new AuctionCreateRequest(
 			product1.getId(),
 			1000,
 			100000,
@@ -89,8 +96,21 @@ public class InitData {
 			LocalDateTime.now().plusSeconds(5),
 			LocalDateTime.now().plusSeconds(10)
 		);
-		auctionService.addAuction(auctionCreateRequest, user1);
+		auctionService.addAuction(auctionCreateRequest1, user1);
 
+		AuctionCreateRequest auctionCreateRequest2 = new AuctionCreateRequest(
+			product2.getId(),
+			1000,
+			100000,
+			10,
+			LocalDateTime.now().plusDays(5),
+			LocalDateTime.now().plusDays(10)
+		);
+		auctionService.addAuction(auctionCreateRequest2, user1);
+		qnAService.addQuestion(1L, new ProductQnACreateRequest("질문1"), user1);
+		qnAService.addAnswer(1L, 1L, new ProductQnAAnswerRequest("답변1"), user1);
+		qnAService.addAnswer(1L, 1L, new ProductQnAAnswerRequest("답변2"), user1);
+		guideRepository.save(new Guide("안내사항1"));
+		guideRepository.save(new Guide("안내사항2"));
 	}
-
 }
