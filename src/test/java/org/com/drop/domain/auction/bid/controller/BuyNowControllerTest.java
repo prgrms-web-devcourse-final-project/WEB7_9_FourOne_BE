@@ -70,7 +70,7 @@ class BuyNowControllerTest {
 		Long userId = 987L;
 
 		given(buyNowService.buyNow(eq(auctionId), eq(userId)))
-			.willThrow(new ServiceException(ErrorCode.AUCTION_BUY_NOW_NOT_AVAILABLE));
+			.willThrow(new ServiceException(ErrorCode.AUCTION_BUY_NOW_NOT_AVAILABLE, "즉시 구매가 불가능한 상품입니다."));
 
 		// when & then
 		mockMvc.perform(
@@ -78,7 +78,7 @@ class BuyNowControllerTest {
 					.queryParam("userId", String.valueOf(userId))
 			)
 			.andExpect(status().isBadRequest())
-			.andExpect(status().is(400))
+			.andExpect(jsonPath("$.httpStatus").value(400))
 			.andExpect(jsonPath("$.code").value("AUCTION_BUY_NOW_NOT_AVAILABLE"))
 			.andExpect(jsonPath("$.message").exists());
 	}
