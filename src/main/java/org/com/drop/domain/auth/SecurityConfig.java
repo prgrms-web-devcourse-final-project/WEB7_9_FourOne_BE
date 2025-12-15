@@ -33,6 +33,7 @@ public class SecurityConfig {
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers("/api/v1/auth/**").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/v1/auctions/**").permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
 				.anyRequest().authenticated()
 			);
 

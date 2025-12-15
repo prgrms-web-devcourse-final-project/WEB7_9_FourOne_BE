@@ -40,6 +40,7 @@ public class RefreshTokenFilter extends OncePerRequestFilter {
 
 			String jsonError = objectMapper.writeValueAsString(
 				new ErrorResponse(
+					HttpServletResponse.SC_UNAUTHORIZED,
 					ErrorCode.AUTH_TOKEN_MISSING.getCode(),
 					ErrorCode.AUTH_TOKEN_MISSING.getMessage() + ": refreshToken missing or empty"
 				)
@@ -67,5 +68,5 @@ public class RefreshTokenFilter extends OncePerRequestFilter {
 		return null;
 	}
 
-	private record ErrorResponse(String code, String message) { }
+	private record ErrorResponse(int status, String code, String message) { }
 }

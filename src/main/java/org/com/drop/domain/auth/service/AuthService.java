@@ -31,7 +31,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 
-// ToDo: 이메일 인증, 검증 관련 로직 추가 후 트랜잭션 확인
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -42,6 +41,7 @@ public class AuthService {
 	private final JwtProvider jwtProvider;
 	private final EmailService emailService;
 	private final VerificationCodeStore verificationCodeStore;
+	private final int RANDOM_CODE = (int) (Math.random() * 900_000) + 100_000;
 
 	@Transactional
 	public LocalSignUpResponse signup(LocalSignUpRequest dto) {
@@ -219,7 +219,7 @@ public class AuthService {
 	}
 
 	private String generateRandomCode() {
-		int code = (int) (Math.random() * (900000)) + 100000;
+		int code = RANDOM_CODE;
 		return String.valueOf(code);
 	}
 }
