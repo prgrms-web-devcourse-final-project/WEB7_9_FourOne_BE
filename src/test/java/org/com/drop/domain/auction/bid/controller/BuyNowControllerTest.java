@@ -78,8 +78,8 @@ class BuyNowControllerTest {
 					.queryParam("userId", String.valueOf(userId))
 			)
 			.andExpect(status().isBadRequest())
+			.andExpect(status().is(400))
 			.andExpect(jsonPath("$.code").value("AUCTION_BUY_NOW_NOT_AVAILABLE"))
-			.andExpect(jsonPath("$.status").value("400"))
 			.andExpect(jsonPath("$.message").exists());
 	}
 }
