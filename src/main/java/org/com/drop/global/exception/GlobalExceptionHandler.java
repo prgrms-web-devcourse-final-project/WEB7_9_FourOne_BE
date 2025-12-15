@@ -14,9 +14,9 @@ import lombok.extern.slf4j.Slf4j;
 public class GlobalExceptionHandler {
 
 	@ExceptionHandler(ServiceException.class)
-	public ResponseEntity<ErrorResponse> handleServiceException(ServiceException e) {
-		ErrorCode errorCode = e.getErrorCode();
-		log.error(e.getMessage(), e);
+	public ResponseEntity<ErrorResponse> handleServiceException(ServiceException exception) {
+		ErrorCode errorCode = exception.getErrorCode();
+		log.error(exception.getMessage(), exception);
 		return ResponseEntity.status(errorCode.getStatus()).body(ErrorResponse.errorResponse(errorCode));
 	}
 }
