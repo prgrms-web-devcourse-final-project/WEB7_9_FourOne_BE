@@ -16,6 +16,8 @@ import org.com.drop.domain.user.entity.User.LoginType;
 import org.com.drop.domain.user.entity.User.UserRole;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -113,7 +115,16 @@ public class AuthService {
 	}
 
 	@Transactional
-	public void logout(String email) {
+	public void logout() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication == null || !authentication.isAuthenticated()) {
+			throw ErrorCode.AUTH_UNAUTHORIZED
+				.serviceException("No authenticated user found for logout.");
+		}
+
+		String email = authentication.getName();
+
 		refreshTokenStore.delete(email);
 	}
 

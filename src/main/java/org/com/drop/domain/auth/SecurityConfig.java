@@ -1,8 +1,10 @@
 package org.com.drop.domain.auth;
 
 import org.com.drop.domain.auth.jwt.JwtFilter;
+import org.com.drop.domain.auth.service.RefreshTokenFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -18,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
 	private final JwtFilter jwtFilter;
+	private final RefreshTokenFilter refreshTokenFilter;
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) {
@@ -28,11 +31,12 @@ public class SecurityConfig {
 			.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
 			.authorizeHttpRequests(auth -> auth
-				// .requestMatchers("/api/v1/auth/**").permitAll()
-				// .requestMatchers(HttpMethod.GET, "/api/v1/auctions/**").permitAll()
-				// .anyRequest().authenticated()
-				.anyRequest().permitAll()
+				.requestMatchers("/api/v1/auth/**").permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/v1/auctions/**").permitAll()
+				.anyRequest().authenticated()
 			);
+
+		http.addFilterBefore(refreshTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
 		http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 

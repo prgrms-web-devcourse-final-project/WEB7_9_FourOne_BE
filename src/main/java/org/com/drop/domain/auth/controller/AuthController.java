@@ -10,7 +10,6 @@ import org.com.drop.domain.auth.dto.UserDeleteRequest;
 import org.com.drop.domain.auth.dto.UserDeleteResponse;
 import org.com.drop.domain.auth.service.AuthService;
 import org.com.drop.domain.user.entity.User;
-import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
 import org.springframework.http.HttpHeaders;
@@ -25,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -89,7 +87,7 @@ public class AuthController {
 	public ResponseEntity<RsData<Void>> logout(
 		@AuthenticationPrincipal UserDetails userDetails) {
 
-		authService.logout(userDetails.getUsername());
+		authService.logout();
 
 		ResponseCookie expiredCookie = ResponseCookie.from("refreshToken", "")
 			.httpOnly(true)
@@ -107,31 +105,11 @@ public class AuthController {
 	@PostMapping("/refresh")
 	public RsData<TokenRefreshResponse> refresh(HttpServletRequest request) {
 
-		String refreshToken = extractRefreshTokenFromCookie(request);
-
-		if (refreshToken == null || refreshToken.isBlank()) {
-			throw ErrorCode.AUTH_TOKEN_MISSING
-				.serviceException("refreshToken is null or blank");
-		}
+		String refreshToken = (String) request.getAttribute("validRefreshToken");
 
 		TokenRefreshResponse response = authService.refresh(refreshToken);
 
 		return createSuccessRsData(response);
-	}
-
-
-	private String extractRefreshTokenFromCookie(HttpServletRequest request) {
-		Cookie[] cookies = request.getCookies();
-		if (cookies == null) {
-			return null;
-		}
-
-		for (Cookie cookie : cookies) {
-			if ("refreshToken".equals(cookie.getName())) {
-				return cookie.getValue();
-			}
-		}
-		return null;
 	}
 
 	@GetMapping("/me")
