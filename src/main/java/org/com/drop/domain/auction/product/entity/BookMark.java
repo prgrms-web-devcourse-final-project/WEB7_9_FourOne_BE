@@ -14,6 +14,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,8 +22,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "bookmarks", indexes = {@Index(name = "idx_user_id", columnList = "user_id"),
-	@Index(name = "idx_product_id", columnList = "product_id")})
+@Table(
+	name = "bookmarks",
+	indexes = {
+		@Index(name = "idx_user_id", columnList = "user_id"),
+		@Index(name = "idx_product_id", columnList = "product_id")
+	},
+	uniqueConstraints = {@UniqueConstraint(name = "uk_user_product", columnNames = {"user_id", "product_id"})}
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -43,7 +50,7 @@ public class BookMark {
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;
 
-	public  BookMark(User user, Product product) {
+	public BookMark(User user, Product product) {
 		this.user = user;
 		this.product = product;
 		this.createdAt = LocalDateTime.now();
