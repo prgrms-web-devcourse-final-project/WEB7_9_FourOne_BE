@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -37,6 +38,7 @@ public class AdminControllerTest {
 		class Read {
 			@Test
 			@DisplayName("가이드 조회 - 성공")
+			@WithMockUser(username = "adminUser", roles = {"ADMIN"})
 			void t1() throws Exception {
 				ResultActions resultActions = mvc
 					.perform(
