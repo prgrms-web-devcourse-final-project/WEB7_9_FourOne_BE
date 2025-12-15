@@ -27,7 +27,7 @@ public enum ErrorCode {
 	AUTH_DUPLICATE_EMAIL("1006", HttpStatus.CONFLICT, "이미 사용 중인 이메일입니다."),
 	AUTH_DUPLICATE_NICKNAME("1007", HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
 	AUTH_EMAIL_SEND_LIMIT("1008", HttpStatus.TOO_MANY_REQUESTS, "이메일 인증 요청 횟수를 초과했습니다. 잠시 후 다시 시도해 주세요."),
-	AUTH_EMAIL_SEND_FAILED("1009", HttpStatus.INTERNAL_SERVER_ERROR, "인증 메일 발송에 실패했습니다. 이메일 주소를 확인하거나 잠시 후 다시 시도해 주세요."),
+	AUTH_EMAIL_SEND_FAILED("1009", HttpStatus.INTERNAL_SERVER_ERROR, "인증 메일 발송에 실패했습니다.잠시 후 다시 시도해 주세요."),
 	AUTH_CODE_MISMATCH("1010", HttpStatus.BAD_REQUEST, "인증 코드가 일치하지 않습니다."),
 	AUTH_CODE_EXPIRED("1011", HttpStatus.GONE, "인증 코드가 만료되었습니다. 인증 요청을 다시 해주세요."),
 	AUTH_UNAUTHORIZED("1012", HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 일치하지 않습니다."),

@@ -66,7 +66,7 @@ public class AuthController {
 
 	@PostMapping("/email/verify-code")
 	public ResponseEntity<RsData<EmailVerifyResponse>> verifyCode(
-		@Valid @RequestBody EmailVerifyRequest dto){
+		@Valid @RequestBody EmailVerifyRequest dto) {
 
 		EmailVerifyResponse response = authService.verifyCode(dto.email(), dto.code());
 		RsData<EmailVerifyResponse> rsData = createSuccessRsData(200, response);

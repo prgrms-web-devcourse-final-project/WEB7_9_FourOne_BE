@@ -55,7 +55,9 @@ public class RefreshTokenFilter extends OncePerRequestFilter {
 
 	private String extractRefreshTokenFromCookie(HttpServletRequest request) {
 		Cookie[] cookies = request.getCookies();
-		if (cookies == null) return null;
+		if (cookies == null) {
+			return null;
+		}
 
 		for (Cookie cookie : cookies) {
 			if ("refreshToken".equals(cookie.getName())) {
@@ -65,5 +67,5 @@ public class RefreshTokenFilter extends OncePerRequestFilter {
 		return null;
 	}
 
-	private record ErrorResponse(String code, String message) {}
+	private record ErrorResponse(String code, String message) { }
 }
