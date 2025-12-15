@@ -2,6 +2,7 @@ package org.com.drop.domain.auction.bid.controller;
 
 import static org.mockito.BDDMockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.time.LocalDateTime;
@@ -86,8 +87,9 @@ class BidControllerTest {
                     """)
 			)
 			.andExpect(status().isBadRequest())
-			.andExpect(status().is(400))
-			.andExpect(jsonPath("$.code").value("AUCTION_BID_AMOUNT_TOO_LOW")) // 네 ErrorCode 숫자에 맞춰
-			.andExpect(jsonPath("$.message").value("입찰 금액이 현재 최고가보다 낮거나 최소 입찰 단위를 충족하지 못했습니다.")); // 메시지는 신경 안 쓴다 했으니 exists만
+			.andExpect(jsonPath("$.httpStatus").value(400))
+			.andExpect(jsonPath("$.code").value("AUCTION_BID_AMOUNT_TOO_LOW"))
+			.andExpect(jsonPath("$.message").value("입찰 금액이 현재 최고가보다 낮거나 최소 입찰 단위를 충족하지 못했습니다."))
+			.andDo(print());
 	}
 }
