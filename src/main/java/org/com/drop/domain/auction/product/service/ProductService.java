@@ -134,7 +134,7 @@ public class ProductService {
 		Product product = findProductById(productId);
 
 		if (bookmarkRepository.findByProductAndUser(product, actor).isPresent()) {
-			throw new ServiceException(ErrorCode.PRODUCT_ALREADY_BOOKMARKED);
+			throw ErrorCode.PRODUCT_ALREADY_BOOKMARKED.serviceException("productId=%d", productId);
 		}
 
 		BookMark bookmark = new BookMark(actor, product);
@@ -150,6 +150,7 @@ public class ProductService {
 
 	public BookMark findBookmarkById(Product product, User actor) {
 		return bookmarkRepository.findByProductAndUser(product, actor)
-			.orElseThrow(() -> new ServiceException(ErrorCode.USER_BOOKMARK_NOT_FOUND));
+			.orElseThrow(() -> ErrorCode.USER_BOOKMARK_NOT_FOUND
+				.serviceException("productId=%d", product.getId()));
 	}
 }

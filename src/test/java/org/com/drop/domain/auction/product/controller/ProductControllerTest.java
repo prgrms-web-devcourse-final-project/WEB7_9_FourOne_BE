@@ -348,7 +348,7 @@ public class ProductControllerTest {
 					.andExpect(handler().methodName("addBookmark"))
 					.andExpect(status().isNotFound())
 					.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
-					.andExpect(jsonPath("$.status").value(1200))
+					.andExpect(jsonPath("$.httpStatus").value(404))
 					.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
 			}
 
@@ -369,9 +369,9 @@ public class ProductControllerTest {
 				resultActions
 					.andExpect(handler().handlerType(ProductController.class))
 					.andExpect(handler().methodName("addBookmark"))
-					.andExpect(status().is(400))
+					.andExpect(status().is(409))
 					.andExpect(jsonPath("$.code").value("PRODUCT_ALREADY_BOOKMARKED"))
-					.andExpect(jsonPath("$.status").value(1201))
+					.andExpect(jsonPath("$.httpStatus").value(409))
 					.andExpect(jsonPath("$.message").value("이미 찜한 상품입니다."));
 			}
 		}
@@ -421,7 +421,7 @@ public class ProductControllerTest {
 					.andExpect(handler().methodName("deleteBookmark"))
 					.andExpect(status().isNotFound())
 					.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
-					.andExpect(jsonPath("$.status").value(1200))
+					.andExpect(jsonPath("$.httpStatus").value(404))
 					.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
 			}
 
@@ -439,7 +439,7 @@ public class ProductControllerTest {
 					.andExpect(handler().methodName("deleteBookmark"))
 					.andExpect(status().is(404))
 					.andExpect(jsonPath("$.code").value("USER_BOOKMARK_NOT_FOUND"))
-					.andExpect(jsonPath("$.status").value(1101))
+					.andExpect(jsonPath("$.httpStatus").value(404))
 					.andExpect(jsonPath("$.message").value("찜한 상품이 아닙니다."));
 			}
 
