@@ -15,6 +15,7 @@ import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ServiceException;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -52,7 +53,6 @@ class BidServiceTest {
 		return userRepository.save(user);
 	}
 
-
 	private Product createDummyProduct(User seller, String name) {
 		Product product = Product.builder()
 			.seller(seller)
@@ -82,11 +82,12 @@ class BidServiceTest {
 		return auctionRepository.save(auction);
 	}
 
-	@Test
-	void 유효한_입찰이면_Bid가_저장되고_Auction_현재가가_갱신된다() {}
+	// @Test
+	// void 유효한_입찰이면_Bid가_저장되고_Auction_현재가가_갱신된다() {}
 
+	@DisplayName("유효한_입찰일때_정상적으로_입찰_생성")
 	@Test
-	void 유효한_입찰일때_정상적으로_입찰_생성() {
+	void createsBidSuccessfullyWhenBidIsValid() {
 		//given
 		User bidder = createDummyUser("입찰자1");
 		User seller = createDummyUser("판매자1");
@@ -104,8 +105,9 @@ class BidServiceTest {
 
 	}
 
+	@DisplayName("최소입찰단위_미만이면_예외가_발생한다")
 	@Test
-	void 최소입찰단위_미만이면_예외가_발생한다() {
+	void throwsExceptionWhenBidAmountBelowBidUnit() {
 		// given
 		User user = createDummyUser("입찰자1");
 		User seller = createDummyUser("판매자1");
@@ -122,22 +124,19 @@ class BidServiceTest {
 
 	}
 
-	@Test
-	void 현재_최고가_이하로_입찰하면_예외가_발생한다() {}
-
-	@Test
-	void 종료된_경매에는_입찰할_수_없다() {}
-
-	@Test
-	void 판매자는_자신의_경매에_입찰할_수_없다() {}
-
-	@Test
-	void 존재하지않는_경매에_입찰하면_AUCTION_NOT_FOUND_예외가_발생한다() {}
-
-	@Test
-	void 동일_사용자가_연속으로_더_높은_금액으로_입찰하면_정상적으로_현재가와_입찰내역이_갱신된다() {}
-
-
-
+	// @Test
+	// void 현재_최고가_이하로_입찰하면_예외가_발생한다() {}
+	//
+	// @Test
+	// void 종료된_경매에는_입찰할_수_없다() {}
+	//
+	// @Test
+	// void 판매자는_자신의_경매에_입찰할_수_없다() {}
+	//
+	// @Test
+	// void 존재하지않는_경매에_입찰하면_AUCTION_NOT_FOUND_예외가_발생한다() {}
+	//
+	// @Test
+	// void 동일_사용자가_연속으로_더_높은_금액으로_입찰하면_정상적으로_현재가와_입찰내역이_갱신된다() {}
 
 }
