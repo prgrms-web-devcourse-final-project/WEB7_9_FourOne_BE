@@ -6,6 +6,11 @@ spring:
     output:
         ansi:
             enabled: always
+toss:
+    payments:
+        base-url: https://api.tosspayments.com
+        secret-key: ${TOSS_SECRET_KEY}
+        customer-key-hmac-secret: ${CUSTOMER_KEY_HMAC_SECRET}
 
     # --- Datasource / JPA ---
     datasource:
