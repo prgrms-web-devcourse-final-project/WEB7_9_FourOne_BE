@@ -41,7 +41,7 @@ public class AuthService {
 	private final JwtProvider jwtProvider;
 	private final EmailService emailService;
 	private final VerificationCodeStore verificationCodeStore;
-	private final int RANDOM_CODE = (int) (Math.random() * 900_000) + 100_000;
+	private final int randomCode = (int) (Math.random() * 900_000) + 100_000;
 
 	@Transactional
 	public LocalSignUpResponse signup(LocalSignUpRequest dto) {
@@ -219,7 +219,7 @@ public class AuthService {
 	}
 
 	private String generateRandomCode() {
-		int code = RANDOM_CODE;
+		int code = randomCode;
 		return String.valueOf(code);
 	}
 }
