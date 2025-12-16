@@ -10,6 +10,7 @@ COPY settings.gradle.kts .
 
 # Gradle 래퍼에 실행 권한 부여
 RUN gradle wrapper
+RUN chmod +x gradlew
 
 # 종속성 설치
 RUN ./gradlew dependencies --no-daemon
