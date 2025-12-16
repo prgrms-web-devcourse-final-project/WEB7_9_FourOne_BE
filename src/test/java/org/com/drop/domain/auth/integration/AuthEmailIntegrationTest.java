@@ -129,8 +129,8 @@ class AuthEmailIntegrationTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
 						{
-					    	"email": "verify@test.com",
-					    	"code": "123456"
+							"email": "verify@test.com",
+							"code": "123456"
 						}
 					"""))
 			.andExpect(status().isGone());
