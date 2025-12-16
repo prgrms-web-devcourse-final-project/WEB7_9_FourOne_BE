@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AnswerRepository extends JpaRepository<Answer, Long> {
 	List<Answer> findByQuestion(Question question);
+
+	List<Answer> findByQuestionIdInAndDeletedAtIsNull(List<Long> questionIds);
 }

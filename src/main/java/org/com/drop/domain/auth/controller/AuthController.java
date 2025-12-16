@@ -17,6 +17,7 @@ import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -61,7 +62,7 @@ public class AuthController {
 		EmailSendResponse response = authService.sendVerificationCode(dto.email());
 		RsData<EmailSendResponse> rsData = createSuccessRsData(202, response);
 
-		return ResponseEntity.ok(rsData);
+		return ResponseEntity.status(HttpStatus.ACCEPTED).body(rsData);
 	}
 
 	@PostMapping("/email/verify-code")
