@@ -14,6 +14,7 @@ import org.com.drop.domain.auction.product.qna.service.QnAService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.rsdata.RsData;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,10 +35,8 @@ public class QnAController {
 
 	@PostMapping
 	public RsData<ProductQnaCreateResponse> addQna(
-		@PathVariable
-		Long productId,
-		@RequestBody
-		@Valid
+		@PathVariable Long productId,
+		@RequestBody @Valid
 		ProductQnACreateRequest request) {
 		//TODO : rq 구현 후 수정
 		User actor = userRepository.findById(1L).get();
@@ -49,12 +48,9 @@ public class QnAController {
 
 	@PostMapping("/{qnaId}")
 	public RsData<ProductQnAAnswerResponse> addAnswer(
-		@PathVariable
-		Long productId,
-		@PathVariable
-		Long qnaId,
-		@RequestBody
-		@Valid
+		@PathVariable Long productId,
+		@PathVariable Long qnaId,
+		@RequestBody @Valid
 		ProductQnAAnswerRequest request) {
 		//TODO : rq 구현 후 수정
 		User actor = userRepository.findById(1L).get();
@@ -66,8 +62,7 @@ public class QnAController {
 
 	@DeleteMapping("/{qnaId}")
 	public RsData<Void> deleteAnswer(
-		@PathVariable
-		Long qnaId
+		@PathVariable Long qnaId
 	) {
 		//TODO : rq 구현 후 수정
 		User actor = userRepository.findById(1L).get();
@@ -77,10 +72,10 @@ public class QnAController {
 
 	@GetMapping
 	public RsData<ProductQnAListResponse> getQna(
-		@PathVariable
-		Long productId
+		@PathVariable Long productId,
+		Pageable pageable
 	) {
-		List<ProductQnAResponse> qnas = qnAService.getQna(productId);
+		List<ProductQnAResponse> qnas = qnAService.getQna(productId, pageable);
 		return new RsData<>(
 			new ProductQnAListResponse(qnas)
 		);
