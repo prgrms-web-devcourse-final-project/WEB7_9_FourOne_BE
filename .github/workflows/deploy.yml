@@ -1,16 +1,16 @@
 name: deploy
 env:
-  IMAGE_NAME: app251127
+  IMAGE_NAME: drop
 
 on:
   push:
     paths:
       - ".github/workflows/**"
-      - "backend/src/**"
-      - "backend/build.gradle.kts"
-      - "backend/Dockerfile"
+      - "src/**"
+      - "build.gradle.kts"
+      - "Dockerfile"
     branches:
-      - main
+      - release
 
 # 권한 최소화/명시화
 permissions:
@@ -44,9 +44,6 @@ jobs:
   buildImageAndPush:
     name: 도커 이미지 빌드와 푸시
     needs: makeTagAndRelease
-    defaults:
-      run:
-        working-directory: backend # 원하는 디렉토리
     runs-on: ubuntu-latest
     outputs:
       owner_lc: ${{ steps.export_owner.outputs.owner_lc }}
@@ -57,7 +54,7 @@ jobs:
         env:
           ACTIONS_STEP_DEBUG: true
           APPLICATION_SECRET: ${{ secrets.APPLICATION_SECRET }}
-        run: echo "$APPLICATION_SECRET" > src/main/resources/application-secret.yml
+        run: echo "$APPLICATION_SECRET" >.env.properties.yml
       - name: Docker Buildx 설치
         uses: docker/setup-buildx-action@v2
       - name: 레지스트리 로그인
@@ -75,12 +72,12 @@ jobs:
 
       - name: export image name
         id: export_image
-        run: echo "image_name=app251127" >> $GITHUB_OUTPUT
+        run: echo "image_name=drop" >> $GITHUB_OUTPUT
 
       - name: 빌드 앤 푸시
         uses: docker/build-push-action@v3
         with:
-          context: ./backend
+          context: .
           push: true
           cache-from: type=registry,ref=ghcr.io/${{ steps.export_owner.outputs.owner_lc }}/${{ steps.export_image.outputs.image_name }}:cache
           cache-to: type=registry,ref=ghcr.io/${{ steps.export_owner.outputs.owner_lc }}/${{ steps.export_image.outputs.image_name }}:cache,mode=max
