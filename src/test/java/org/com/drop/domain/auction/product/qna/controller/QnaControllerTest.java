@@ -1,6 +1,7 @@
 package org.com.drop.domain.auction.product.qna.controller;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -34,6 +36,7 @@ import tools.jackson.databind.ObjectMapper;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
+@WithMockUser(username = "test@drop.com", roles = {"USER"})
 public class QnaControllerTest {
 
 	private final Long productId = 1L;
@@ -73,12 +76,12 @@ public class QnaControllerTest {
 					ProductQnACreateRequest productQnACreateRequest = new ProductQnACreateRequest(question);
 					setUp(productQnACreateRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna".formatted(productId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -103,12 +106,12 @@ public class QnaControllerTest {
 					ProductQnACreateRequest productQnACreateRequest = new ProductQnACreateRequest("");
 					setUp(productQnACreateRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna".formatted(productId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -124,12 +127,12 @@ public class QnaControllerTest {
 					ProductQnACreateRequest productQnACreateRequest = new ProductQnACreateRequest(question);
 					setUp(productQnACreateRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna".formatted(wrongProductId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -153,12 +156,12 @@ public class QnaControllerTest {
 					ProductQnAAnswerRequest productQnAAnswerRequest = new ProductQnAAnswerRequest(answer);
 					setUp(productQnAAnswerRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna/%d".formatted(productId, questionId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -183,12 +186,12 @@ public class QnaControllerTest {
 					ProductQnAAnswerRequest productQnAAnswerRequest = new ProductQnAAnswerRequest("");
 					setUp(productQnAAnswerRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna/%d".formatted(productId, questionId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -204,12 +207,12 @@ public class QnaControllerTest {
 					ProductQnAAnswerRequest productQnAAnswerRequest = new ProductQnAAnswerRequest(answer);
 					setUp(productQnAAnswerRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna/%d".formatted(wrongProductId, questionId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -227,12 +230,12 @@ public class QnaControllerTest {
 					ProductQnAAnswerRequest productQnAAnswerRequest = new ProductQnAAnswerRequest(answer);
 					setUp(productQnAAnswerRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna/%d".formatted(productId, wrongQuestionId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -250,10 +253,10 @@ public class QnaControllerTest {
 				@Test
 				@DisplayName("답변 삭제 - 성공")
 				void t3() throws Exception {
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							delete("/api/v1/products/%d/qna/%d".formatted(productId, answerId))
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -271,10 +274,10 @@ public class QnaControllerTest {
 				@Test
 				@DisplayName("상품 삭제 - 실패 (상품 없음)")
 				void t3_1() throws Exception {
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							delete("/api/v1/products/%d".formatted(wrongProductId))
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -294,7 +297,7 @@ public class QnaControllerTest {
 				void t4() throws Exception {
 					ResultActions resultActions = mvc
 						.perform(
-							get("/api/v1/products/%d/qna".formatted(productId))
+							get("/api/v1/products/%d/qna?page=0&size=10&sort=id,asc".formatted(productId))
 						)
 						.andDo(print());
 
@@ -311,30 +314,54 @@ public class QnaControllerTest {
 
 					assertThat(jsonPath("$.data.totalCount").value(questions.size()));
 
-					for (Question q : questions) {
-						assertThat(jsonPath("$.data.productQnAResponses.qnaId").value(q.getId()));
-						assertThat(jsonPath("$.data.productQnAResponses.questionerId")
-							.value(q.getQuestioner().getId()));
-						assertThat(jsonPath("$.data.productQnAResponses.question").value(q.getQuestion()));
-						assertThat(jsonPath("$.data.productQnAResponses.questionedAt").value(q.getCreatedAt()));
+					for (int i = 0; i < questions.size(); i++) {
+						Question question  = questions.get(i);
+						resultActions.andExpect(
+							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.qnaId".formatted(i))
+								.value(question .getId())
+						);
+						resultActions.andExpect(
+							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.questionerId"
+								.formatted(i))
+								.value(question .getQuestioner().getId())
+						);
+						resultActions.andExpect(
+							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.question"
+								.formatted(i))
+								.value(question .getQuestion())
+						);
+						List<Answer> answers = answerRepository.findByQuestion(question);
 
-						List<Answer> answers = answerRepository.findByQuestion(q);
+						for (int j = 0; j < answers.size(); j++) {
+							Answer answer = answers.get(j);
 
-						for (Answer a : answers) {
-							assertThat(jsonPath("$.data.productQnAResponses.answers.qnaId")
-								.value(a.getQuestion().getId()));
-							assertThat(jsonPath("$.data.productQnAResponses.answers.answer").value(a.getAnswer()));
-							assertThat(jsonPath("$.data.productQnAResponses.answers.answererId")
-								.value(a.getAnswerer().getId()));
-							assertThat(jsonPath("$.data.productQnAResponses.answers.answer").value(a.getAnswer()));
-							assertThat(jsonPath("$.data.productQnAResponses.answers.answeredAt")
-								.value(a.getCreatedAt()));
+							resultActions.andExpect(
+								jsonPath("$.data.productQnAResponses[%d].answers[%d].qnaId"
+									.formatted(i, j))
+									.value(answer.getQuestion().getId())
+							);
+
+							resultActions.andExpect(
+								jsonPath("$.data.productQnAResponses[%d].answers[%d].answerId"
+									.formatted(i, j))
+									.value(answer.getId())
+							);
+
+							resultActions.andExpect(
+								jsonPath("$.data.productQnAResponses[%d].answers[%d].answererId"
+									.formatted(i, j))
+									.value(answer.getAnswerer().getId())
+							);
+
+							resultActions.andExpect(
+								jsonPath("$.data.productQnAResponses[%d].answers[%d].answer"
+									.formatted(i, j))
+									.value(answer.getAnswer())
+							);
 						}
-
 					}
 				}
 			}
 		}
 	}
-
 }
