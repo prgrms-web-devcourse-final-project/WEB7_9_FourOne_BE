@@ -14,6 +14,7 @@ RUN chmod +x gradlew
 # 소스 코드와 Gradle 설정 파일 복사
 COPY build.gradle.kts .
 COPY settings.gradle.kts .
+COPY naver-checkstyle-rules.xml .
 
 # 종속성 설치
 RUN ./gradlew dependencies --no-daemon
