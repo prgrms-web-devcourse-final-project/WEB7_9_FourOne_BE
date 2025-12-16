@@ -38,12 +38,6 @@ spring:
             max-file-size: 10MB
             max-request-size: 10MB
 
-    jwt:
-        secret: ${JWT_KEY}
-        access-expire-minutes: 20
-        refresh-expire-days: 7
-        issuer: "DROP"
-
     # --- Redis ---
     data:
         redis:
@@ -65,6 +59,13 @@ spring:
                         required: true
                     connectiontimeout: 5000
                     timeout: 5000
+# --- Jwt ---
+
+jwt:
+    secret: ${JWT_KEY}
+    access-expire-minutes: 20
+    refresh-expire-days: 7
+    issuer: "DROP"
 
 # --- Logging ---
 logging:

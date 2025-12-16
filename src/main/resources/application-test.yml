@@ -20,6 +20,11 @@ spring:
             enabled: true
             path: /h2-console
 
+jwt:
+    secret: testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttest
+    access-token-expire: 1200
+    refresh-token-expire: 604800
+
 logging:
     level:
         org.hibernate.SQL: DEBUG
