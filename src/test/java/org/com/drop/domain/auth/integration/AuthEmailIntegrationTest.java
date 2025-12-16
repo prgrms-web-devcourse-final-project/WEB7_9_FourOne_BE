@@ -59,21 +59,20 @@ class AuthEmailIntegrationTest {
 		mockMvc.perform(post("/api/v1/auth/email/send-code")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
-                    {
-                        "email": "verify@test.com"
-                    }
-                """))
+						{
+							"email": "verify@test.com"
+						}
+					"""))
 			.andExpect(status().isAccepted());
 
 		verify(valueOperations, times(1))
 			.set(
 				startsWith("email_code:"),
-				anyString(),                  // code
-				anyLong(),                    // ttl
-				any()                         // TimeUnit
+				anyString(),
+				anyLong(),
+				any()
 			);
 
-		// **검증 추가: JavaMailSender.send()가 호출되었는지 확인**
 		verify(javaMailSender, times(1)).send(mimeMessage);
 	}
 
@@ -90,11 +89,11 @@ class AuthEmailIntegrationTest {
 		mockMvc.perform(post("/api/v1/auth/email/verify-code")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
-                    {
-                        "email": "verify@test.com",
-                        "code": "123456"
-                    }
-                """))
+						{
+							"email": "verify@test.com",
+							"code": "123456"
+						}
+					"""))
 			.andExpect(status().isOk());
 
 		verify(stringRedisTemplate, times(1))
@@ -111,11 +110,11 @@ class AuthEmailIntegrationTest {
 		mockMvc.perform(post("/api/v1/auth/email/verify-code")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
-                    {
-                        "email": "verify@test.com",
-                        "code": "123456"
-                    }
-                """))
+					    {
+					        "email": "verify@test.com",
+					        "code": "123456"
+					    }
+					"""))
 			.andExpect(status().isBadRequest());
 	}
 
@@ -129,11 +128,11 @@ class AuthEmailIntegrationTest {
 		mockMvc.perform(post("/api/v1/auth/email/verify-code")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
-                    {
-                        "email": "verify@test.com",
-                        "code": "123456"
-                    }
-                """))
+					    {
+					        "email": "verify@test.com",
+					        "code": "123456"
+					    }
+					"""))
 			.andExpect(status().isGone());
 	}
 }
