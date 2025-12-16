@@ -110,10 +110,10 @@ class AuthEmailIntegrationTest {
 		mockMvc.perform(post("/api/v1/auth/email/verify-code")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
-					    {
-					        "email": "verify@test.com",
-					        "code": "123456"
-					    }
+						{
+							"email": "verify@test.com",
+							"code": "123456"
+						}
 					"""))
 			.andExpect(status().isBadRequest());
 	}
@@ -128,10 +128,10 @@ class AuthEmailIntegrationTest {
 		mockMvc.perform(post("/api/v1/auth/email/verify-code")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
-					    {
-					        "email": "verify@test.com",
-					        "code": "123456"
-					    }
+						{
+					    	"email": "verify@test.com",
+					    	"code": "123456"
+						}
 					"""))
 			.andExpect(status().isGone());
 	}
