@@ -89,7 +89,7 @@ class BidControllerTest {
 
 		// when & then
 		mockMvc.perform(
-				post("/bids/{auctionId}/bids", auctionId)
+				post("/auctions/{auctionId}/bids", auctionId)
 					.with(csrf())
 					.contentType(String.valueOf(MediaType.APPLICATION_JSON))
 					.content("""
@@ -138,7 +138,7 @@ class BidControllerTest {
 
 		// when & then
 		mockMvc.perform(
-				post("/bids/{auctionId}/bids", auctionId)
+				post("/auctions/{auctionId}/bids", auctionId)
 					.with(csrf())
 					.contentType(String.valueOf(MediaType.APPLICATION_JSON))
 					.content("""
