@@ -73,7 +73,7 @@ class BidControllerTest {
 
 		UserDetails securityUser = org.springframework.security.core.userdetails.User
 			.withUsername(email)
-			.password("password") // 패스워드는 아무거나
+			.password("password")
 			.roles("USER")
 			.build();
 
@@ -84,7 +84,7 @@ class BidControllerTest {
 		LoginUserArgumentResolver realResolver = new LoginUserArgumentResolver(userService);
 
 		mockMvc = MockMvcBuilders.standaloneSetup(new BidController(bidService))
-			.setCustomArgumentResolvers(realResolver) // 진짜 리졸버 주입
+			.setCustomArgumentResolvers(realResolver)
 			.build();
 
 		// when & then
@@ -117,7 +117,7 @@ class BidControllerTest {
 
 		UserDetails securityUser = org.springframework.security.core.userdetails.User
 			.withUsername(email)
-			.password("password") // 패스워드는 아무거나
+			.password("password")
 			.roles("USER")
 			.build();
 

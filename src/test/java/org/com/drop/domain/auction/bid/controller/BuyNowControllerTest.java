@@ -52,7 +52,7 @@ class BuyNowControllerTest {
 		String email = "buyer@test.com";
 
 		User appUser = User.builder()
-			.id(userId) // user.getId()로 사용될 값
+			.id(userId)
 			.email(email)
 			.build();
 		given(userService.findUserByEmail(email)).willReturn(appUser);
@@ -109,7 +109,7 @@ class BuyNowControllerTest {
 
 		UserDetails securityUser = org.springframework.security.core.userdetails.User
 			.withUsername(email)
-			.password("password") // 패스워드는 아무거나
+			.password("password")
 			.roles("USER")
 			.build();
 
