@@ -77,7 +77,8 @@ class BidControllerTest {
 			.roles("USER")
 			.build();
 
-		Authentication auth = new UsernamePasswordAuthenticationToken(securityUser, null, securityUser.getAuthorities());
+		Authentication auth = new UsernamePasswordAuthenticationToken(securityUser, null,
+			securityUser.getAuthorities());
 		SecurityContextHolder.getContext().setAuthentication(auth);
 
 		LoginUserArgumentResolver realResolver = new LoginUserArgumentResolver(userService);
@@ -120,7 +121,8 @@ class BidControllerTest {
 			.roles("USER")
 			.build();
 
-		Authentication auth = new UsernamePasswordAuthenticationToken(securityUser, null, securityUser.getAuthorities());
+		Authentication auth = new UsernamePasswordAuthenticationToken(securityUser,
+			null, securityUser.getAuthorities());
 		SecurityContextHolder.getContext().setAuthentication(auth);
 
 		LoginUserArgumentResolver realResolver = new LoginUserArgumentResolver(userService);
@@ -130,10 +132,9 @@ class BidControllerTest {
 			.setControllerAdvice(new GlobalExceptionHandler())
 			.build();
 
-		given(bidService.placeBid(auctionId, appUser.getId(),new BidRequestDto(10000L)))
+		given(bidService.placeBid(auctionId, appUser.getId(), new BidRequestDto(10000L)))
 			.willThrow(new ServiceException(ErrorCode.AUCTION_BID_AMOUNT_TOO_LOW,
 				"입찰 금액이 현재 최고가보다 낮거나 최소 입찰 단위를 충족하지 못했습니다."));
-
 
 		// when & then
 		mockMvc.perform(
@@ -163,8 +164,8 @@ class BidControllerTest {
 					.with(csrf())
 					.contentType(String.valueOf(MediaType.APPLICATION_JSON))
 					.content("""
-                { "bidAmount": 10000 }
-                """)
+						{ "bidAmount": 10000 }
+								""")
 			)
 			.andDo(print()) // 로그 확인
 			.andExpect(status().isUnauthorized());

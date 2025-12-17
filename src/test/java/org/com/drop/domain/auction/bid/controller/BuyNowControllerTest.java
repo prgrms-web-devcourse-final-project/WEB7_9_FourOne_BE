@@ -43,8 +43,6 @@ class BuyNowControllerTest {
 	@MockitoBean
 	BuyNowService buyNowService;
 
-
-
 	@DisplayName("즉시구매_요청시_200과_ResponseCustom_OK_형태로_데이터를_반환한다")
 	@Test
 	void returns200AndResponseCustomOkWhenBuyNowRequested() throws Exception {
@@ -64,7 +62,8 @@ class BuyNowControllerTest {
 			.password("password")
 			.roles("USER")
 			.build();
-		Authentication auth = new UsernamePasswordAuthenticationToken(securityUser, null, securityUser.getAuthorities());
+		Authentication auth = new UsernamePasswordAuthenticationToken(securityUser, null,
+			securityUser.getAuthorities());
 		SecurityContextHolder.getContext().setAuthentication(auth);
 
 		BuyNowResponseDto serviceResponse = new BuyNowResponseDto(
@@ -82,7 +81,6 @@ class BuyNowControllerTest {
 			.setCustomArgumentResolvers(new LoginUserArgumentResolver(userService))
 			.setControllerAdvice(new GlobalExceptionHandler())
 			.build();
-
 
 		// when & then
 		mockMvc.perform(
@@ -115,7 +113,8 @@ class BuyNowControllerTest {
 			.roles("USER")
 			.build();
 
-		Authentication auth = new UsernamePasswordAuthenticationToken(securityUser, null, securityUser.getAuthorities());
+		Authentication auth = new UsernamePasswordAuthenticationToken(securityUser, null,
+			securityUser.getAuthorities());
 		SecurityContextHolder.getContext().setAuthentication(auth);
 
 		given(buyNowService.buyNow(eq(auctionId), eq(userId)))
