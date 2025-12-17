@@ -21,6 +21,7 @@ import org.com.drop.domain.user.entity.User.LoginType;
 import org.com.drop.domain.user.entity.User.UserRole;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
+import org.springframework.mail.MailException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -80,19 +81,25 @@ public class AuthService {
 	public EmailSendResponse sendVerificationCode(String email) {
 		if (userRepository.existsByEmail(email)) {
 			throw ErrorCode.AUTH_DUPLICATE_EMAIL
-				.serviceException("email=%s (이미 등록된 이메일)", email);
+				.serviceException("email=%s", email);
 		}
 
 		String code = generateRandomCode();
 
 		try {
 			verificationCodeStore.saveCode(email, code);
+			emailService.sendVerificationEmail(email, code);
+		} catch (MailException e) {
+			verificationCodeStore.removeCode(email);
+
+			throw ErrorCode.AUTH_EMAIL_SEND_FAILED
+				.serviceException("mail send failed: email=%s", email);
+
 		} catch (Exception e) {
 			throw ErrorCode.AUTH_EMAIL_SEND_FAILED
-				.serviceException("Redis 저장 실패로 인한 이메일 발송 실패: email=%s", email);
+				.serviceException("verification email process failed: email=%s", email);
 		}
 
-		emailService.sendVerificationEmail(email, code);
 		return EmailSendResponse.now();
 	}
 
