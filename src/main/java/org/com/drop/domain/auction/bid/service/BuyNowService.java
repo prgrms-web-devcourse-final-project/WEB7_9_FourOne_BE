@@ -76,8 +76,6 @@ public class BuyNowService {
 			savedWinner.getId(),
 			savedWinner.getFinalPrice(),
 			savedWinner.getWinTime()
-			// payment.paymentRequestId(),
-			// payment.paymentStatus()
 		);
 	}
 
