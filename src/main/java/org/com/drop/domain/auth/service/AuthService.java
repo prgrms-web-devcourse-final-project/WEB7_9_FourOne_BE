@@ -1,6 +1,7 @@
 package org.com.drop.domain.auth.service;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.com.drop.domain.auth.dto.LocalLoginRequest;
 import org.com.drop.domain.auth.dto.LocalLoginResponse;
@@ -40,8 +41,8 @@ public class AuthService {
 	private final JwtProvider jwtProvider;
 	private final EmailService emailService;
 	private final VerificationCodeStore verificationCodeStore;
-	private final int randomCode = (int) (Math.random() * 900_000) + 100_000;
-
+	private static final int VERIFICATION_CODE_MIN = 100_000;
+	private static final int VERIFICATION_CODE_MAX = 999_999;
 	@Transactional
 	public LocalSignUpResponse signup(LocalSignUpRequest dto) {
 
@@ -214,8 +215,10 @@ public class AuthService {
 		return new TokenRefreshResponse(newAccessToken, expiresIn);
 	}
 
+
 	private String generateRandomCode() {
-		int code = randomCode;
+		int code = ThreadLocalRandom.current()
+			.nextInt(VERIFICATION_CODE_MIN, VERIFICATION_CODE_MAX + 1);
 		return String.valueOf(code);
 	}
 }
