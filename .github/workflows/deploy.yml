@@ -50,11 +50,6 @@ jobs:
       image_name: ${{ steps.export_image.outputs.image_name }}
     steps:
       - uses: actions/checkout@v4
-      - name: application-secret 추가
-        env:
-          ACTIONS_STEP_DEBUG: true
-          APPLICATION_SECRET: ${{ secrets.APPLICATION_SECRET }}
-        run: echo "$APPLICATION_SECRET" > .env.properties
       - name: Docker Buildx 설치
         uses: docker/setup-buildx-action@v2
       - name: 레지스트리 로그인
@@ -92,12 +87,6 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      - name: 인스턴스 ID 가져오기
-        id: get_instance_id
-        run: |
-          INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=dev-ec2-1" "Name=instance-state-name,Values=running" --query "Reservations[].Instances[].InstanceId" --output text)
-          echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_ENV
-          echo $INSTANCE_ID
       - name: AWS SSM Send-Command
         uses: peterkimzz/aws-ssm-send-command@master
         id: ssm
@@ -109,8 +98,8 @@ jobs:
           working-directory: /
           comment: Deploy
           command: |
-            docker pull ghcr.io/${{ needs.buildImageAndPush.outputs.owner_lc }}/${{ needs.buildImageAndPush.outputs.image_name }}:latest && \
-            docker stop app1 2>/dev/null || true && \
-            docker rm app1 2>/dev/null || true && \
-            docker run -d --name app1 -p 8080:8080 ghcr.io/${{ needs.buildImageAndPush.outputs.owner_lc }}/${{ needs.buildImageAndPush.outputs.image_name }}:latest && \
-            docker iamge prune -f
+            docker stop dropapp 2>/dev/null || true && \
+            docker rm dropapp 2>/dev/null || true && \
+            docker pull ghcr.io/prgrms-web-devcourse-final-project/drop:latest && \
+            ${{ secrets.DOCKER_RUN_COMMAND }} && \
+            docker image prune -f
