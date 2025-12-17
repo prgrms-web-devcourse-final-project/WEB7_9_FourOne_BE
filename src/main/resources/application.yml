@@ -1,18 +1,11 @@
 spring:
     config:
         import: optional:file:.env.properties
-    profiles:
-        active: test
+
     output:
         ansi:
             enabled: always
-toss:
-    payments:
-        base-url: https://api.tosspayments.com
-        secret-key: ${TOSS_SECRET_KEY}
-        customer-key-hmac-secret: ${CUSTOMER_KEY_HMAC_SECRET}
 
-    # --- Datasource / JPA ---
     datasource:
         hikari:
             auto-commit: false
@@ -20,50 +13,43 @@ toss:
     jpa:
         hibernate:
             ddl-auto: update
+        open-in-view: false
         properties:
             hibernate:
                 format_sql: true
                 highlight_sql: true
                 use_sql_comments: true
-                dialect: org.hibernate.dialect.MySQLDialect
                 default_batch_fetch_size: 100
         show-sql: true
 
-    # --- Web / MVC ---
     mvc:
         hiddenmethod:
             filter:
                 enabled: true
-    web:
-        resources:
-            static-locations:
-                - classpath:/static/
+
     servlet:
         multipart:
             max-file-size: 10MB
             max-request-size: 10MB
 
-    jwt:
-        secret: ${JWT_KEY}
-        access-expire-minutes: 20
-        refresh-expire-days: 7
-        issuer: "DROP"
-
-    # --- Redis ---
     data:
         redis:
             host: localhost
             port: 6379
 
+toss:
+    payments:
+        base-url: https://api.tosspayments.com
+        secret-key: ${TOSS_SECRET_KEY}
+        customer-key-hmac-secret: ${CUSTOMER_KEY_HMAC_SECRET}
 
-# --- Logging ---
+jwt:
+    secret: ${JWT_KEY}
+    access-expire-minutes: 20
+    refresh-expire-days: 7
+    issuer: DROP
+
 logging:
     level:
+        org.hibernate.SQL: DEBUG
         org.hibernate.orm.jdbc.bind: TRACE
-        org.hibernate.orm.jdbc.extract: TRACE
-        org.springframework.transaction.interceptor: TRACE
-        com.rest1: DEBUG
-        com.mysite.knitly: DEBUG
-        org.springframework.security: DEBUG
-        org.springframework.security.oauth2: TRACE
-        org.springframework.web: INFO
