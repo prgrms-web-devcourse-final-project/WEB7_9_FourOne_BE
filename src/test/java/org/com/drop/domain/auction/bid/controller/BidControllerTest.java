@@ -152,22 +152,31 @@ class BidControllerTest {
 			.andDo(print());
 	}
 
-	@DisplayName("인증되지 않은 사용자가 입찰요청시 401 응답한다")
+	@DisplayName("로그인하지 않은 사용자가 입찰요청시 401 응답한다")
 	@Test
 	void returns401WhenAnonymousUserBids() throws Exception {
 		// given
 		Long auctionId = 12345L;
 
+		SecurityContextHolder.clearContext();
+
+		mockMvc = MockMvcBuilders.standaloneSetup(new BidController(bidService))
+			.setCustomArgumentResolvers(new LoginUserArgumentResolver(userService))
+			.setControllerAdvice(new GlobalExceptionHandler())
+			.build();
+
 		// when & then
 		mockMvc.perform(
-				post("/bids/{auctionId}/bids", auctionId)
+				post("/auctions/{auctionId}/bids", auctionId)
 					.with(csrf())
 					.contentType(String.valueOf(MediaType.APPLICATION_JSON))
 					.content("""
 						{ "bidAmount": 10000 }
 								""")
 			)
-			.andDo(print()) // 로그 확인
-			.andExpect(status().isUnauthorized());
+			.andDo(print())
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.message").value("로그인이 필요합니다."))
+			.andExpect(jsonPath("$.code").value("USER_UNAUTHORIZED"));
 	}
 }
