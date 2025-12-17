@@ -1,15 +1,22 @@
 package org.com.drop.domain.auction.product.qna.controller;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.List;
+
 import org.com.drop.domain.auction.product.controller.ProductController;
+import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnAAnswerRequest;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnACreateRequest;
 import org.com.drop.domain.auction.product.qna.entity.Answer;
+import org.com.drop.domain.auction.product.qna.entity.Question;
 import org.com.drop.domain.auction.product.qna.repository.AnswerRepository;
+import org.com.drop.domain.auction.product.qna.repository.QuestionRepository;
+import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -17,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -28,6 +36,7 @@ import tools.jackson.databind.ObjectMapper;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
+@WithMockUser(username = "test@drop.com", roles = {"USER"})
 public class QnaControllerTest {
 
 	private final Long productId = 1L;
@@ -45,7 +54,11 @@ public class QnaControllerTest {
 	@Autowired
 	private ObjectMapper objectMapper;
 	@Autowired
+	private QuestionRepository questionRepository;
+	@Autowired
 	private AnswerRepository answerRepository;
+	@Autowired
+	private ProductRepository productRepository;
 
 	void setUp(Object testRequestDto) throws Exception {
 		jsonContent = objectMapper.writeValueAsString(testRequestDto);
@@ -63,12 +76,12 @@ public class QnaControllerTest {
 					ProductQnACreateRequest productQnACreateRequest = new ProductQnACreateRequest(question);
 					setUp(productQnACreateRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna".formatted(productId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -93,12 +106,12 @@ public class QnaControllerTest {
 					ProductQnACreateRequest productQnACreateRequest = new ProductQnACreateRequest("");
 					setUp(productQnACreateRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna".formatted(productId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -114,12 +127,12 @@ public class QnaControllerTest {
 					ProductQnACreateRequest productQnACreateRequest = new ProductQnACreateRequest(question);
 					setUp(productQnACreateRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna".formatted(wrongProductId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -143,12 +156,12 @@ public class QnaControllerTest {
 					ProductQnAAnswerRequest productQnAAnswerRequest = new ProductQnAAnswerRequest(answer);
 					setUp(productQnAAnswerRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna/%d".formatted(productId, questionId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -173,12 +186,12 @@ public class QnaControllerTest {
 					ProductQnAAnswerRequest productQnAAnswerRequest = new ProductQnAAnswerRequest("");
 					setUp(productQnAAnswerRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna/%d".formatted(productId, questionId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -194,12 +207,12 @@ public class QnaControllerTest {
 					ProductQnAAnswerRequest productQnAAnswerRequest = new ProductQnAAnswerRequest(answer);
 					setUp(productQnAAnswerRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna/%d".formatted(wrongProductId, questionId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -217,12 +230,12 @@ public class QnaControllerTest {
 					ProductQnAAnswerRequest productQnAAnswerRequest = new ProductQnAAnswerRequest(answer);
 					setUp(productQnAAnswerRequest);
 
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							post("/api/v1/products/%d/qna/%d".formatted(productId, wrongQuestionId))
 								.contentType(MediaType.APPLICATION_JSON)
 								.content(jsonContent)
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -240,10 +253,10 @@ public class QnaControllerTest {
 				@Test
 				@DisplayName("답변 삭제 - 성공")
 				void t3() throws Exception {
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							delete("/api/v1/products/%d/qna/%d".formatted(productId, answerId))
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -261,10 +274,10 @@ public class QnaControllerTest {
 				@Test
 				@DisplayName("상품 삭제 - 실패 (상품 없음)")
 				void t3_1() throws Exception {
-					//TODO: 로그인 구현 후 인증 확인 수정 필요
 					ResultActions resultActions = mvc
 						.perform(
 							delete("/api/v1/products/%d".formatted(wrongProductId))
+								.with(csrf())
 						)
 						.andDo(print());
 
@@ -276,7 +289,79 @@ public class QnaControllerTest {
 						.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
 				}
 			}
+
+			@Nested
+			class Read {
+				@Test
+				@DisplayName("QnA 조회 - 성공")
+				void t4() throws Exception {
+					ResultActions resultActions = mvc
+						.perform(
+							get("/api/v1/products/%d/qna?page=0&size=10&sort=id,asc".formatted(productId))
+						)
+						.andDo(print());
+
+					resultActions
+						.andExpect(handler().handlerType(QnAController.class))
+						.andExpect(handler().methodName("getQna"))
+						.andExpect(status().isOk())
+						.andExpect(jsonPath("$.code").value("SUCCESS"))
+						.andExpect(jsonPath("$.status").value(200))
+						.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
+
+					Product product = productRepository.findById(productId).get();
+					List<Question> questions = questionRepository.findByProductOrderById(product);
+
+					assertThat(jsonPath("$.data.totalCount").value(questions.size()));
+
+					for (int i = 0; i < questions.size(); i++) {
+						Question question  = questions.get(i);
+						resultActions.andExpect(
+							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.qnaId".formatted(i))
+								.value(question .getId())
+						);
+						resultActions.andExpect(
+							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.questionerId"
+								.formatted(i))
+								.value(question .getQuestioner().getId())
+						);
+						resultActions.andExpect(
+							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.question"
+								.formatted(i))
+								.value(question .getQuestion())
+						);
+						List<Answer> answers = answerRepository.findByQuestion(question);
+
+						for (int j = 0; j < answers.size(); j++) {
+							Answer answer = answers.get(j);
+
+							resultActions.andExpect(
+								jsonPath("$.data.productQnAResponses[%d].answers[%d].qnaId"
+									.formatted(i, j))
+									.value(answer.getQuestion().getId())
+							);
+
+							resultActions.andExpect(
+								jsonPath("$.data.productQnAResponses[%d].answers[%d].answerId"
+									.formatted(i, j))
+									.value(answer.getId())
+							);
+
+							resultActions.andExpect(
+								jsonPath("$.data.productQnAResponses[%d].answers[%d].answererId"
+									.formatted(i, j))
+									.value(answer.getAnswerer().getId())
+							);
+
+							resultActions.andExpect(
+								jsonPath("$.data.productQnAResponses[%d].answers[%d].answer"
+									.formatted(i, j))
+									.value(answer.getAnswer())
+							);
+						}
+					}
+				}
+			}
 		}
 	}
-
 }

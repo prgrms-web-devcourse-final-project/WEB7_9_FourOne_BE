@@ -1,11 +1,13 @@
 package org.com.drop.domain.auction.product.qna.repository;
 
-import java.util.Optional;
+import java.util.List;
 
 import org.com.drop.domain.auction.product.qna.entity.Answer;
 import org.com.drop.domain.auction.product.qna.entity.Question;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AnswerRepository extends JpaRepository<Answer, Long> {
-	Optional<Object> findByQuestion(Question question);
+	List<Answer> findByQuestion(Question question);
+
+	List<Answer> findByQuestionIdInAndDeletedAtIsNull(List<Long> questionIds);
 }

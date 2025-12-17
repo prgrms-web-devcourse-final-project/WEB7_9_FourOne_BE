@@ -18,15 +18,22 @@ spring:
         console:
             enabled: true
 
+# --- Toss Payments (TEST) ---
 toss:
     payments:
         base-url: https://api.tosspayments.com
         secret-key: test_secret
         customer-key-hmac-secret: test_hmac
 
+# --- JWT (TEST) ---
 jwt:
-    secret: test_jwt_key
+    secret: test_jwt_key_test_jwt_key_test_jwt_key
     access-expire-minutes: 20
     refresh-expire-days: 7
     issuer: DROP-TEST
+
+logging:
+    level:
+        org.hibernate.SQL: DEBUG
+        org.hibernate.orm.jdbc.bind: TRACE
 
