@@ -3,6 +3,8 @@ package org.com.drop.domain.auction.auction.entity;
 import java.time.LocalDateTime;
 
 import org.com.drop.domain.auction.product.entity.Product;
+import org.com.drop.global.exception.ErrorCode;
+import org.com.drop.global.exception.ServiceException;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -65,7 +67,7 @@ public class Auction {
 
 	public void end(LocalDateTime now) {
 		if (this.status != AuctionStatus.LIVE) {
-			throw new IllegalStateException("LIVE 상태의 경매만 종료할 수 있습니다.");
+			throw new ServiceException(ErrorCode.AUCTION_NOT_LIVE, "진행 중인 경매가 아닙니다.");
 		}
 		this.status = AuctionStatus.ENDED;
 		this.endAt = now;
