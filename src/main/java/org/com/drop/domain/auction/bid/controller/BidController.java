@@ -16,7 +16,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/bids")
+@RequestMapping("/auctions")
 @RequiredArgsConstructor
 public class BidController {
 
