@@ -6,7 +6,6 @@ import static org.mockito.Mockito.*;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import org.com.drop.domain.auth.dto.GetCurrentUserInfoResponse;
 import org.com.drop.domain.auth.dto.LocalLoginRequest;
 import org.com.drop.domain.auth.dto.LocalLoginResponse;
 import org.com.drop.domain.auth.dto.LocalSignUpRequest;
@@ -18,6 +17,7 @@ import org.com.drop.domain.auth.email.service.EmailService;
 import org.com.drop.domain.auth.jwt.JwtProvider;
 import org.com.drop.domain.auth.store.RefreshTokenStore;
 import org.com.drop.domain.auth.store.VerificationCodeStore;
+import org.com.drop.domain.user.dto.GetCurrentUserInfoResponse;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;

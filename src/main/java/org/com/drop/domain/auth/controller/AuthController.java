@@ -1,6 +1,5 @@
 package org.com.drop.domain.auth.controller;
 
-import org.com.drop.domain.auth.dto.GetCurrentUserInfoResponse;
 import org.com.drop.domain.auth.dto.LocalLoginRequest;
 import org.com.drop.domain.auth.dto.LocalLoginResponse;
 import org.com.drop.domain.auth.dto.LocalSignUpRequest;
@@ -18,10 +17,7 @@ import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -119,14 +115,6 @@ public class AuthController {
 		String refreshToken = (String)request.getAttribute("validRefreshToken");
 
 		TokenRefreshResponse response = authService.refresh(refreshToken);
-		return new RsData<>(response);
-	}
-
-	@GetMapping("/me")
-	public RsData<GetCurrentUserInfoResponse> me(
-		@LoginUser User user) {
-
-		GetCurrentUserInfoResponse response = authService.getMe(user);
 		return new RsData<>(response);
 	}
 }

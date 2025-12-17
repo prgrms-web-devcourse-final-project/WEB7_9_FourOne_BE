@@ -2,7 +2,6 @@ package org.com.drop.domain.auth.service;
 
 import java.time.LocalDateTime;
 
-import org.com.drop.domain.auth.dto.GetCurrentUserInfoResponse;
 import org.com.drop.domain.auth.dto.LocalLoginRequest;
 import org.com.drop.domain.auth.dto.LocalLoginResponse;
 import org.com.drop.domain.auth.dto.LocalSignUpRequest;
@@ -152,6 +151,7 @@ public class AuthService {
 		return false;
 	}
 
+	@Transactional(readOnly = true)
 	public LocalLoginResponse login(LocalLoginRequest dto) {
 		User user = userRepository.findByEmail(dto.email())
 			.orElseThrow(() ->
@@ -212,10 +212,6 @@ public class AuthService {
 		long expiresIn = jwtProvider.getAccessTokenValidityInSeconds();
 
 		return new TokenRefreshResponse(newAccessToken, expiresIn);
-	}
-
-	public GetCurrentUserInfoResponse getMe(User user) {
-		return GetCurrentUserInfoResponse.of(user);
 	}
 
 	private String generateRandomCode() {
