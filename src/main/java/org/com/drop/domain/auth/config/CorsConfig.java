@@ -18,8 +18,8 @@ public class CorsConfig {
 		config.setAllowedOrigins(List.of(
 			"http://localhost:3000",
 			"http://127.0.0.1:3000",
-			// TODO: 실제 프론트엔드 도메인 추가
-			"http://wow"
+			"https://khee.store",
+			"https://www.khee.store"
 		));
 		config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 		config.setAllowedHeaders(List.of("*"));
