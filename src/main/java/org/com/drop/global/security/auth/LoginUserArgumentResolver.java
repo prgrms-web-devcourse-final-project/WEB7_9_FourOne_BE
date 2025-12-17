@@ -36,7 +36,7 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
 		if (authentication == null || !(authentication.getPrincipal() instanceof UserDetails)) {
-			return null;
+			throw ErrorCode.USER_UNAUTHORIZED.serviceException("인증 정보가 없습니다.");
 		}
 
 		UserDetails userDetails = (UserDetails) authentication.getPrincipal();
