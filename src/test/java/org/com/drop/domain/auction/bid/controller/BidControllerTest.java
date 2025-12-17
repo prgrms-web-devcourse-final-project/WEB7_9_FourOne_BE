@@ -1,6 +1,7 @@
 package org.com.drop.domain.auction.bid.controller;
 
 import static org.mockito.BDDMockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -11,19 +12,32 @@ import org.com.drop.domain.auction.bid.dto.request.BidRequestDto;
 import org.com.drop.domain.auction.bid.dto.response.BidResponseDto;
 import org.com.drop.domain.auction.bid.service.BidService;
 import org.com.drop.domain.auth.jwt.JwtProvider;
+import org.com.drop.domain.auth.service.RefreshTokenFilter;
+import org.com.drop.domain.user.entity.User;
+import org.com.drop.domain.user.service.UserService;
 import org.com.drop.global.exception.ErrorCode;
+import org.com.drop.global.exception.GlobalExceptionHandler;
 import org.com.drop.global.exception.ServiceException;
+import org.com.drop.global.security.auth.LoginUserArgumentResolver;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MediaType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 @WebMvcTest(BidController.class)
-@AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureMockMvc
+@Import(GlobalExceptionHandler.class)
 class BidControllerTest {
 
 	@Autowired
@@ -33,58 +47,98 @@ class BidControllerTest {
 	JwtProvider jwtProvider;
 
 	@MockitoBean
+	private RefreshTokenFilter refreshTokenFilter;
+
+	@MockitoBean
+	UserService userService;
+
+	@MockitoBean
 	BidService bidService;
 
 	@DisplayName("입찰요청이 오면 200과 BidResponseDto를 반환한다")
 	@Test
 	void returns200AndBidResponseDtoWhenBidRequested() throws Exception {
-		//given
+		// given
 		Long auctionId = 12345L;
-		Long userId = 987L;
-
+		Long userId = 1L;
+		String email = "test@test.com";
 		LocalDateTime bidTime = LocalDateTime.of(2025, 12, 5, 15, 50);
 
-		BidResponseDto serviceResponse = BidResponseDto.of(
-			auctionId,
-			true,
-			11_000L,
-			bidTime
-		);
+		User appUser = User.builder().id(userId).email(email).build();
 
-		given(bidService.placeBid(eq(auctionId), eq(userId), any(BidRequestDto.class)))
-			.willReturn(serviceResponse);
+		given(userService.findUserByEmail(eq(email))).willReturn(appUser);
 
-		//when&then
+		BidResponseDto serviceResponse = BidResponseDto.of(auctionId, true, 11_000L, bidTime);
+		given(bidService.placeBid(any(), any(), any())).willReturn(serviceResponse);
+
+		UserDetails securityUser = org.springframework.security.core.userdetails.User
+			.withUsername(email)
+			.password("password") // 패스워드는 아무거나
+			.roles("USER")
+			.build();
+
+		Authentication auth = new UsernamePasswordAuthenticationToken(securityUser, null, securityUser.getAuthorities());
+		SecurityContextHolder.getContext().setAuthentication(auth);
+
+		LoginUserArgumentResolver realResolver = new LoginUserArgumentResolver(userService);
+
+		mockMvc = MockMvcBuilders.standaloneSetup(new BidController(bidService))
+			.setCustomArgumentResolvers(realResolver) // 진짜 리졸버 주입
+			.build();
+
+		// when & then
 		mockMvc.perform(
 				post("/bids/{auctionId}/bids", auctionId)
-					.queryParam("userId", String.valueOf(userId))
+					.with(csrf())
 					.contentType(String.valueOf(MediaType.APPLICATION_JSON))
 					.content("""
 						{ "bidAmount": 11000 }
 						""")
 			)
+			.andDo(print())
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data.auctionId").value(12345))
-			.andExpect(jsonPath("$.data.isHighestBidder").value(true))
 			.andExpect(jsonPath("$.data.currentHighestBid").value(11000))
+			.andExpect(jsonPath("$.data.isHighestBidder").value(true))
 			.andExpect(jsonPath("$.data.bidTime").value("2025-12-05T15:50:00"));
 	}
 
 	@DisplayName("최소입찰단위 미만이면 400으로 에러응답한다")
 	@Test
+	@WithMockUser(username = "test@test.com")
 	void returns400WhenBidAmountBelowBidUnit() throws Exception {
 		// given
 		Long auctionId = 12345L;
-		Long userId = 987L;
-		// 서비스에서 예외 던지도록 설정
-		given(bidService.placeBid(auctionId, userId, new BidRequestDto(10000L)))
+		String email = "test@test.com";
+
+		User appUser = User.builder().id(1L).email(email).build();
+		given(userService.findUserByEmail(email)).willReturn(appUser);
+
+		UserDetails securityUser = org.springframework.security.core.userdetails.User
+			.withUsername(email)
+			.password("password") // 패스워드는 아무거나
+			.roles("USER")
+			.build();
+
+		Authentication auth = new UsernamePasswordAuthenticationToken(securityUser, null, securityUser.getAuthorities());
+		SecurityContextHolder.getContext().setAuthentication(auth);
+
+		LoginUserArgumentResolver realResolver = new LoginUserArgumentResolver(userService);
+
+		mockMvc = MockMvcBuilders.standaloneSetup(new BidController(bidService))
+			.setCustomArgumentResolvers(realResolver)
+			.setControllerAdvice(new GlobalExceptionHandler())
+			.build();
+
+		given(bidService.placeBid(auctionId, appUser.getId(),new BidRequestDto(10000L)))
 			.willThrow(new ServiceException(ErrorCode.AUCTION_BID_AMOUNT_TOO_LOW,
 				"입찰 금액이 현재 최고가보다 낮거나 최소 입찰 단위를 충족하지 못했습니다."));
+
 
 		// when & then
 		mockMvc.perform(
 				post("/bids/{auctionId}/bids", auctionId)
-					.queryParam("userId", String.valueOf(userId))
+					.with(csrf())
 					.contentType(String.valueOf(MediaType.APPLICATION_JSON))
 					.content("""
 							{ "bidAmount": 10000 }
@@ -95,5 +149,24 @@ class BidControllerTest {
 			.andExpect(jsonPath("$.code").value("AUCTION_BID_AMOUNT_TOO_LOW"))
 			.andExpect(jsonPath("$.message").value("입찰 금액이 현재 최고가보다 낮거나 최소 입찰 단위를 충족하지 못했습니다."))
 			.andDo(print());
+	}
+
+	@DisplayName("인증되지 않은 사용자가 입찰요청시 401 응답한다")
+	@Test
+	void returns401WhenAnonymousUserBids() throws Exception {
+		// given
+		Long auctionId = 12345L;
+
+		// when & then
+		mockMvc.perform(
+				post("/bids/{auctionId}/bids", auctionId)
+					.with(csrf())
+					.contentType(String.valueOf(MediaType.APPLICATION_JSON))
+					.content("""
+                { "bidAmount": 10000 }
+                """)
+			)
+			.andDo(print()) // 로그 확인
+			.andExpect(status().isUnauthorized());
 	}
 }
