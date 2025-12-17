@@ -21,7 +21,6 @@ import org.com.drop.domain.user.entity.User.LoginType;
 import org.com.drop.domain.user.entity.User.UserRole;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
-import org.springframework.mail.MailException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,24 +39,23 @@ public class AuthService {
 	private final JwtProvider jwtProvider;
 	private final EmailService emailService;
 	private final VerificationCodeStore verificationCodeStore;
+
 	private static final int VERIFICATION_CODE_MIN = 100_000;
 	private static final int VERIFICATION_CODE_MAX = 999_999;
+
 	@Transactional
 	public LocalSignUpResponse signup(LocalSignUpRequest dto) {
 
 		if (!verificationCodeStore.isVerified(dto.email())) {
-			throw ErrorCode.AUTH_CODE_EXPIRED
-				.serviceException("email=%s", dto.email());
+			throw ErrorCode.AUTH_CODE_EXPIRED.serviceException("인증되지 않은 이메일입니다: email=%s", dto.email());
 		}
 
 		if (userRepository.existsByEmail(dto.email())) {
-			throw ErrorCode.AUTH_DUPLICATE_EMAIL
-				.serviceException("email=%s", dto.email());
+			throw ErrorCode.AUTH_DUPLICATE_EMAIL.serviceException("중복된 이메일입니다: email=%s", dto.email());
 		}
 
 		if (userRepository.existsByNickname(dto.nickname())) {
-			throw ErrorCode.AUTH_DUPLICATE_NICKNAME
-				.serviceException("nickname=%s", dto.nickname());
+			throw ErrorCode.AUTH_DUPLICATE_NICKNAME.serviceException("중복된 닉네임입니다: nickname=%s", dto.nickname());
 		}
 
 		User user = User.builder()
@@ -78,8 +76,7 @@ public class AuthService {
 
 	public EmailSendResponse sendVerificationCode(String email) {
 		if (userRepository.existsByEmail(email)) {
-			throw ErrorCode.AUTH_DUPLICATE_EMAIL
-				.serviceException("email=%s", email);
+			throw ErrorCode.AUTH_DUPLICATE_EMAIL.serviceException("이미 가입된 이메일입니다: email=%s", email);
 		}
 
 		String code = generateRandomCode();
@@ -87,15 +84,9 @@ public class AuthService {
 		try {
 			verificationCodeStore.saveCode(email, code);
 			emailService.sendVerificationEmail(email, code);
-		} catch (MailException e) {
-			verificationCodeStore.removeCode(email);
-
-			throw ErrorCode.AUTH_EMAIL_SEND_FAILED
-				.serviceException("mail send failed: email=%s", email);
-
 		} catch (Exception e) {
-			throw ErrorCode.AUTH_EMAIL_SEND_FAILED
-				.serviceException("verification email process failed: email=%s", email);
+			verificationCodeStore.removeCode(email);
+			throw ErrorCode.AUTH_EMAIL_SEND_FAILED.serviceException("이메일 발송 중 오류 발생: email=%s, error=%s", email, e.getMessage());
 		}
 
 		return EmailSendResponse.now();
@@ -106,17 +97,14 @@ public class AuthService {
 	}
 
 	public EmailVerifyResponse verifyCode(String email, String submittedCode) {
-
 		String storedCode = verificationCodeStore.getCode(email);
 
 		if (storedCode == null) {
-			throw ErrorCode.AUTH_CODE_EXPIRED
-				.serviceException("인증 코드가 만료되었거나 존재하지 않습니다. email=%s", email);
+			throw ErrorCode.AUTH_CODE_EXPIRED.serviceException("인증 코드가 만료되었거나 존재하지 않습니다: email=%s", email);
 		}
 
 		if (!storedCode.equals(submittedCode)) {
-			throw ErrorCode.AUTH_CODE_MISMATCH
-				.serviceException("인증 코드가 일치하지 않습니다. email=%s", email);
+			throw ErrorCode.AUTH_CODE_MISMATCH.serviceException("인증 코드가 일치하지 않습니다: email=%s", email);
 		}
 
 		verificationCodeStore.removeCode(email);
@@ -127,17 +115,11 @@ public class AuthService {
 
 	@Transactional
 	public UserDeleteResponse deleteAccount(User user, UserDeleteRequest request) {
-
 		if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-			throw ErrorCode.AUTH_PASSWORD_MISMATCH
-				.serviceException("userId=%d", user.getId());
+			throw ErrorCode.AUTH_PASSWORD_MISMATCH.serviceException("비밀번호 불일치로 탈퇴 실패: userId=%d", user.getId());
 		}
 
-		if (userHasActiveAuctionsOrTrades(user)) {
-			throw ErrorCode.USER_HAS_ACTIVE_AUCTIONS
-				.serviceException("userId=%d", user.getId());
-		}
-
+		// TODO: 진행 중인 경매 체크 로직 보완 필요
 		user.markAsDeleted();
 		userRepository.save(user);
 
@@ -152,40 +134,24 @@ public class AuthService {
 		refreshTokenStore.delete(email);
 	}
 
-	private boolean userHasActiveAuctionsOrTrades(User user) {
-		// TODO: 진행 중인 경매나 입찰이 있는 경우 처리
-		return false;
-	}
-
 	@Transactional(readOnly = true)
 	public LocalLoginResponse login(LocalLoginRequest dto) {
 		User user = userRepository.findByEmail(dto.email())
-			.orElseThrow(() ->
-				ErrorCode.AUTH_UNAUTHORIZED
-					.serviceException("email=%s", dto.email())
-			);
+			.orElseThrow(() -> ErrorCode.AUTH_UNAUTHORIZED.serviceException("존재하지 않는 사용자입니다: email=%s", dto.email()));
 
 		if (!passwordEncoder.matches(dto.password(), user.getPassword())) {
-			throw ErrorCode.AUTH_UNAUTHORIZED
-				.serviceException("userId=%d (password mismatch)", user.getId());
+			throw ErrorCode.AUTH_UNAUTHORIZED.serviceException("비밀번호가 일치하지 않습니다: userId=%d", user.getId());
 		}
 
 		String accessToken = jwtProvider.createAccessToken(user.getEmail());
 		long expiresIn = jwtProvider.getAccessTokenValidityInSeconds();
 
-		return new LocalLoginResponse(
-			user.getId(),
-			user.getEmail(),
-			user.getNickname(),
-			accessToken,
-			expiresIn
-		);
+		return new LocalLoginResponse(user.getId(), user.getEmail(), user.getNickname(), accessToken, expiresIn);
 	}
 
 	public void logout(User user) {
 		if (user == null) {
-			throw ErrorCode.AUTH_UNAUTHORIZED
-				.serviceException("No authenticated user found for logout.");
+			throw ErrorCode.AUTH_UNAUTHORIZED.serviceException("로그아웃할 인증 유저 정보가 없습니다.");
 		}
 
 		refreshTokenStore.delete(user.getEmail());
@@ -193,24 +159,17 @@ public class AuthService {
 
 	public TokenRefreshResponse refresh(String refreshToken) {
 		String email;
-
 		try {
 			email = jwtProvider.getUsername(refreshToken);
 		} catch (Exception e) {
-			throw ErrorCode.AUTH_TOKEN_INVALID
-				.serviceException("refreshToken parsing failed");
+			throw ErrorCode.AUTH_TOKEN_INVALID.serviceException("토큰 파싱 실패: %s", e.getMessage());
 		}
 
 		if (!refreshTokenStore.exists(email, refreshToken)) {
-			throw ErrorCode.AUTH_TOKEN_INVALID
-				.serviceException(
-					"refreshToken not found in store, email=%s",
-					email
-				);
+			throw ErrorCode.AUTH_TOKEN_INVALID.serviceException("저장소에 존재하지 않는 토큰입니다: email=%s", email);
 		}
 
 		String newAccessToken = jwtProvider.createAccessToken(email);
-
 		long expiresIn = jwtProvider.getAccessTokenValidityInSeconds();
 
 		return new TokenRefreshResponse(newAccessToken, expiresIn);
@@ -218,8 +177,7 @@ public class AuthService {
 
 
 	private String generateRandomCode() {
-		int code = ThreadLocalRandom.current()
-			.nextInt(VERIFICATION_CODE_MIN, VERIFICATION_CODE_MAX + 1);
+		int code = ThreadLocalRandom.current().nextInt(VERIFICATION_CODE_MIN, VERIFICATION_CODE_MAX + 1);
 		return String.valueOf(code);
 	}
 }
