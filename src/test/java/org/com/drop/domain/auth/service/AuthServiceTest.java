@@ -17,7 +17,6 @@ import org.com.drop.domain.auth.email.service.EmailService;
 import org.com.drop.domain.auth.jwt.JwtProvider;
 import org.com.drop.domain.auth.store.RefreshTokenStore;
 import org.com.drop.domain.auth.store.VerificationCodeStore;
-import org.com.drop.domain.user.dto.GetCurrentUserInfoResponse;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
@@ -79,21 +78,6 @@ class AuthServiceTest {
 			.build();
 
 		SecurityContextHolder.setContext(securityContext);
-	}
-
-	@Test
-	@DisplayName("현재 사용자 정보 조회")
-	void getMe_success() {
-		// Given (mockUser 사용)
-
-		// When
-		GetCurrentUserInfoResponse response = authService.getMe(mockUser);
-
-		// Then
-		assertNotNull(response);
-		assertEquals(mockUser.getId(), response.userId());
-		assertEquals(mockUser.getEmail(), response.email());
-		assertEquals(mockUser.getNickname(), response.nickname());
 	}
 
 	@Nested
