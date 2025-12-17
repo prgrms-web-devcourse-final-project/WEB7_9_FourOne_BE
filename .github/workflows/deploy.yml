@@ -105,6 +105,6 @@ jobs:
             docker rm dropapp || true
             docker pull ghcr.io/prgrms-web-devcourse-final-project/drop:latest
             echo "RUN START"
-            '"${{ secrets.DOCKER_RUN }}"'
+            ${{ secrets.DOCKER_RUN }}
             echo "RUN END"
             docker ps -a
