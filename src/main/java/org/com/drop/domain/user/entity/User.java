@@ -76,4 +76,10 @@ public class User {
 	public void markAsDeleted() {
 		this.deletedAt = LocalDateTime.now();
 	}
+
+	public void updateProfile(String nickname, String userProfile) {
+		if (userProfile != null) {
+			this.userProfile = userProfile;
+		}
+	}
 }

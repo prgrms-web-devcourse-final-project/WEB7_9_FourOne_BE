@@ -2,15 +2,20 @@ package org.com.drop.domain.user.controller;
 
 import org.com.drop.domain.user.dto.MyBookmarkPageResponse;
 import org.com.drop.domain.user.dto.MyPageResponse;
+import org.com.drop.domain.user.dto.UpdateProfileRequest;
+import org.com.drop.domain.user.dto.UpdateProfileResponse;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.service.UserService;
 import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -34,6 +39,15 @@ public class UserController {
 		@RequestParam(defaultValue = "1") int page) {
 
 		MyBookmarkPageResponse response = userService.getMyBookmarks(user, page);
+		return new RsData<>(response);
+	}
+
+	@PatchMapping("/me/profile")
+	public RsData<UpdateProfileResponse> updateProfile(
+		@LoginUser User user,
+		@Valid @RequestBody UpdateProfileRequest dto) {
+
+		UpdateProfileResponse response = userService.updateProfile(user, dto);
 		return new RsData<>(response);
 	}
 }

@@ -13,6 +13,8 @@ import org.com.drop.domain.auction.product.repository.ProductImageRepository;
 import org.com.drop.domain.user.dto.MyAuctionListResponse;
 import org.com.drop.domain.user.dto.MyBookmarkPageResponse;
 import org.com.drop.domain.user.dto.MyPageResponse;
+import org.com.drop.domain.user.dto.UpdateProfileRequest;
+import org.com.drop.domain.user.dto.UpdateProfileResponse;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
@@ -65,6 +67,25 @@ public class UserService {
 			.toList();
 
 		return new MyBookmarkPageResponse(page, bookmarkPage.getTotalElements(), dtoList);
+	}
+
+	@Transactional
+	public UpdateProfileResponse updateProfile(User user, UpdateProfileRequest dto) {
+		if (!user.getNickname().equals(dto.nickname()) && userRepository.existsByNickname(dto.nickname())) {
+			throw ErrorCode.USER_NICKNAME_CONFLICT
+				.serviceException("이미 사용 중인 닉네임입니다: nickname=%s", dto.nickname());
+		}
+
+		if (dto.profileImageUrl() != null && user.getUserProfile() != null) {
+			if (!user.getUserProfile().equals(dto.profileImageUrl())) {
+				// TODO: 이미지 S3 삭제 로직 추가
+			}
+		}
+
+		user.updateProfile(dto.nickname(), dto.profileImageUrl());
+		userRepository.save(user);
+
+		return UpdateProfileResponse.of(user);
 	}
 
 	private Map<Long, String> getProductMainImageMap(List<BookMark> bookmarks) {
