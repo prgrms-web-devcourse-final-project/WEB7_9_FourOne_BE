@@ -29,7 +29,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -55,9 +54,6 @@ class AuthServiceTest {
 
 	@Mock
 	private SecurityContext securityContext;
-
-	@Mock
-	private Authentication authentication;
 
 	@Mock
 	private EmailService emailService;

@@ -94,7 +94,7 @@ public class AuthController {
 		@LoginUser User user,
 		HttpServletResponse response
 	) {
-		authService.logout();
+		authService.logout(user);
 
 		response.addHeader(
 			HttpHeaders.SET_COOKIE,
