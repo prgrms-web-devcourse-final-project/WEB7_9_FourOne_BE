@@ -150,10 +150,6 @@ public class AuthService {
 	}
 
 	public void logout(User user) {
-		if (user == null) {
-			throw ErrorCode.AUTH_UNAUTHORIZED.serviceException("로그아웃할 인증 유저 정보가 없습니다.");
-		}
-
 		refreshTokenStore.delete(user.getEmail());
 	}
 

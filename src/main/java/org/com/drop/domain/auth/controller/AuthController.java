@@ -63,10 +63,10 @@ public class AuthController {
 	@PostMapping("/delete")
 	public RsData<UserDeleteResponse> deleteAccount(
 		@LoginUser User user,
-		@Validated @RequestBody UserDeleteRequest request) {
+		@Valid @RequestBody UserDeleteRequest request) {
 
 		UserDeleteResponse response = authService.deleteAccount(user, request);
-		return new RsData<>(200, response);
+		return new RsData<>(response);
 	}
 
 	@PostMapping("/login")
