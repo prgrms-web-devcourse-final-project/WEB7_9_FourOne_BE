@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
 import org.com.drop.domain.auction.bid.dto.request.BidRequestDto;
+import org.com.drop.domain.auction.bid.dto.response.BidHistoryResponse;
 import org.com.drop.domain.auction.bid.dto.response.BidResponseDto;
 import org.com.drop.domain.auction.bid.entity.Bid;
 import org.com.drop.domain.auction.bid.repository.BidRepository;
@@ -12,6 +13,8 @@ import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -78,5 +81,11 @@ public class BidService {
 			currentHighestBid,
 			bid.getCreatedAt()
 		);
+	}
+
+	public Page<BidHistoryResponse> getBidHistory(Long auctionId, Pageable pageable) {
+		Page<Bid> bidsPage = bidRepository.findAllByAuctionId( auctionId, pageable);
+		return bidsPage.map(BidHistoryResponse::from);
+
 	}
 }
