@@ -5,8 +5,8 @@ import org.com.drop.domain.auction.auction.dto.AuctionCreateResponse;
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.service.AuctionService;
 import org.com.drop.domain.user.entity.User;
-import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.rsdata.RsData;
+import org.com.drop.global.security.auth.LoginUser;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,18 +22,14 @@ public class AuctionController {
 
 	private final AuctionService auctionService;
 
-	//임시 설정
-	private final UserRepository userRepository;
-
 	@PostMapping
 	public RsData<AuctionCreateResponse> addProduct(
-		@RequestBody
-		@Valid
-		AuctionCreateRequest request) {
-		//TODO : rq 구현 후 수정
-		User actor = userRepository.findById(1L).get();
+		@LoginUser User actor,
+		@RequestBody @Valid AuctionCreateRequest request
+	) {
 		Auction auction = auctionService.addAuction(request, actor);
 		return new RsData<>(
+			201,
 			new AuctionCreateResponse(auction)
 		);
 	}
