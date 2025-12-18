@@ -14,5 +14,6 @@ public record TossWebhookRequest(
 		String orderId,
 		String status,
 		Long totalAmount
-	) {};
+	) {
+	}
 }

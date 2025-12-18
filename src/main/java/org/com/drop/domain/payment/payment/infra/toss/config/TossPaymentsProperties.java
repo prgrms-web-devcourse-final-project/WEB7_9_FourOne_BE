@@ -7,4 +7,5 @@ public record TossPaymentsProperties(
 	String baseUrl,
 	String secretKey,
 	String customerKeyHmacSecret
-) { }
+) {
+}

@@ -11,4 +11,5 @@ public record TossAutoPayRequest(
 	String customerEmail,
 	String customerName,
 	String customerMobilePhone
-) { }
+) {
+}

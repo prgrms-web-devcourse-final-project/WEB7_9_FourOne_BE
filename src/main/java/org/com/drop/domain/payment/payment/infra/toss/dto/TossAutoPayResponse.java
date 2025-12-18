@@ -19,5 +19,6 @@ public record TossAutoPayResponse(
 		String number,
 		String cardType,
 		String ownerType
-	) {};
+	) {
+	}
 }
