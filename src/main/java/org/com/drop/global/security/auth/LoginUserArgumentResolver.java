@@ -2,6 +2,7 @@ package org.com.drop.global.security.auth;
 
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.service.UserService;
+import org.com.drop.global.exception.ErrorCode;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,7 +37,7 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
 		if (authentication == null || !(authentication.getPrincipal() instanceof UserDetails)) {
-			return null;
+			throw ErrorCode.USER_UNAUTHORIZED.serviceException("인증 정보가 없습니다.");
 		}
 
 		UserDetails userDetails = (UserDetails) authentication.getPrincipal();

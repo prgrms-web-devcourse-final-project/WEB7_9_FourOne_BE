@@ -46,7 +46,9 @@ public class InitData {
 
 	@Transactional
 	public void work() {
-
+		if (userRepository.findByEmail("user1@example.com").isPresent()) {
+			return;
+		}
 		User user1 = User.builder()
 			.email("user1@example.com")
 			.nickname("유저1")
