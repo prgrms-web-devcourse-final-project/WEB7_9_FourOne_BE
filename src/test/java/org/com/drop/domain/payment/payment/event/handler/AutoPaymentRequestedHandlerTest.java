@@ -1,5 +1,7 @@
 package org.com.drop.domain.payment.payment.event.handler;
 
+import static org.mockito.Mockito.*;
+
 import org.com.drop.domain.payment.payment.domain.Payment;
 import org.com.drop.domain.payment.payment.domain.PaymentStatus;
 import org.com.drop.domain.payment.payment.event.AutoPaymentRequestedEvent;
@@ -10,9 +12,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
-
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AutoPaymentRequestedHandlerTest {

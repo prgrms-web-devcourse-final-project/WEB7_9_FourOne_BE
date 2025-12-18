@@ -1,5 +1,10 @@
 package org.com.drop.domain.payment.payment.service;
 
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.time.LocalDateTime;
+
 import org.com.drop.domain.payment.payment.domain.Payment;
 import org.com.drop.domain.payment.payment.domain.PaymentStatus;
 import org.com.drop.domain.payment.payment.infra.toss.TossPaymentsClient;
@@ -15,19 +20,16 @@ import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.time.LocalDateTime;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
 @SpringBootTest(
 	properties = {
 		"springdoc.api-docs.enabled=false",
@@ -50,6 +52,16 @@ class PaymentServiceImplTest {
 			.withDatabaseName("test")
 			.withUsername("test")
 			.withPassword("test");
+	@Autowired
+	PaymentRepository paymentRepository;
+	@Autowired
+	SettlementRepository settlementRepository;
+	@Autowired
+	WinnerRepository winnerRepository;
+	@MockitoBean
+	SecurityFilterChain securityFilterChain;
+	TossPaymentsClient tossPaymentsClient = mock(TossPaymentsClient.class);
+	CustomerKeyGenerator customerKeyGenerator = mock(CustomerKeyGenerator.class);
 
 	@DynamicPropertySource
 	static void overrideProps(DynamicPropertyRegistry registry) {
@@ -61,18 +73,6 @@ class PaymentServiceImplTest {
 		registry.add("spring.jpa.hibernate.ddl-auto",
 			() -> "create-drop");
 	}
-
-	@Autowired
-	PaymentRepository paymentRepository;
-
-	@Autowired
-	SettlementRepository settlementRepository;
-
-	@Autowired
-	WinnerRepository winnerRepository;
-
-	TossPaymentsClient tossPaymentsClient = mock(TossPaymentsClient.class);
-	CustomerKeyGenerator customerKeyGenerator = mock(CustomerKeyGenerator.class);
 
 	@Test
 	void createPayment_createsRequestedPaymentWithSellerId() {
