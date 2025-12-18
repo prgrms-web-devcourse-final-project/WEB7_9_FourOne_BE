@@ -18,7 +18,6 @@ import org.com.drop.domain.auction.product.repository.ProductImageRepository;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,7 +37,6 @@ import tools.jackson.databind.ObjectMapper;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
-@WithMockUser(username = "test@drop.com", roles = {"USER"})
 public class ProductControllerTest {
 
 	private final Long productId = 2L;
@@ -53,7 +51,6 @@ public class ProductControllerTest {
 	private final List<String> images = List.of("img1.png", "img2.png");
 	private final List<String> updatedImages = List.of("UpdatedImg1.png", "UpdatedImg2.png");
 	private String jsonContent;
-	private Long testUserId;
 
 	@Autowired
 	private MockMvc mvc;
@@ -68,18 +65,8 @@ public class ProductControllerTest {
 	@Autowired
 	private BookmarkRepository bookmarkRepository;
 
-	@BeforeEach
-	void setupUser() {
-		Optional<User> userOptional = userRepository.findByEmail("test@drop.com");
-		if (userOptional.isEmpty()) {
-			testUserId = 1L;
-		} else {
-			testUserId = userOptional.get().getId();
-		}
-	}
-
 	void setUp(String name, String description, Product.Category category, Product.SubCategory subCategory,
-		List<String> images) throws Exception {
+		List<String> images) {
 		ProductCreateRequest testRequestDto = new ProductCreateRequest(
 			name,
 			description,
@@ -97,6 +84,7 @@ public class ProductControllerTest {
 		@Nested
 		class Exhibit {
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 출품 - 성공")
 			void t1() throws Exception {
 				setUp(name, description, category, subCategory, images);
@@ -106,7 +94,6 @@ public class ProductControllerTest {
 						post("/api/v1/products")
 							.contentType(MediaType.APPLICATION_JSON)
 							.content(jsonContent)
-							.with(csrf())
 					)
 					.andDo(print());
 
@@ -132,6 +119,7 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 출품 - 실패 - 필수값(이름) 누락")
 			void t1_1() throws Exception {
 				setUp("", description, category, subCategory, images);
@@ -140,18 +128,32 @@ public class ProductControllerTest {
 						post("/api/v1/products")
 							.contentType(MediaType.APPLICATION_JSON)
 							.content(jsonContent)
-							.with(csrf())
 					)
 					.andDo(print());
 
 				resultActions
 					.andExpect(status().isBadRequest());
 			}
+
+			@Test
+			@DisplayName("상품 출품 - 실패 (로그인 없음)")
+			void t1_2() throws Exception {
+				setUp(name, description, category, subCategory, images);
+
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+					).andDo(print());
+				resultActions.andExpect(status().isForbidden());
+			}
 		}
 
 		@Nested
 		class Update {
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 수정 - 성공")
 			void t2() throws Exception {
 				setUp(updatedName, description, category, subCategory, updatedImages);
@@ -188,6 +190,7 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 수정 - 실패 (잘못된 상품 id)")
 			void t2_1() throws Exception {
 				setUp(updatedName, description, category, subCategory, images);
@@ -209,6 +212,7 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 수정 - 실패 (필수값(이름) 누락)")
 			void t2_2() throws Exception {
 				setUp("", description, category, subCategory, images);
@@ -226,6 +230,7 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 수정 - 실패 (경매 이미 시작)")
 			void t2_3() throws Exception {
 				setUp(updatedName, description, category, subCategory, images);
@@ -250,11 +255,26 @@ public class ProductControllerTest {
 					.andExpect(jsonPath("$.code").value("PRODUCT_ALREADY_ON_AUCTION"))
 					.andExpect(jsonPath("$.message").value("이미 경매가 시작된 상품입니다."));
 			}
+
+			@Test
+			@DisplayName("상품 수정 - 실패 (로그인 없음)")
+			void t2_4() throws Exception {
+				setUp(updatedName, description, category, subCategory, updatedImages);
+				ResultActions resultActions = mvc
+					.perform(
+						put("/api/v1/products/%d".formatted(auctionId))
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+					)
+					.andDo(print());
+				resultActions.andExpect(status().isForbidden());
+			}
 		}
 
 		@Nested
 		class Delete {
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 삭제 - 성공")
 			void t3() throws Exception {
 				ResultActions resultActions = mvc
@@ -278,6 +298,7 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 삭제 - 실패 (상품 없음)")
 			void t3_1() throws Exception {
 				ResultActions resultActions = mvc
@@ -296,6 +317,7 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 삭제 - 실패 (경매 이미 시작)")
 			void t3_2() throws Exception {
 				try {
@@ -317,6 +339,17 @@ public class ProductControllerTest {
 					.andExpect(jsonPath("$.code").value("PRODUCT_ALREADY_ON_AUCTION"))
 					.andExpect(jsonPath("$.message").value("이미 경매가 시작된 상품입니다."));
 			}
+
+			@Test
+			@DisplayName("상품 삭제 - 실패 (로그인 없음)")
+			void t1_2() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						delete("/api/v1/products/%d".formatted(productId))
+					)
+					.andDo(print());
+				resultActions.andExpect(status().isForbidden());
+			}
 		}
 	}
 
@@ -325,6 +358,7 @@ public class ProductControllerTest {
 		@Nested
 		class Create {
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("북마크 등록 - 성공")
 			void t4() throws Exception {
 				ResultActions resultActions = mvc
@@ -349,6 +383,7 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("북마크 등록 - 실패 (상품 없음)")
 			void t4_1() throws Exception {
 				ResultActions resultActions = mvc
@@ -368,6 +403,7 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("북마크 등록 - 실패 (이미 등록)")
 			void t4_2() throws Exception {
 				ResultActions resultActions0 = mvc
@@ -389,16 +425,29 @@ public class ProductControllerTest {
 					.andExpect(jsonPath("$.httpStatus").value(409))
 					.andExpect(jsonPath("$.message").value("이미 찜한 상품입니다."));
 			}
+
+			@Test
+			@DisplayName("북마크 등록 - 실패 (로그인 없음)")
+			void t1_2() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products/%d/bookmarks".formatted(productId))
+					)
+					.andDo(print());
+				resultActions.andExpect(status().isForbidden());
+			}
 		}
 
 		@Nested
 		class Delete {
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("북마크 삭제 - 성공")
 			void t5() throws Exception {
 				ResultActions resultActions0 = mvc
 					.perform(
 						post("/api/v1/products/%d/bookmarks".formatted(productId))
+							.with(csrf())
 					).andDo(print());
 				ResultActions resultActions = mvc
 					.perform(
@@ -422,6 +471,7 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("북마크 삭제 - 실패 (상품 없음)")
 			void t5_1() throws Exception {
 				ResultActions resultActions = mvc
@@ -441,6 +491,7 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("북마크 삭제 - 실패 (등록 이력 없음)")
 			void t5_2() throws Exception {
 				ResultActions resultActions = mvc
@@ -457,6 +508,17 @@ public class ProductControllerTest {
 					.andExpect(jsonPath("$.code").value("USER_BOOKMARK_NOT_FOUND"))
 					.andExpect(jsonPath("$.httpStatus").value(404))
 					.andExpect(jsonPath("$.message").value("찜한 상품이 아닙니다."));
+			}
+
+			@Test
+			@DisplayName("북마크 삭제 - 실패 (로그인 없음)")
+			void t1_2() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						delete("/api/v1/products/%d/bookmarks".formatted(productId))
+					)
+					.andDo(print());
+				resultActions.andExpect(status().isForbidden());
 			}
 
 		}
