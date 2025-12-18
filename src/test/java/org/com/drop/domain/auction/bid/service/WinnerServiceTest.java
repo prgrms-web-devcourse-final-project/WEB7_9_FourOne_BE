@@ -80,7 +80,6 @@ class WinnerServiceTest {
 			.bidder(bidder1)
 			.bidAmount(11_000L)
 			.createdAt(LocalDateTime.now().minusSeconds(2))
-			.isAuto(false)
 			.build());
 
 		bidRepository.saveAndFlush(Bid.builder()
@@ -88,7 +87,6 @@ class WinnerServiceTest {
 			.bidder(bidder2)
 			.bidAmount(12_000L)
 			.createdAt(LocalDateTime.now().minusSeconds(1))
-			.isAuto(false)
 			.build());
 
 
@@ -166,7 +164,6 @@ class WinnerServiceTest {
 			.bidder(bidder)
 			.bidAmount(11_000L)
 			.createdAt(LocalDateTime.now())
-			.isAuto(false)
 			.build());
 
 
@@ -224,7 +221,6 @@ class WinnerServiceTest {
 			.bidder(bidder1)
 			.bidAmount(11_000L)
 			.createdAt(LocalDateTime.now().minusSeconds(2))
-			.isAuto(false)
 			.build());
 
 		bidRepository.saveAndFlush(Bid.builder()
@@ -232,7 +228,6 @@ class WinnerServiceTest {
 			.bidder(bidder2)
 			.bidAmount(12_000L)
 			.createdAt(LocalDateTime.now().minusSeconds(1))
-			.isAuto(false)
 			.build());
 
 		// when
