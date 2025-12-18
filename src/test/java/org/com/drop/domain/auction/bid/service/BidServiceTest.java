@@ -139,4 +139,31 @@ class BidServiceTest {
 	// @Test
 	// void 동일_사용자가_연속으로_더_높은_금액으로_입찰하면_정상적으로_현재가와_입찰내역이_갱신된다() {}
 
+	@Test
+	@DisplayName("입찰내역을 페이지 리스트로 확인할 수 있다.")
+	void canRetrieveBidHistoryAsPagedList() {
+		// given
+		User bidder1 = createDummyUser("입찰자1");
+		User bidder2 = createDummyUser("입찰자2");
+		User seller = createDummyUser("판매자1");
+		Product product = createDummyProduct(seller, "테스트 상품");
+		Auction auction = createLiveAuction(product);
+
+		// 여러 입찰 생성
+		bidService.placeBid(auction.getId(), bidder1.getId(), new BidRequestDto(11_000L));
+		bidService.placeBid(auction.getId(), bidder2.getId(), new BidRequestDto(12_000L));
+		bidService.placeBid(auction.getId(), bidder1.getId(), new BidRequestDto(13_000L));
+
+		// when
+		var bidHistoryPage = bidService.getBidHistory(auction.getId(),
+			org.springframework.data.domain.PageRequest.of(0, 10,
+				org.springframework.data.domain.Sort.by("createdAt").descending()));
+
+		// then
+		assertThat(bidHistoryPage.getTotalElements()).isEqualTo(3);
+		assertThat(bidHistoryPage.getContent().get(0).bidAmount()).isEqualTo(13_000L);
+		assertThat(bidHistoryPage.getContent().get(1).bidAmount()).isEqualTo(12_000L);
+		assertThat(bidHistoryPage.getContent().get(2).bidAmount()).isEqualTo(11_000L);
+	}
+
 }
