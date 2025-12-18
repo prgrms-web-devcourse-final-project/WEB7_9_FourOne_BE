@@ -6,6 +6,7 @@ spring:
         ansi:
             enabled: always
 
+    # --- Datasource / JPA ---
     datasource:
         hikari:
             auto-commit: false
@@ -14,18 +15,26 @@ spring:
         hibernate:
             ddl-auto: update
         open-in-view: false
+        show-sql: true
         properties:
             hibernate:
                 format_sql: true
                 highlight_sql: true
                 use_sql_comments: true
                 default_batch_fetch_size: 100
-        show-sql: true
+                # 테스트/H2에서도 깨지지 않도록 dialect 강제 제거
+                # dialect: org.hibernate.dialect.MySQLDialect
 
+    # --- Web / MVC ---
     mvc:
         hiddenmethod:
             filter:
                 enabled: true
+
+    web:
+        resources:
+            static-locations:
+                - classpath:/static/
 
     servlet:
         multipart:
@@ -38,38 +47,54 @@ spring:
             host: localhost
             port: 6379
 
-    # --- Email ---
+    # --- Mail (테스트 깨짐 방지용 최소 설정) ---
     mail:
-        host: smtp.gmail.com
-        port: 587
-        username: drop
-        password: ${MAIL_PASSWORD}
+        host: localhost
+        port: 1025
+        username: test
+        password: test
         properties:
             mail:
                 smtp:
-                    auth: true
+                    auth: false
                     starttls:
-                        enable: true
-                        required: true
-                    connectiontimeout: 5000
-                    timeout: 5000
+                        enable: false
 
-# --- Toss Payments ---
+    # --- RabbitMQ (테스트에서 연결 시도 방지) ---
+    rabbitmq:
+        host: localhost
+        port: 5672
+        username: guest
+        password: guest
+        listener:
+            simple:
+                auto-startup: false
+            direct:
+                auto-startup: false
+        template:
+            mandatory: false
+
+# --- Toss Payments (placeholder 유지) ---
 toss:
     payments:
         base-url: https://api.tosspayments.com
-        secret-key: ${TOSS_SECRET_KEY}
-        customer-key-hmac-secret: ${CUSTOMER_KEY_HMAC_SECRET}
+        secret-key: ${TOSS_SECRET_KEY:dummy}
+        customer-key-hmac-secret: ${CUSTOMER_KEY_HMAC_SECRET:dummy}
 
 # --- JWT ---
 jwt:
-    secret: ${JWT_KEY}
+    secret: ${JWT_KEY:dummy-test-key}
     access-expire-minutes: 20
     refresh-expire-days: 7
     issuer: DROP
 
+# --- Logging ---
 logging:
     level:
         org.hibernate.SQL: DEBUG
         org.hibernate.orm.jdbc.bind: TRACE
+        org.springframework.transaction.interceptor: TRACE
+        org.springframework.security: INFO
+        org.springframework.web: INFO
+
 
