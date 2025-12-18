@@ -4,4 +4,5 @@ public record WinnerConfirmedEvent(
 	Long winnerId,
 	Long userId,
 	Long finalPrice
-) {}
+) {
+}

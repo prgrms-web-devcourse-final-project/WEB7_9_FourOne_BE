@@ -4,4 +4,5 @@ public record SettlementHoldEvent(
 	Long paymentId,
 	Long sellerId,
 	Long amount
-) { }
+) {
+}
