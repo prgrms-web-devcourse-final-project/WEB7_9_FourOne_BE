@@ -28,7 +28,7 @@ public class BidController {
 		@LoginUser User user,
 		@RequestBody @Valid BidRequestDto requestDto
 	) {
-		BidResponseDto dto = bidService.placeBid(auctionId, user.getId(), requestDto);
+		BidResponseDto dto = bidService.placeBid(auctionId, user.getEmail(), requestDto);
 		return new RsData<>(dto);
 	}
 
