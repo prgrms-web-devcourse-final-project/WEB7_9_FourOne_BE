@@ -1,5 +1,6 @@
 package org.com.drop.domain.auth.integration;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -54,7 +55,9 @@ class AuthLoginIntegrationTest {
 							"email": "test@test.com",
 							"password": "Password123!"
 						}
-					"""))
+					""")
+				.with(csrf())
+			)
 			.andExpect(status().isOk())
 			.andExpect(cookie().exists("refreshToken"))
 			.andExpect(jsonPath("$.data.accessToken").exists());
