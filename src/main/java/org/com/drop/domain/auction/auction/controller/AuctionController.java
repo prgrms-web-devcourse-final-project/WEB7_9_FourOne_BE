@@ -29,6 +29,7 @@ public class AuctionController {
 	) {
 		Auction auction = auctionService.addAuction(request, actor);
 		return new RsData<>(
+			201,
 			new AuctionCreateResponse(auction)
 		);
 	}

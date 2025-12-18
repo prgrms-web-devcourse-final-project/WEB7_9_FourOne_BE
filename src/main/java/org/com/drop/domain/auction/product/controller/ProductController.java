@@ -34,6 +34,7 @@ public class ProductController {
 	) {
 		Product product = productService.addProduct(request, actor);
 		return new RsData<>(
+			201,
 			new ProductCreateResponse(product)
 		);
 	}
@@ -55,7 +56,7 @@ public class ProductController {
 		@PathVariable Long productId
 	) {
 		productService.deleteProduct(productId, actor);
-		return new RsData<>(null);
+		return new RsData<>(204, null);
 	}
 
 	@PostMapping("/{productId}/bookmarks")
