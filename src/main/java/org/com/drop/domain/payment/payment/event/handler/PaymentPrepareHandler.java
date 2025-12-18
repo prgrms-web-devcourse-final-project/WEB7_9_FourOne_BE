@@ -1,7 +1,5 @@
 package org.com.drop.domain.payment.payment.event.handler;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.com.drop.domain.payment.payment.event.AutoPaymentRequestedEvent;
 import org.com.drop.domain.payment.payment.event.PaymentRequestedEvent;
 import org.com.drop.domain.payment.payment.service.PaymentService;
@@ -9,6 +7,9 @@ import org.com.drop.domain.payment.payment.service.UserPaymentMethodService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
@@ -40,7 +41,8 @@ public class PaymentPrepareHandler {
 					event.amount()
 				)
 			);
-		}else { log.info("자동결제 OFF - 사용자가 직접 결제해야 함");
+		} else {
+			log.info("자동결제 OFF - 사용자가 직접 결제해야 함");
 		}
 	}
 }

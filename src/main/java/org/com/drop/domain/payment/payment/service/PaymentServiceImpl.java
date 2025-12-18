@@ -1,6 +1,7 @@
 package org.com.drop.domain.payment.payment.service;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
+import java.time.LocalDateTime;
+
 import org.com.drop.domain.payment.payment.domain.Payment;
 import org.com.drop.domain.payment.payment.domain.PaymentStatus;
 import org.com.drop.domain.payment.payment.infra.toss.TossPaymentsClient;
@@ -16,7 +17,9 @@ import org.com.drop.domain.winner.repository.WinnerRepository;
 import org.com.drop.global.exception.AlreadyProcessedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -61,7 +64,6 @@ public class PaymentServiceImpl implements PaymentService {
 
 			String customerKey = customerKeyGenerator.generate("winner:" + payment.getWinnersId());
 
-
 			TossAutoPayRequest request = TossAutoPayRequest.builder()
 				.amount(payment.getNet())
 				.customerKey(customerKey)
@@ -69,9 +71,7 @@ public class PaymentServiceImpl implements PaymentService {
 				.orderName("DROP 경매 자동결제")
 				.build();
 
-
 			String idempotencyKey = "auto-pay-" + payment.getId();
-
 
 			TossAutoPayResponse response =
 				tossPaymentsClient.approveBilling(billingKey, request, idempotencyKey);

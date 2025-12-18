@@ -4,4 +4,5 @@ public record PaymentRequestedEvent(
 	Long winnerId,
 	Long userId,
 	Long amount
-) {}
+) {
+}
