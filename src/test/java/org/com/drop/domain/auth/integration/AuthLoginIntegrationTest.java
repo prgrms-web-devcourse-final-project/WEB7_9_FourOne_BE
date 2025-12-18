@@ -8,16 +8,18 @@ import org.com.drop.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@ActiveProfiles("test")
 class AuthLoginIntegrationTest {
 
 	@Autowired
@@ -48,11 +50,11 @@ class AuthLoginIntegrationTest {
 		mockMvc.perform(post("/api/v1/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
-					{
-						"email": "test@test.com",
-						"password": "Password123!"
-					}
-				"""))
+						{
+							"email": "test@test.com",
+							"password": "Password123!"
+						}
+					"""))
 			.andExpect(status().isOk())
 			.andExpect(cookie().exists("refreshToken"))
 			.andExpect(jsonPath("$.data.accessToken").exists());

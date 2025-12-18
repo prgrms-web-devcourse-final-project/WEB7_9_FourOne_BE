@@ -23,16 +23,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.transaction.Transactional;
-import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -78,6 +79,7 @@ public class ProductControllerTest {
 		}
 	}
 
+	@SuppressWarnings("checkstyle:RegexpSinglelineJava")
 	void setUp(String name, String description, Product.Category category, Product.SubCategory subCategory,
 		List<String> images) throws Exception {
 		ProductCreateRequest testRequestDto = new ProductCreateRequest(
@@ -125,7 +127,7 @@ public class ProductControllerTest {
 				List<ProductImage> productImages = productImageRepository.findAllByProductId(productId)
 					.stream().sorted((a, b) -> a.getId().compareTo(b.getId()))
 					.toList();
-				for	(int i = 0; i < productImages.size(); i++ ) {
+				for (int i = 0; i < productImages.size(); i++) {
 					assertThat(productImages.get(i).getImageUrl()).isEqualTo(images.get(i));
 				}
 
@@ -182,7 +184,7 @@ public class ProductControllerTest {
 				List<ProductImage> productImages = productImageRepository.findAllByProductId(auctionId)
 					.stream().sorted((a, b) -> a.getId().compareTo(b.getId()))
 					.toList();
-				for	(int i = 0; i < productImages.size(); i++ ) {
+				for (int i = 0; i < productImages.size(); i++) {
 					assertThat(productImages.get(i).getImageUrl()).isEqualTo(updatedImages.get(i));
 				}
 			}

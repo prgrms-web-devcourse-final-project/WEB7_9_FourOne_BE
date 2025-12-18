@@ -16,64 +16,66 @@ java {
 	}
 }
 
+configurations {
+	compileOnly {
+		extendsFrom(configurations.annotationProcessor.get())
+	}
+}
+
 repositories {
 	mavenCentral()
 }
 
-/* ===========================
- * Dependencies
- * =========================== */
 dependencies {
-	/** Spring Boot */
-	implementation("org.springframework.boot:spring-boot-starter-web")
+	implementation("org.springframework.boot:spring-boot-starter")
+
+	// Spring
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-security")
+	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
-	implementation("org.springframework.boot:spring-boot-starter-mail")
-	implementation("org.springframework.boot:spring-boot-starter-data-redis")
-	implementation ("org.springframework.boot:spring-boot-starter-mail")
 
-
-	/** DB */
-	runtimeOnly("com.mysql:mysql-connector-j")
+	// DB
 	runtimeOnly("com.h2database:h2")
+	runtimeOnly("com.mysql:mysql-connector-j")
 
-	/** Lombok */
+	// Lombok
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
 
-	/** JWT */
+	developmentOnly("org.springframework.boot:spring-boot-devtools")
+
+	// Test
+	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation("org.springframework.security:spring-security-test")
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+	// JWT
 	implementation("io.jsonwebtoken:jjwt-api:0.11.5")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
 
-	/** Swagger */
-	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.0")
+	// Swagger
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
 
 	// Email
 	implementation ("org.springframework.boot:spring-boot-starter-mail")
 
 	// Redis
 	implementation ("org.springframework.boot:spring-boot-starter-data-redis")
-	/** Test */
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testImplementation("org.springframework.security:spring-security-test")
-	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-	/** Testcontainers */
-	testImplementation(platform("org.testcontainers:testcontainers-bom:1.20.4"))
-	testImplementation("org.testcontainers:junit-jupiter")
-	testImplementation("org.testcontainers:mysql")
+	testImplementation("org.testcontainers:testcontainers:1.20.1")
+	testImplementation("org.testcontainers:mysql:1.20.1")
+	testImplementation("org.testcontainers:junit-jupiter:1.20.1")
 }
 
-/* ===========================
- * Checkstyle
- * =========================== */
+/** ===========================
+ *  Checkstyle
+ *  =========================== */
 checkstyle {
 	toolVersion = "8.42"
 	configFile = file("${rootDir}/naver-checkstyle-rules.xml")
-	configProperties["suppressionFile"] =
-		"${rootDir}/naver-checkstyle-suppressions.xml"
+	configProperties["suppressionFile"] = "${rootDir}/naver-checkstyle-suppressions.xml"
 	maxWarnings = 0
 }
 
