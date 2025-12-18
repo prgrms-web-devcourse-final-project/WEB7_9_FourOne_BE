@@ -55,7 +55,4 @@ public class Bid {
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt; // 입찰 시각
 
-	@Column(nullable = false)
-	private boolean isAuto; // 자동 입찰 여부
-
 }
