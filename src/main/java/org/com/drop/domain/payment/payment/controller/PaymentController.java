@@ -1,11 +1,17 @@
 package org.com.drop.domain.payment.payment.controller;
 
-import lombok.RequiredArgsConstructor;
+import java.util.Map;
+
 import org.com.drop.domain.payment.payment.service.PaymentService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/payments")
@@ -13,11 +19,13 @@ import java.util.Map;
 public class PaymentController {
 
 	private final PaymentService paymentService;
+
 	@PostMapping("/create")
 	public ResponseEntity<?> create(@RequestParam Long winnersId,
-									@RequestParam Long amount) {
+		@RequestParam Long amount) {
 		return ResponseEntity.ok(paymentService.createPayment(winnersId, amount));
 	}
+
 	@PostMapping("/approve/webhook")
 	public ResponseEntity<?> approveByWebhook(
 		@RequestParam String tossPaymentKey,

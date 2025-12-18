@@ -7,5 +7,6 @@ public interface UserPaymentMethodService {
 	record UserPaymentInfo(
 		boolean autoPayEnabled,
 		String billingKey
-	) {}
+	) {
+	}
 }
