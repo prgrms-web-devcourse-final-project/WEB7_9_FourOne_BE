@@ -27,10 +27,9 @@ toss:
 
 # --- JWT (TEST) ---
 jwt:
-    secret: test_jwt_key_test_jwt_key_test_jwt_key
-    access-expire-minutes: 20
-    refresh-expire-days: 7
-    issuer: DROP-TEST
+    secret: dGVzdHRlc3R0ZXN0dGVzdHRlc3R0ZXN0dGVzdHRlc3R0ZXN0
+    access-token-expire: 1200
+    refresh-token-expire: 604800
 
 logging:
     level:

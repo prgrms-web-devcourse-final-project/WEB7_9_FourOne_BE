@@ -1,6 +1,10 @@
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.kotlin.dsl.checkstyle
+import org.gradle.kotlin.dsl.jacoco
+
 plugins {
 	java
-	id("org.springframework.boot") version "3.3.5"
+	id("org.springframework.boot") version "3.5.8"
 	id("io.spring.dependency-management") version "1.1.6"
 	checkstyle
 	jacoco
@@ -46,10 +50,8 @@ dependencies {
 
 	/** Test */
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
-	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
-	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	testImplementation("org.springframework.security:spring-security-test")
 
 	/** Testcontainers */
 	testImplementation(platform("org.testcontainers:testcontainers-bom:1.20.4"))
