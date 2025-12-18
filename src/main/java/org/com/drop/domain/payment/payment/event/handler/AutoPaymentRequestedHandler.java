@@ -1,7 +1,5 @@
 package org.com.drop.domain.payment.payment.event.handler;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.com.drop.domain.payment.payment.domain.Payment;
 import org.com.drop.domain.payment.payment.domain.PaymentStatus;
 import org.com.drop.domain.payment.payment.event.AutoPaymentRequestedEvent;
@@ -11,6 +9,9 @@ import org.com.drop.domain.payment.payment.service.PaymentService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
@@ -24,7 +25,6 @@ public class AutoPaymentRequestedHandler {
 	public void handle(AutoPaymentRequestedEvent event) {
 
 		log.info("[AutoPaymentRequestedHandler] 이벤트 수신: {}", event);
-
 
 		Payment payment = paymentService.attemptAutoPayment(
 			event.paymentId(),

@@ -5,4 +5,5 @@ public record AutoPaymentRequestedEvent(
 	Long userId,
 	String billingKey,
 	Long amount
-) {}
+) {
+}
