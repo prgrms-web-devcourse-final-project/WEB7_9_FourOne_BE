@@ -31,8 +31,7 @@ class SettlementReleaseServiceImplTest {
 		Settlement settlement = Settlement.builder()
 			.paymentId(paymentId)
 			.sellerId(2L)
-			.status(SettlementStatus.HOLDING)
-			.build();
+			.build(); // 기본 상태 = HOLDING
 
 		when(settlementRepository.findByPaymentId(paymentId))
 			.thenReturn(Optional.of(settlement));
@@ -46,8 +45,9 @@ class SettlementReleaseServiceImplTest {
 		assertThat(settlement.getPaidAt())
 			.isNotNull();
 
-		verify(settlementRepository).save(settlement);
+		// save()는 더 이상 호출되지 않음 (Dirty Checking)
 	}
 }
+
 
 

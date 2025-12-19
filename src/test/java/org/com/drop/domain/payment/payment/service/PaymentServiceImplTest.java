@@ -13,7 +13,6 @@ import org.com.drop.domain.payment.payment.repository.PaymentRepository;
 import org.com.drop.domain.payment.settlement.repository.SettlementRepository;
 import org.com.drop.domain.winner.domain.Winner;
 import org.com.drop.domain.winner.repository.WinnerRepository;
-import org.com.drop.global.exception.AlreadyProcessedException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
@@ -101,7 +100,7 @@ class PaymentServiceImplTest {
 	}
 
 	@Test
-	void confirmPaymentByWebhook_isIdempotent_throwExceptionOnDuplicate() {
+	void confirmPaymentByWebhook_isIdempotent_doNotDuplicateSettlement() {
 
 		Winner winner = new Winner();
 		ReflectionTestUtils.setField(winner, "sellerId", 10L);
@@ -130,13 +129,20 @@ class PaymentServiceImplTest {
 				winnerRepository
 			);
 
+		// first webhook
 		service.confirmPaymentByWebhook("pk_test", winnerId, 1000L);
 
-		assertThatThrownBy(() ->
-			service.confirmPaymentByWebhook("pk_test", winnerId, 1000L)
-		).isInstanceOf(AlreadyProcessedException.class);
+		// second webhook (duplicate)
+		service.confirmPaymentByWebhook("pk_test", winnerId, 1000L);
 
-		assertThat(settlementRepository.findByPaymentId(payment.getId())).isPresent();
+		// then
+		assertThat(paymentRepository.findById(payment.getId()))
+			.get()
+			.extracting(Payment::getStatus)
+			.isEqualTo(PaymentStatus.PAID);
+
+		assertThat(settlementRepository.findByPaymentId(payment.getId()))
+			.isPresent();
 	}
 }
 

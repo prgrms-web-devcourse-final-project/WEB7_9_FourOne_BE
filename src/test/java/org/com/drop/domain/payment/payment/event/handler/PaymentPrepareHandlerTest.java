@@ -32,7 +32,8 @@ class PaymentPrepareHandlerTest {
 
 	@Test
 	void handle_whenAutoPayEnabled_publishAutoPaymentRequestedEvent() {
-		Payment payment = Payment.builder().id(1L).build();
+		Payment payment = mock(Payment.class);
+		when(payment.getId()).thenReturn(1L);
 
 		when(paymentService.createPayment(any(), any()))
 			.thenReturn(payment);
@@ -48,7 +49,8 @@ class PaymentPrepareHandlerTest {
 
 	@Test
 	void handle_whenAutoPayDisabled_doNotPublishAutoPaymentEvent() {
-		Payment payment = Payment.builder().id(1L).build();
+		Payment payment = mock(Payment.class);
+		when(payment.getId()).thenReturn(1L);
 
 		when(paymentService.createPayment(any(), any()))
 			.thenReturn(payment);
@@ -62,5 +64,3 @@ class PaymentPrepareHandlerTest {
 			.publishEvent(any(AutoPaymentRequestedEvent.class));
 	}
 }
-
-

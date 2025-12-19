@@ -3,7 +3,6 @@ package org.com.drop.domain.payment.payment.event.handler;
 import static org.mockito.Mockito.*;
 
 import org.com.drop.domain.payment.payment.domain.Payment;
-import org.com.drop.domain.payment.payment.domain.PaymentStatus;
 import org.com.drop.domain.payment.payment.event.AutoPaymentRequestedEvent;
 import org.com.drop.domain.payment.payment.service.PaymentService;
 import org.junit.jupiter.api.Test;
@@ -28,11 +27,8 @@ class AutoPaymentRequestedHandlerTest {
 	@Test
 	void handle_callsAttemptAutoPayment_whenPaymentIsRequested() {
 		// given
-		Payment payment = Payment.builder()
-			.id(1L)
-			.status(PaymentStatus.PAID)
-			.tossPaymentKey("toss-key")
-			.build();
+		Payment payment = mock(Payment.class);
+		when(payment.getId()).thenReturn(1L);
 
 		when(paymentService.attemptAutoPayment(1L, "billing-key"))
 			.thenReturn(payment);
@@ -48,5 +44,6 @@ class AutoPaymentRequestedHandlerTest {
 			.attemptAutoPayment(1L, "billing-key");
 	}
 }
+
 
 
