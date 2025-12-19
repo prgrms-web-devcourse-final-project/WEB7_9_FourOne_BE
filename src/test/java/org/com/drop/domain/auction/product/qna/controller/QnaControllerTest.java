@@ -8,7 +8,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 
-import org.com.drop.domain.auction.product.controller.ProductController;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnAAnswerRequest;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnACreateRequest;
@@ -21,22 +20,22 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.transaction.Transactional;
-import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
-@WithMockUser(username = "test@drop.com", roles = {"USER"})
 public class QnaControllerTest {
 
 	private final Long productId = 1L;
@@ -71,6 +70,7 @@ public class QnaControllerTest {
 			@Nested
 			class Create {
 				@Test
+				@WithMockUser(username = "user1@example.com", roles = {"USER"})
 				@DisplayName("질문 등록 - 성공")
 				void t1() throws Exception {
 					ProductQnACreateRequest productQnACreateRequest = new ProductQnACreateRequest(question);
@@ -101,6 +101,7 @@ public class QnaControllerTest {
 				}
 
 				@Test
+				@WithMockUser(username = "user1@example.com", roles = {"USER"})
 				@DisplayName("질문 등록 - 실패 (내용 없음)")
 				void t1_1() throws Exception {
 					ProductQnACreateRequest productQnACreateRequest = new ProductQnACreateRequest("");
@@ -122,6 +123,7 @@ public class QnaControllerTest {
 				}
 
 				@Test
+				@WithMockUser(username = "user1@example.com", roles = {"USER"})
 				@DisplayName("질문 등록 - 실패 (상품 없음)")
 				void t1_2() throws Exception {
 					ProductQnACreateRequest productQnACreateRequest = new ProductQnACreateRequest(question);
@@ -143,6 +145,23 @@ public class QnaControllerTest {
 						.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
 						.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
 				}
+
+				@Test
+				@DisplayName("질문 등록 - 실패 (로그인 없음)")
+				void t1_3() throws Exception {
+					ProductQnACreateRequest productQnACreateRequest = new ProductQnACreateRequest(question);
+					setUp(productQnACreateRequest);
+
+					ResultActions resultActions = mvc
+						.perform(
+							post("/api/v1/products/%d/qna".formatted(productId))
+								.contentType(MediaType.APPLICATION_JSON)
+								.content(jsonContent)
+						)
+						.andDo(print());
+
+					resultActions.andExpect(status().isForbidden());
+				}
 			}
 		}
 
@@ -151,6 +170,7 @@ public class QnaControllerTest {
 			@Nested
 			class Create {
 				@Test
+				@WithMockUser(username = "user1@example.com", roles = {"USER"})
 				@DisplayName("답변 등록 - 성공")
 				void t2() throws Exception {
 					ProductQnAAnswerRequest productQnAAnswerRequest = new ProductQnAAnswerRequest(answer);
@@ -181,6 +201,7 @@ public class QnaControllerTest {
 				}
 
 				@Test
+				@WithMockUser(username = "user1@example.com", roles = {"USER"})
 				@DisplayName("답변 등록 - 실패 (내용 없음)")
 				void t2_1() throws Exception {
 					ProductQnAAnswerRequest productQnAAnswerRequest = new ProductQnAAnswerRequest("");
@@ -202,6 +223,7 @@ public class QnaControllerTest {
 				}
 
 				@Test
+				@WithMockUser(username = "user1@example.com", roles = {"USER"})
 				@DisplayName("답변 등록 - 실패 (상품 없음)")
 				void t2_2() throws Exception {
 					ProductQnAAnswerRequest productQnAAnswerRequest = new ProductQnAAnswerRequest(answer);
@@ -225,6 +247,7 @@ public class QnaControllerTest {
 				}
 
 				@Test
+				@WithMockUser(username = "user1@example.com", roles = {"USER"})
 				@DisplayName("답변 등록 - 실패 (질문 없음)")
 				void t2_3() throws Exception {
 					ProductQnAAnswerRequest productQnAAnswerRequest = new ProductQnAAnswerRequest(answer);
@@ -246,11 +269,30 @@ public class QnaControllerTest {
 						.andExpect(jsonPath("$.code").value("PRODUCT_QUESTION_NOT_FOUND"))
 						.andExpect(jsonPath("$.message").value("질문을 찾을 수 없습니다."));
 				}
+
+				@Test
+				@DisplayName("답변 등록 - 실패 (로그인 없음)")
+				void t1_3() throws Exception {
+					ProductQnAAnswerRequest productQnAAnswerRequest = new ProductQnAAnswerRequest(answer);
+					setUp(productQnAAnswerRequest);
+
+					ResultActions resultActions = mvc
+						.perform(
+							post("/api/v1/products/%d/qna/%d".formatted(productId, questionId))
+								.contentType(MediaType.APPLICATION_JSON)
+								.content(jsonContent)
+								.with(csrf())
+						)
+						.andDo(print());
+
+					resultActions.andExpect(status().isForbidden());
+				}
 			}
 
 			@Nested
 			class Delete {
 				@Test
+				@WithMockUser(username = "user1@example.com", roles = {"USER"})
 				@DisplayName("답변 삭제 - 성공")
 				void t3() throws Exception {
 					ResultActions resultActions = mvc
@@ -272,21 +314,35 @@ public class QnaControllerTest {
 				}
 
 				@Test
-				@DisplayName("상품 삭제 - 실패 (상품 없음)")
+				@WithMockUser(username = "user1@example.com", roles = {"USER"})
+				@DisplayName("답변 삭제 - 실패 (답변 없음)")
 				void t3_1() throws Exception {
 					ResultActions resultActions = mvc
 						.perform(
-							delete("/api/v1/products/%d".formatted(wrongProductId))
+							delete("/api/v1/products/%d/qna/%d".formatted(productId, wrongAnswerId))
 								.with(csrf())
 						)
 						.andDo(print());
 
 					resultActions
-						.andExpect(handler().handlerType(ProductController.class))
-						.andExpect(handler().methodName("deleteProduct"))
+						.andExpect(handler().handlerType(QnAController.class))
+						.andExpect(handler().methodName("deleteAnswer"))
 						.andExpect(status().isNotFound())
-						.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
-						.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
+						.andExpect(jsonPath("$.code").value("PRODUCT_ANSWER_NOT_FOUND"))
+						.andExpect(jsonPath("$.message").value("답변을 찾을 수 없습니다."));
+				}
+
+				@Test
+				@DisplayName("상품 삭제 - 실패 (로그인 없음)")
+				void t1_3() throws Exception {
+					ResultActions resultActions = mvc
+						.perform(
+							delete("/api/v1/products/%d/qna/%d".formatted(productId, wrongAnswerId))
+								.with(csrf())
+						)
+						.andDo(print());
+
+					resultActions.andExpect(status().isForbidden());
 				}
 			}
 
@@ -315,20 +371,20 @@ public class QnaControllerTest {
 					assertThat(jsonPath("$.data.totalCount").value(questions.size()));
 
 					for (int i = 0; i < questions.size(); i++) {
-						Question question  = questions.get(i);
+						Question question = questions.get(i);
 						resultActions.andExpect(
 							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.qnaId".formatted(i))
-								.value(question .getId())
+								.value(question.getId())
 						);
 						resultActions.andExpect(
 							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.questionerId"
 								.formatted(i))
-								.value(question .getQuestioner().getId())
+								.value(question.getQuestioner().getId())
 						);
 						resultActions.andExpect(
 							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.question"
 								.formatted(i))
-								.value(question .getQuestion())
+								.value(question.getQuestion())
 						);
 						List<Answer> answers = answerRepository.findByQuestion(question);
 
@@ -360,6 +416,23 @@ public class QnaControllerTest {
 							);
 						}
 					}
+				}
+
+				@Test
+				@DisplayName("QnA 조회 - 실패 (상품 없음)")
+				void t4_1() throws Exception {
+					ResultActions resultActions = mvc
+						.perform(
+							get("/api/v1/products/%d/qna?page=0&size=10&sort=id,asc".formatted(wrongProductId))
+						)
+						.andDo(print());
+					resultActions
+						.andExpect(handler().handlerType(QnAController.class))
+						.andExpect(handler().methodName("getQna"))
+						.andExpect(status().is(404))
+						.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
+						.andExpect(jsonPath("$.httpStatus").value(404))
+						.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
 				}
 			}
 		}

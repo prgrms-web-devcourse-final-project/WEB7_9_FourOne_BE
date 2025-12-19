@@ -39,9 +39,8 @@ public class AuthService {
 	private final JwtProvider jwtProvider;
 	private final EmailService emailService;
 	private final VerificationCodeStore verificationCodeStore;
-
 	private static final int VERIFICATION_CODE_MIN = 100_000;
-	private static final int VERIFICATION_CODE_MAX = 999_999;
+	private static final int VERIFICATION_CODE_MAX = 1_000_000;
 
 	@Transactional
 	public LocalSignUpResponse signup(LocalSignUpRequest dto) {
@@ -173,7 +172,8 @@ public class AuthService {
 
 
 	private String generateRandomCode() {
-		int code = ThreadLocalRandom.current().nextInt(VERIFICATION_CODE_MIN, VERIFICATION_CODE_MAX + 1);
+		int code = ThreadLocalRandom.current()
+			.nextInt(VERIFICATION_CODE_MIN, VERIFICATION_CODE_MAX);
 		return String.valueOf(code);
 	}
 }

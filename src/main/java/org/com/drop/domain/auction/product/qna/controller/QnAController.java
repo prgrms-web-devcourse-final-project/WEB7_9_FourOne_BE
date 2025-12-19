@@ -31,7 +31,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/products/{productId}/qna")
 public class QnAController {
 	private final UserRepository userRepository; //임시
-	private final QnAService  qnAService;
+	private final QnAService qnAService;
 
 	@PostMapping
 	public RsData<ProductQnaCreateResponse> addQna(
