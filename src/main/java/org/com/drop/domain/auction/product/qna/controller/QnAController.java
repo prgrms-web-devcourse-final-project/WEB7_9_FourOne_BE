@@ -12,8 +12,8 @@ import org.com.drop.domain.auction.product.qna.entity.Answer;
 import org.com.drop.domain.auction.product.qna.entity.Question;
 import org.com.drop.domain.auction.product.qna.service.QnAService;
 import org.com.drop.domain.user.entity.User;
+import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.rsdata.RsData;
-import org.com.drop.global.security.auth.LoginUser;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,14 +30,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/products/{productId}/qna")
 public class QnAController {
-	private final QnAService  qnAService;
+	private final UserRepository userRepository; //임시
+	private final QnAService qnAService;
 
 	@PostMapping
 	public RsData<ProductQnaCreateResponse> addQna(
-		@LoginUser User actor,
 		@PathVariable Long productId,
 		@RequestBody @Valid
 		ProductQnACreateRequest request) {
+		//TODO : rq 구현 후 수정
+		User actor = userRepository.findById(1L).get();
 		Question question = qnAService.addQuestion(productId, request, actor);
 		return new RsData<>(
 			new ProductQnaCreateResponse(question)
@@ -46,11 +48,12 @@ public class QnAController {
 
 	@PostMapping("/{qnaId}")
 	public RsData<ProductQnAAnswerResponse> addAnswer(
-		@LoginUser User actor,
 		@PathVariable Long productId,
 		@PathVariable Long qnaId,
 		@RequestBody @Valid
 		ProductQnAAnswerRequest request) {
+		//TODO : rq 구현 후 수정
+		User actor = userRepository.findById(1L).get();
 		Answer answer = qnAService.addAnswer(productId, qnaId, request, actor);
 		return new RsData<>(
 			new ProductQnAAnswerResponse(answer)
@@ -59,9 +62,10 @@ public class QnAController {
 
 	@DeleteMapping("/{qnaId}")
 	public RsData<Void> deleteAnswer(
-		@LoginUser User actor,
 		@PathVariable Long qnaId
 	) {
+		//TODO : rq 구현 후 수정
+		User actor = userRepository.findById(1L).get();
 		qnAService.deleteAnswer(qnaId, actor);
 		return new RsData<>(null);
 	}
