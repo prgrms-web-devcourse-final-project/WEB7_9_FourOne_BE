@@ -24,7 +24,7 @@ public class SecurityConfig {
 	private final RefreshTokenFilter refreshTokenFilter;
 
 	@Bean
-	public SecurityFilterChain filterChain(HttpSecurity http) {
+	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http
 			.cors(Customizer.withDefaults())
 			.csrf(AbstractHttpConfigurer::disable)
@@ -34,7 +34,7 @@ public class SecurityConfig {
 
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-				.requestMatchers("/api/v1/auth/**").permitAll()
+				.requestMatchers("/error", "/api/v1/auth/**").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/v1/auctions/**").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
 				.anyRequest().authenticated()
