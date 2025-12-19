@@ -20,16 +20,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.transaction.Transactional;
-import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -370,20 +371,20 @@ public class QnaControllerTest {
 					assertThat(jsonPath("$.data.totalCount").value(questions.size()));
 
 					for (int i = 0; i < questions.size(); i++) {
-						Question question  = questions.get(i);
+						Question question = questions.get(i);
 						resultActions.andExpect(
 							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.qnaId".formatted(i))
-								.value(question .getId())
+								.value(question.getId())
 						);
 						resultActions.andExpect(
 							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.questionerId"
 								.formatted(i))
-								.value(question .getQuestioner().getId())
+								.value(question.getQuestioner().getId())
 						);
 						resultActions.andExpect(
 							jsonPath("$.data.productQnAResponses[%d].productQnaCreateResponse.question"
 								.formatted(i))
-								.value(question .getQuestion())
+								.value(question.getQuestion())
 						);
 						List<Answer> answers = answerRepository.findByQuestion(question);
 
