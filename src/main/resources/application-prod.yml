@@ -4,6 +4,10 @@ spring:
     url: ${DB_URL}
     username: ${DB_USER}
     password: ${DB_PW}
+  data:
+    redis:
+      host: 10.0.3.10
+      port: 6379
 
   jpa:
     hibernate:
