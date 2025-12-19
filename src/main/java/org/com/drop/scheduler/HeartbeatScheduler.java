@@ -1,4 +1,4 @@
-package org.com.drop.domain.notification.service;
+package org.com.drop.scheduler;
 
 import org.com.drop.domain.notification.repository.NotificationEmitterRepository;
 import org.springframework.scheduling.annotation.Scheduled;
