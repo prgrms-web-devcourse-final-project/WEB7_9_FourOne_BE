@@ -6,6 +6,15 @@ spring:
     output:
         ansi:
             enabled: always
+    cloud:
+      aws:
+        credentials:
+          access-key: ${AWS_ACCESS_KEY:none}
+          secret-key: ${AWS_SECRET_KEY:none}
+        s3:
+          bucket: ${AWS_S3_BUCKET}
+        region:
+          static: ${AWS_S3_REGION}
 
     # --- Datasource / JPA ---
     datasource:

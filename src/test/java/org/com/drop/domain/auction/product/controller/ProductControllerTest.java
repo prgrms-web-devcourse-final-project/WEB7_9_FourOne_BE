@@ -83,6 +83,62 @@ public class ProductControllerTest {
 
 	@Nested
 	class ProductTest {
+		@Nested
+		class Read {
+			@Test
+			@DisplayName("상품 조회 - 성공")
+			void t1() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						get("/api/v1/products/%d".formatted(productId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("getProduct"))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.code").value("SUCCESS"))
+					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
+
+				Product product = productRepository.findById(productId).get();
+
+				resultActions
+					.andExpect(jsonPath("$.data.productId").value(product.getId()))
+					.andExpect(jsonPath("$.data.sellerId").value(product.getSeller().getId()))
+					.andExpect(jsonPath("$.data.name").value(product.getName()))
+					.andExpect(jsonPath("$.data.description").value(product.getDescription()))
+					.andExpect(jsonPath("$.data.category").value(product.getCategory().toString()))
+					.andExpect(jsonPath("$.data.subCategory").value(product.getSubcategory().toString()))
+					.andExpect(jsonPath("$.data.createdAt").isNotEmpty());
+
+				List<ProductImage> productImages = productImageRepository.findAllByProductId(productId)
+					.stream().sorted((a, b) -> a.getId().compareTo(b.getId()))
+					.toList();
+				for	(int i = 0; i < productImages.size(); i++ ) {
+					assertThat(productImages.get(i).getImageUrl()).isEqualTo(images.get(i));
+				}
+
+			}
+
+			@Test
+			@DisplayName("상품 조회 - 실패 - 상품 없음")
+			void t1_1() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						get("/api/v1/products/%d".formatted(wrongProductId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("getProduct"))
+					.andExpect(status().isNotFound())
+					.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
+					.andExpect(jsonPath("$.httpStatus").value("404"))
+					.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
+			}
+		}
 
 		@Nested
 		class Exhibit {
@@ -515,7 +571,7 @@ public class ProductControllerTest {
 
 			@Test
 			@DisplayName("북마크 삭제 - 실패 (로그인 없음)")
-			void t1_2() throws Exception {
+			void t5_3() throws Exception {
 				ResultActions resultActions = mvc
 					.perform(
 						delete("/api/v1/products/%d/bookmarks".formatted(productId))
@@ -524,6 +580,47 @@ public class ProductControllerTest {
 				resultActions.andExpect(status().isForbidden());
 			}
 
+		}
+	}
+
+	@Nested
+	class PreSigned {
+		@Nested
+		class MakeUrl {
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("Url 발급 - 성공")
+			void t6() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						get("/api/v1/products/img")
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("getImageUrl"))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.code").value("SUCCESS"))
+					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
+
+				Product product = productRepository.findById(productId).get();
+
+				resultActions
+					.andExpect(jsonPath("$.data").isNotEmpty());
+
+			}
+
+			@Test
+			@DisplayName("Url 발급 - 실패 (로그인 없음)")
+			void t5_3() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						get("/api/v1/products/img")
+					)
+					.andDo(print());
+				resultActions.andExpect(status().isUnauthorized());
+			}
 		}
 	}
 
