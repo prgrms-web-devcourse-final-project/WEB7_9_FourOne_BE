@@ -1,10 +1,11 @@
-package org.com.drop.domain.auth;
+package org.com.drop.domain.auth.config;
 
 import org.com.drop.domain.auth.jwt.JwtFilter;
 import org.com.drop.domain.auth.service.RefreshTokenFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -25,12 +26,14 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) {
 		http
+			.cors(Customizer.withDefaults())
 			.csrf(AbstractHttpConfigurer::disable)
 			.formLogin(AbstractHttpConfigurer::disable)
 			.httpBasic(AbstractHttpConfigurer::disable)
 			.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
 			.authorizeHttpRequests(auth -> auth
+				.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 				.requestMatchers("/api/v1/auth/**").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/v1/auctions/**").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
