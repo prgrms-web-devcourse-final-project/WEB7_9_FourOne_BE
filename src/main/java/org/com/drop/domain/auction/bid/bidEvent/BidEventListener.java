@@ -13,7 +13,6 @@ public class BidEventListener {
 
 	private final SseService sseService;
 
-	// 트랜잭션 커밋(DB 저장)이 성공한 후에만 실행됨
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	public void handleBidSuccess(BidSuccessEvent event) {
 		sseService.notifyHighestPrice(event.auctionId(), event.newhighestBid());
