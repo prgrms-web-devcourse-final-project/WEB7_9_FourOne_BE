@@ -11,19 +11,16 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @DynamicUpdate
 @Table(name = "payments")
 public class Payment {
@@ -36,7 +33,7 @@ public class Payment {
 	private Long winnersId;
 
 	@Column(name = "method_id")
-	private Long methoddI;
+	private Long methodId;
 
 	@Column(name = "sellers_id", nullable = false)
 	private Long sellersId;
@@ -51,7 +48,7 @@ public class Payment {
 	@Column(name = "receipt")
 	private String receipt;
 
-	@Column(name = "requested_at")
+	@Column(name = "requested_at", nullable = false)
 	private LocalDateTime requestedAt;
 
 	@Column(name = "approved_at")
@@ -66,5 +63,61 @@ public class Payment {
 	@Enumerated(EnumType.STRING)
 	@Column(name = "card_company")
 	private CardCompany cardCompany;
+
+	@Builder
+	private Payment(
+		Long winnersId,
+		Long sellersId,
+		Long methodId,
+		PaymentStatus status,
+		LocalDateTime requestedAt,
+		Long fee,
+		Long net,
+		CardCompany cardCompany
+	) {
+		this.winnersId = winnersId;
+		this.sellersId = sellersId;
+		this.methodId = methodId;
+		this.status = status;
+		this.requestedAt = requestedAt;
+		this.fee = fee;
+		this.net = net;
+		this.cardCompany = cardCompany;
+	}
+
+	@PrePersist
+	protected void prePersist() {
+		if (this.requestedAt == null) {
+			this.requestedAt = LocalDateTime.now();
+		}
+		if (this.status == null) {
+			this.status = PaymentStatus.REQUESTED;
+		}
+	}
+
+	/* =====================
+	   도메인 상태 변경 메서드
+	   ===================== */
+
+	public void assignTossPaymentKey(String tossPaymentKey) {
+		this.tossPaymentKey = tossPaymentKey;
+	}
+
+	public void markPaid() {
+		this.status = PaymentStatus.PAID;
+		this.approvedAt = LocalDateTime.now();
+	}
+
+	public void markFailed() {
+		this.status = PaymentStatus.FAILED;
+	}
+
+	public void markCanceled() {
+		this.status = PaymentStatus.CANCELED;
+	}
+
+	public void markExpired() {
+		this.status = PaymentStatus.EXPIRED;
+	}
 }
 

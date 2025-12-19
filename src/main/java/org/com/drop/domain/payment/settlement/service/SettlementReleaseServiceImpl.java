@@ -31,10 +31,7 @@ public class SettlementReleaseServiceImpl implements SettlementReleaseService {
 			return;
 		}
 
-		settlement.setStatus(SettlementStatus.PAID);
-		settlement.setPaidAt(LocalDateTime.now());
-
-		settlementRepository.save(settlement);
+		settlement.markPaid();
 
 		log.info("[SETTLEMENT] released by purchase confirm. paymentId={}", paymentId);
 	}
@@ -44,6 +41,7 @@ public class SettlementReleaseServiceImpl implements SettlementReleaseService {
 	public void releaseAutomatically() {
 
 		LocalDateTime basetime = LocalDateTime.now().minusDays(7);
+
 		List<Settlement> targets =
 			settlementRepository.findAllByStatusAndHoldAtBefore(
 				SettlementStatus.HOLDING,
@@ -51,9 +49,9 @@ public class SettlementReleaseServiceImpl implements SettlementReleaseService {
 			);
 
 		for (Settlement settlement : targets) {
-			settlement.setStatus(SettlementStatus.PAID);
-			settlement.setPaidAt(LocalDateTime.now());
+			settlement.markPaid();
 			log.info("[SETTLEMENT] auto released. settlementId={}", settlement.getId());
 		}
 	}
 }
+

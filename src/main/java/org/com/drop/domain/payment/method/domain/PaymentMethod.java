@@ -14,19 +14,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "payment_methods")
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PaymentMethod {
 
 	@Id
@@ -37,23 +33,33 @@ public class PaymentMethod {
 	private Long userId;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "card_company")
+	@Column(name = "card_company", nullable = false)
 	private CardCompany cardCompany;
 
-	@Column(name = "created_at")
+	@Column(name = "created_at", nullable = false, updatable = false)
 	private LocalDateTime createdAt;
 
-	@Column(name = "updated_at")
+	@Column(name = "updated_at", nullable = false)
 	private LocalDateTime updatedAt;
 
+	@Builder
+	private PaymentMethod(Long userId, CardCompany cardCompany) {
+		this.userId = userId;
+		this.cardCompany = cardCompany;
+	}
+
+	public void changeCardCompany(CardCompany cardCompany) {
+		this.cardCompany = cardCompany;
+	}
+
 	@PrePersist
-	public void prePersist() {
+	protected void prePersist() {
 		this.createdAt = LocalDateTime.now();
 		this.updatedAt = this.createdAt;
 	}
 
 	@PreUpdate
-	public void preUpdate() {
+	protected void preUpdate() {
 		this.updatedAt = LocalDateTime.now();
 	}
 }

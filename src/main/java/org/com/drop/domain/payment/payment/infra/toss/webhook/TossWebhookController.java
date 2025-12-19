@@ -2,7 +2,7 @@ package org.com.drop.domain.payment.payment.infra.toss.webhook;
 
 import org.com.drop.domain.payment.payment.infra.toss.webhook.dto.TossWebhookRequest;
 import org.com.drop.domain.payment.payment.service.PaymentService;
-import org.springframework.http.ResponseEntity;
+import org.com.drop.global.rsdata.RsData;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,19 +20,21 @@ public class TossWebhookController {
 	private final PaymentService paymentService;
 
 	@PostMapping
-	public ResponseEntity<Void> handle(@RequestBody TossWebhookRequest request) {
+	public RsData<Void> handle(
+		@RequestBody TossWebhookRequest request
+	) {
 
 		log.info("[TOSS WEBHOOK] received eventType={}", request.eventType());
 
 		if (!"PAYMENT_STATUS_CHANGED".equals(request.eventType())) {
 			log.info("[TOSS WEBHOOK] ignored eventType={}", request.eventType());
-			return ResponseEntity.ok().build();
+			return new RsData<>(null);
 		}
 
 		var data = request.data();
 		if (!"DONE".equalsIgnoreCase(data.status())) {
 			log.info("[TOSS WEBHOOK] payment not done. status={}", data.status());
-			return ResponseEntity.ok().build();
+			return new RsData<>(null);
 		}
 
 		try {
@@ -48,7 +50,7 @@ public class TossWebhookController {
 			log.error("[TOSS WEBHOOK] error processing webhook", e);
 		}
 
-		return ResponseEntity.ok().build();
+		return new RsData<>(null);
 	}
 
 	private Long extractWinnersId(String orderId) {
@@ -59,3 +61,4 @@ public class TossWebhookController {
 		}
 	}
 }
+

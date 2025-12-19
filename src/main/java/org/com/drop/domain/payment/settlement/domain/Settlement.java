@@ -10,19 +10,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
+
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "settlement")
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Settlement {
 
 	@Id
@@ -53,4 +50,30 @@ public class Settlement {
 
 	@Column(name = "paid_at")
 	private LocalDateTime paidAt;
+
+	@Builder
+	private Settlement(
+		Long paymentId,
+		Long sellerId,
+		Long fee,
+		Long net
+	) {
+		this.paymentId = paymentId;
+		this.sellerId = sellerId;
+		this.fee = fee;
+		this.net = net;
+		this.status = SettlementStatus.HOLDING;
+		this.holdAt = LocalDateTime.now();
+	}
+
+	public void markReady() {
+		this.status = SettlementStatus.READY;
+		this.readyAt = LocalDateTime.now();
+	}
+
+	public void markPaid() {
+		this.status = SettlementStatus.PAID;
+		this.paidAt = LocalDateTime.now();
+	}
 }
+
