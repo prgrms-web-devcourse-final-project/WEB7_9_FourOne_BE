@@ -3,7 +3,6 @@ package org.com.drop.domain.notification.controller;
 import org.com.drop.domain.notification.service.NotificationService;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,10 +21,4 @@ public class NotificationController {
 	public SseEmitter subscribe(@RequestParam Long userId) {
 		return notificationService.subscribe(userId);
 	}
-
-	@PostMapping("/send")
-	public void sendNotification(@RequestParam Long userId, @RequestParam String message) {
-		notificationService.sendTo(userId, message);
-	}
-
 }
