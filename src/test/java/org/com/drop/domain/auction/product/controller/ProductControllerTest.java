@@ -116,7 +116,8 @@ public class ProductControllerTest {
 					.stream().sorted((a, b) -> a.getId().compareTo(b.getId()))
 					.toList();
 				for	(int i = 0; i < productImages.size(); i++ ) {
-					assertThat(productImages.get(i).getImageUrl()).isEqualTo("b67103865cff09c2638b8e8e8551175b18db2253.jpg");
+					assertThat(productImages.get(i).getImageUrl())
+						.isEqualTo("b67103865cff09c2638b8e8e8551175b18db2253.jpg");
 				}
 
 			}
