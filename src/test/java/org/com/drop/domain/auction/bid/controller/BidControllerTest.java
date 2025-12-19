@@ -20,12 +20,11 @@ import org.com.drop.global.exception.GlobalExceptionHandler;
 import org.com.drop.global.exception.ServiceException;
 import org.com.drop.global.security.auth.LoginUserArgumentResolver;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MediaType;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -40,7 +39,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 @Import(GlobalExceptionHandler.class)
 class BidControllerTest {
 
-	@Autowired
+
 	MockMvc mockMvc;
 
 	@MockitoBean
