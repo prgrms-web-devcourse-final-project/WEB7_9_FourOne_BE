@@ -18,8 +18,9 @@ public class CorsConfig {
 		config.setAllowedOrigins(List.of(
 			"http://localhost:3000",
 			"http://127.0.0.1:3000",
-			"https://khee.store",
-			"https://www.khee.store"
+			"http://localhost:8080",
+			"https://api.p-14626.khee.store",
+			"https://www.api.p-14626.khee.store"
 		));
 		config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 		config.setAllowedHeaders(List.of("*"));
