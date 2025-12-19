@@ -1,6 +1,7 @@
 package org.com.drop.domain.auction.product.controller;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -24,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -64,7 +66,7 @@ public class ProductControllerTest {
 	private BookmarkRepository bookmarkRepository;
 
 	void setUp(String name, String description, Product.Category category, Product.SubCategory subCategory,
-		List<String> images) throws Exception {
+		List<String> images) {
 		ProductCreateRequest testRequestDto = new ProductCreateRequest(
 			name,
 			description,
@@ -82,11 +84,11 @@ public class ProductControllerTest {
 		@Nested
 		class Exhibit {
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 출품 - 성공")
 			void t1() throws Exception {
 				setUp(name, description, category, subCategory, images);
 
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						post("/api/v1/products")
@@ -117,10 +119,10 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 출품 - 실패 - 필수값(이름) 누락")
 			void t1_1() throws Exception {
 				setUp("", description, category, subCategory, images);
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						post("/api/v1/products")
@@ -132,20 +134,35 @@ public class ProductControllerTest {
 				resultActions
 					.andExpect(status().isBadRequest());
 			}
+
+			@Test
+			@DisplayName("상품 출품 - 실패 (로그인 없음)")
+			void t1_2() throws Exception {
+				setUp(name, description, category, subCategory, images);
+
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+					).andDo(print());
+				resultActions.andExpect(status().isForbidden());
+			}
 		}
 
 		@Nested
 		class Update {
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 수정 - 성공")
 			void t2() throws Exception {
 				setUp(updatedName, description, category, subCategory, updatedImages);
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						put("/api/v1/products/%d".formatted(auctionId))
 							.contentType(MediaType.APPLICATION_JSON)
 							.content(jsonContent)
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -173,15 +190,16 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 수정 - 실패 (잘못된 상품 id)")
 			void t2_1() throws Exception {
 				setUp(updatedName, description, category, subCategory, images);
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						put("/api/v1/products/%d".formatted(wrongProductId))
 							.contentType(MediaType.APPLICATION_JSON)
 							.content(jsonContent)
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -194,15 +212,16 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 수정 - 실패 (필수값(이름) 누락)")
 			void t2_2() throws Exception {
 				setUp("", description, category, subCategory, images);
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						put("/api/v1/products/%d".formatted(productId))
 							.contentType(MediaType.APPLICATION_JSON)
 							.content(jsonContent)
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -211,6 +230,7 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 수정 - 실패 (경매 이미 시작)")
 			void t2_3() throws Exception {
 				setUp(updatedName, description, category, subCategory, images);
@@ -219,12 +239,12 @@ public class ProductControllerTest {
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
 				}
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						put("/api/v1/products/%d".formatted(expirationAuctionId))
 							.contentType(MediaType.APPLICATION_JSON)
 							.content(jsonContent)
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -235,17 +255,32 @@ public class ProductControllerTest {
 					.andExpect(jsonPath("$.code").value("PRODUCT_ALREADY_ON_AUCTION"))
 					.andExpect(jsonPath("$.message").value("이미 경매가 시작된 상품입니다."));
 			}
+
+			@Test
+			@DisplayName("상품 수정 - 실패 (로그인 없음)")
+			void t2_4() throws Exception {
+				setUp(updatedName, description, category, subCategory, updatedImages);
+				ResultActions resultActions = mvc
+					.perform(
+						put("/api/v1/products/%d".formatted(auctionId))
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+					)
+					.andDo(print());
+				resultActions.andExpect(status().isForbidden());
+			}
 		}
 
 		@Nested
 		class Delete {
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 삭제 - 성공")
 			void t3() throws Exception {
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						delete("/api/v1/products/%d".formatted(productId))
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -263,12 +298,13 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 삭제 - 실패 (상품 없음)")
 			void t3_1() throws Exception {
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						delete("/api/v1/products/%d".formatted(wrongProductId))
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -281,6 +317,7 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 삭제 - 실패 (경매 이미 시작)")
 			void t3_2() throws Exception {
 				try {
@@ -288,10 +325,10 @@ public class ProductControllerTest {
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
 				}
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						delete("/api/v1/products/%d".formatted(expirationAuctionId))
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -302,6 +339,17 @@ public class ProductControllerTest {
 					.andExpect(jsonPath("$.code").value("PRODUCT_ALREADY_ON_AUCTION"))
 					.andExpect(jsonPath("$.message").value("이미 경매가 시작된 상품입니다."));
 			}
+
+			@Test
+			@DisplayName("상품 삭제 - 실패 (로그인 없음)")
+			void t1_2() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						delete("/api/v1/products/%d".formatted(productId))
+					)
+					.andDo(print());
+				resultActions.andExpect(status().isForbidden());
+			}
 		}
 	}
 
@@ -310,12 +358,13 @@ public class ProductControllerTest {
 		@Nested
 		class Create {
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("북마크 등록 - 성공")
 			void t4() throws Exception {
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						post("/api/v1/products/%d/bookmarks".formatted(productId))
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -334,12 +383,13 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("북마크 등록 - 실패 (상품 없음)")
 			void t4_1() throws Exception {
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						post("/api/v1/products/%d/bookmarks".formatted(wrongProductId))
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -353,16 +403,17 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("북마크 등록 - 실패 (이미 등록)")
 			void t4_2() throws Exception {
 				ResultActions resultActions0 = mvc
 					.perform(
 						post("/api/v1/products/%d/bookmarks".formatted(productId))
 					).andDo(print());
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						post("/api/v1/products/%d/bookmarks".formatted(productId))
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -374,21 +425,34 @@ public class ProductControllerTest {
 					.andExpect(jsonPath("$.httpStatus").value(409))
 					.andExpect(jsonPath("$.message").value("이미 찜한 상품입니다."));
 			}
+
+			@Test
+			@DisplayName("북마크 등록 - 실패 (로그인 없음)")
+			void t1_2() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products/%d/bookmarks".formatted(productId))
+					)
+					.andDo(print());
+				resultActions.andExpect(status().isForbidden());
+			}
 		}
 
 		@Nested
 		class Delete {
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("북마크 삭제 - 성공")
 			void t5() throws Exception {
 				ResultActions resultActions0 = mvc
 					.perform(
 						post("/api/v1/products/%d/bookmarks".formatted(productId))
+							.with(csrf())
 					).andDo(print());
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						delete("/api/v1/products/%d/bookmarks".formatted(productId))
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -407,12 +471,13 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("북마크 삭제 - 실패 (상품 없음)")
 			void t5_1() throws Exception {
-				//TODO: 로그인 구현 후 인증 확인 수정 필요
 				ResultActions resultActions = mvc
 					.perform(
 						delete("/api/v1/products/%d/bookmarks".formatted(wrongProductId))
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -426,11 +491,13 @@ public class ProductControllerTest {
 			}
 
 			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("북마크 삭제 - 실패 (등록 이력 없음)")
 			void t5_2() throws Exception {
 				ResultActions resultActions = mvc
 					.perform(
 						delete("/api/v1/products/%d/bookmarks".formatted(productId))
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -441,6 +508,17 @@ public class ProductControllerTest {
 					.andExpect(jsonPath("$.code").value("USER_BOOKMARK_NOT_FOUND"))
 					.andExpect(jsonPath("$.httpStatus").value(404))
 					.andExpect(jsonPath("$.message").value("찜한 상품이 아닙니다."));
+			}
+
+			@Test
+			@DisplayName("북마크 삭제 - 실패 (로그인 없음)")
+			void t1_2() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						delete("/api/v1/products/%d/bookmarks".formatted(productId))
+					)
+					.andDo(print());
+				resultActions.andExpect(status().isForbidden());
 			}
 
 		}

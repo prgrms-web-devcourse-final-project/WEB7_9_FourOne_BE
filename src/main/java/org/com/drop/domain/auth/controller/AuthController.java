@@ -8,12 +8,16 @@ import org.com.drop.domain.auth.dto.LocalSignUpResponse;
 import org.com.drop.domain.auth.dto.TokenRefreshResponse;
 import org.com.drop.domain.auth.dto.UserDeleteRequest;
 import org.com.drop.domain.auth.dto.UserDeleteResponse;
+import org.com.drop.domain.auth.email.dto.EmailSendRequest;
+import org.com.drop.domain.auth.email.dto.EmailSendResponse;
+import org.com.drop.domain.auth.email.dto.EmailVerifyRequest;
+import org.com.drop.domain.auth.email.dto.EmailVerifyResponse;
 import org.com.drop.domain.auth.service.AuthService;
 import org.com.drop.domain.user.entity.User;
-import org.com.drop.domain.user.repository.UserRepository;
-import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.rsdata.RsData;
+import org.com.drop.global.security.auth.LoginUser;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,7 +29,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,10 +39,10 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
 	private final AuthService authService;
-	private final UserRepository userRepository;
+	static final int CACHE_TTL_SECONDS = 7 * 24 * 60 * 60;
 
-	private <T> RsData<T> createSuccessRsData(T data) {
-		return new RsData<>(data);
+	private <T> RsData<T> createSuccessRsData(int status, T data) {
+		return new RsData<>(status, data);
 	}
 
 	@PostMapping("/local/signup")
@@ -47,48 +50,56 @@ public class AuthController {
 		@Valid @RequestBody LocalSignUpRequest dto) {
 
 		LocalSignUpResponse response = authService.signup(dto);
-		RsData<LocalSignUpResponse> rsData = createSuccessRsData(response);
+		RsData<LocalSignUpResponse> rsData = createSuccessRsData(201, response);
+
+		return ResponseEntity.created(null).body(rsData);
+	}
+
+	@PostMapping("/email/send-code")
+	public ResponseEntity<RsData<EmailSendResponse>> sendVerificationCode(
+		@Valid @RequestBody EmailSendRequest dto) {
+
+		EmailSendResponse response = authService.sendVerificationCode(dto.email());
+		RsData<EmailSendResponse> rsData = createSuccessRsData(202, response);
+
+		return ResponseEntity.status(HttpStatus.ACCEPTED).body(rsData);
+	}
+
+	@PostMapping("/email/verify-code")
+	public ResponseEntity<RsData<EmailVerifyResponse>> verifyCode(
+		@Valid @RequestBody EmailVerifyRequest dto) {
+
+		EmailVerifyResponse response = authService.verifyCode(dto.email(), dto.code());
+		RsData<EmailVerifyResponse> rsData = createSuccessRsData(200, response);
 
 		return ResponseEntity.ok(rsData);
 	}
 
-	// ToDo: Refresh token을 Redis 에 저장하는 로직 추가
 	@PostMapping("/delete")
 	public RsData<UserDeleteResponse> deleteAccount(
-		@AuthenticationPrincipal UserDetails userDetails,
+		@LoginUser User user,
 		@Validated @RequestBody UserDeleteRequest request) {
-
-		User user = findUserFromUserDetails(userDetails);
 
 		UserDeleteResponse response = authService.deleteAccount(user, request);
 
-		return createSuccessRsData(response);
+		return createSuccessRsData(200, response);
 	}
 
-	private User findUserFromUserDetails(UserDetails userDetails) {
-		return userRepository.findByEmail(userDetails.getUsername())
-			.orElseThrow(() ->
-				ErrorCode.USER_NOT_FOUND
-					.serviceException("email=%s", userDetails.getUsername())
-			);
-	}
-
-	// ToDo: Refresh token을 Redis 에 저장하는 로직 추가
 	@PostMapping("/login")
 	public ResponseEntity<RsData<LocalLoginResponse>> login(
 		@Validated @RequestBody LocalLoginRequest dto) {
 
 		LocalLoginResponse response = authService.login(dto);
 
-		String refreshToken = authService.getJwtProvider().createRefreshToken(response.email());
+		String refreshToken = authService.createRefreshToken(response.email());
 
 		ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
 			.httpOnly(true)
 			.path("/")
-			.maxAge(7 * 24 * 60 * 60)
+			.maxAge(CACHE_TTL_SECONDS)
 			.build();
 
-		RsData<LocalLoginResponse> body = createSuccessRsData(response);
+		RsData<LocalLoginResponse> body = createSuccessRsData(200, response);
 
 		return ResponseEntity.ok()
 			.header(HttpHeaders.SET_COOKIE, cookie.toString())
@@ -99,7 +110,7 @@ public class AuthController {
 	public ResponseEntity<RsData<Void>> logout(
 		@AuthenticationPrincipal UserDetails userDetails) {
 
-		authService.logout(userDetails.getUsername());
+		authService.logout();
 
 		ResponseCookie expiredCookie = ResponseCookie.from("refreshToken", "")
 			.httpOnly(true)
@@ -107,7 +118,7 @@ public class AuthController {
 			.maxAge(0)
 			.build();
 
-		RsData<Void> body = createSuccessRsData(null);
+		RsData<Void> body = createSuccessRsData(200, null);
 
 		return ResponseEntity.ok()
 			.header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
@@ -117,40 +128,19 @@ public class AuthController {
 	@PostMapping("/refresh")
 	public RsData<TokenRefreshResponse> refresh(HttpServletRequest request) {
 
-		String refreshToken = extractRefreshTokenFromCookie(request);
-
-		if (refreshToken == null || refreshToken.isBlank()) {
-			throw ErrorCode.AUTH_TOKEN_MISSING
-				.serviceException("refreshToken is null or blank");
-		}
+		String refreshToken = (String) request.getAttribute("validRefreshToken");
 
 		TokenRefreshResponse response = authService.refresh(refreshToken);
 
-		return createSuccessRsData(response);
-	}
-
-
-	private String extractRefreshTokenFromCookie(HttpServletRequest request) {
-		Cookie[] cookies = request.getCookies();
-		if (cookies == null) {
-			return null;
-		}
-
-		for (Cookie cookie : cookies) {
-			if ("refreshToken".equals(cookie.getName())) {
-				return cookie.getValue();
-			}
-		}
-		return null;
+		return createSuccessRsData(200, response);
 	}
 
 	@GetMapping("/me")
 	public RsData<GetCurrentUserInfoResponse> me(
-		@AuthenticationPrincipal UserDetails userDetails) {
+		@LoginUser User user) {
 
-		User user = findUserFromUserDetails(userDetails);
 		GetCurrentUserInfoResponse response = authService.getMe(user);
 
-		return createSuccessRsData(response);
+		return createSuccessRsData(200, response);
 	}
 }

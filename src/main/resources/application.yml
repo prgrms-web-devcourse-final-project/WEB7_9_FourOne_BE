@@ -2,7 +2,7 @@ spring:
     config:
         import: optional:file:.env.properties
     profiles:
-        active: test
+        active: prod
     output:
         ansi:
             enabled: always
@@ -38,18 +38,34 @@ spring:
             max-file-size: 10MB
             max-request-size: 10MB
 
-    jwt:
-        secret: ${JWT_KEY}
-        access-expire-minutes: 20
-        refresh-expire-days: 7
-        issuer: "DROP"
-
     # --- Redis ---
     data:
         redis:
             host: localhost
             port: 6379
 
+    # --- EMail ---
+    mail:
+        host: smtp.gmail.com
+        port: 587
+        username: drop
+        password: ${MAIL_PASSWORD}
+        properties:
+            mail:
+                smtp:
+                    auth: true
+                    starttls:
+                        enable: true
+                        required: true
+                    connectiontimeout: 5000
+                    timeout: 5000
+# --- Jwt ---
+
+jwt:
+    secret: ${JWT_KEY}
+    access-expire-minutes: 20
+    refresh-expire-days: 7
+    issuer: "DROP"
 
 # --- Logging ---
 logging:

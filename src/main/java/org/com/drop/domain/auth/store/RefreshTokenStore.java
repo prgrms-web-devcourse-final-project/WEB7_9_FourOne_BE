@@ -1,4 +1,4 @@
-package org.com.drop.domain.auth.service;
+package org.com.drop.domain.auth.store;
 
 
 public interface RefreshTokenStore {

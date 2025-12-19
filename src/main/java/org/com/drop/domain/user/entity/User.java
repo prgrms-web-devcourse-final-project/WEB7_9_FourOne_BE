@@ -2,8 +2,12 @@ package org.com.drop.domain.user.entity;
 
 import java.time.LocalDateTime;
 
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
@@ -26,6 +30,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class User {
 
 	@Id
@@ -47,6 +52,7 @@ public class User {
 
 	private String userProfile;
 
+	@CreatedDate
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;
 
@@ -56,6 +62,7 @@ public class User {
 
 	private String kakaoId;  // 소셜로그인 전용
 
+	@Builder.Default
 	@Column(nullable = false, columnDefinition = "integer default 0")
 	private Integer penaltyCount = 0;
 

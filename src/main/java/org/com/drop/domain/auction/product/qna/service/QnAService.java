@@ -1,7 +1,8 @@
 package org.com.drop.domain.auction.product.qna.service;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnAAnswerRequest;
@@ -14,6 +15,8 @@ import org.com.drop.domain.auction.product.qna.repository.QuestionRepository;
 import org.com.drop.domain.auction.product.service.ProductService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.exception.ErrorCode;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -77,16 +80,20 @@ public class QnAService {
 	}
 
 	@Transactional
-	public List<ProductQnAResponse> getQna(Long productId) {
+	public List<ProductQnAResponse> getQna(Long productId, Pageable pageable) {
 		Product product = productService.findProductById(productId);
-		List<Question> question = questionRepository.findByProductOrderById(product);
-		List<ProductQnAResponse> response = new ArrayList<>();
-		for (Question q : question) {
-			List<Answer> answers = answerRepository.findByQuestion(q);
-			response.add(
-				new ProductQnAResponse(q, answers)
-			);
-		}
+		Page<Question> questions = questionRepository.findByProduct(product, pageable);
+
+		List<Long> questionIds = questions.getContent().stream().map(Question::getId).toList();
+		List<Answer> answers = answerRepository.findByQuestionIdInAndDeletedAtIsNull(questionIds);
+
+		Map<Long, List<Answer>> answerMap =
+			answers.stream().collect(Collectors.groupingBy(answer -> answer.getQuestion().getId()));
+
+		List<ProductQnAResponse> response = questions.getContent().stream()
+			.map(question -> new ProductQnAResponse(question, answerMap.getOrDefault(question.getId(), List.of())))
+				.toList();
+
 		return response;
 	}
 }

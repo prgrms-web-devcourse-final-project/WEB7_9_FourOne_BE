@@ -44,6 +44,7 @@ dependencies {
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 
 	// Test
+	testImplementation ("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
@@ -59,6 +60,9 @@ dependencies {
 
 	// Email
 	implementation ("org.springframework.boot:spring-boot-starter-mail")
+
+	// Redis
+	implementation ("org.springframework.boot:spring-boot-starter-data-redis")
 }
 
 /** ===========================
