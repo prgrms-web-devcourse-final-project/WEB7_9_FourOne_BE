@@ -71,7 +71,8 @@ public class InitData {
 			.build();
 		userRepository.save(user2);
 
-		List<String> images = List.of("img1.png", "img2.png");
+		List<String> images = List.of("\t\n"
+			+ "b67103865cff09c2638b8e8e8551175b18db2253.jpg");
 		ProductCreateRequest productCreateRequest1 = new ProductCreateRequest(
 			"상품명",
 			"설명",
