@@ -71,12 +71,13 @@ public class ProductService {
 			request.description(),
 			request.category(),
 			request.subCategory());
+		productRepository.save(product);
 		addProductImages(product, request.imagesFiles());
-		return productRepository.save(product);
+		return product;
 	}
 
 	@Transactional
-	public List<ProductImage> addProductImages(Product product, List<String> imageUrls) {
+	public void addProductImages(Product product, List<String> imageUrls) {
 
 		List<ProductImage> images = imageUrls.stream()
 			.map(url -> new ProductImage(product, url))
@@ -92,7 +93,7 @@ public class ProductService {
 			current.setTail(next);
 		}
 
-		return images;
+		productImageRepository.saveAll(images);
 	}
 
 
@@ -108,6 +109,7 @@ public class ProductService {
 	public ProductSearchResponse findProductWithImgById(Long id) {
 		Product product = findProductById(id);
 		List<String> images = getSortedImageUrls(productImageRepository.findAllByProductId(product.getId()));
+
 		return new ProductSearchResponse(product, images);
 	}
 
@@ -116,6 +118,7 @@ public class ProductService {
 			.filter(img -> img.getPreImg() == null).findFirst();
 
 		if (start.isEmpty()) {
+			System.out.println("이미지 없다.");
 			return Collections.emptyList();
 		}
 
@@ -123,8 +126,10 @@ public class ProductService {
 		ProductImage current = start.get();
 
 		while (current != null) {
+			System.out.println(current);
 			sortedUrls.add(amazonS3Client.getPresignedUrl(current.getImageUrl()));
 			current = current.getTrailImg();
+
 		}
 
 		return sortedUrls;

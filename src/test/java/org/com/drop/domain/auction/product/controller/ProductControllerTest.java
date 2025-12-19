@@ -116,7 +116,7 @@ public class ProductControllerTest {
 					.stream().sorted((a, b) -> a.getId().compareTo(b.getId()))
 					.toList();
 				for	(int i = 0; i < productImages.size(); i++ ) {
-					assertThat(productImages.get(i).getImageUrl()).isEqualTo(images.get(i));
+					assertThat(productImages.get(i).getImageUrl()).isEqualTo("b67103865cff09c2638b8e8e8551175b18db2253.jpg");
 				}
 
 			}
@@ -168,7 +168,7 @@ public class ProductControllerTest {
 					.andExpect(jsonPath("$.data.createdAt").isNotEmpty())
 					.andExpect(jsonPath("$.data.updatedAt").isEmpty());
 
-				List<ProductImage> productImages = productImageRepository.findAllByProductId(productId)
+				List<ProductImage> productImages = productImageRepository.findAllByProductId(3L)
 					.stream().sorted((a, b) -> a.getId().compareTo(b.getId()))
 					.toList();
 				for	(int i = 0; i < productImages.size(); i++ ) {

@@ -2,6 +2,8 @@ package org.com.drop.domain.auction.product.entity;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.CreationTimestamp;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -48,7 +50,8 @@ public class ProductImage {
 	@JoinColumn(name = "tail_img_id")
 	private ProductImage trailImg;
 
-	@Column(nullable = false, updatable = false)
+	@CreationTimestamp
+	@Column(name = "created_at", nullable = false, updatable = false)
 	private LocalDateTime createdAt;
 
 	public ProductImage(Product product, String imageUrl) {
