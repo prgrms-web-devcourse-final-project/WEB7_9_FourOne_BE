@@ -27,7 +27,7 @@ toss:
 
 # --- JWT (TEST) ---
 jwt:
-    secret: dGVzdHRlc3R0ZXN0dGVzdHRlc3R0ZXN0dGVzdHRlc3R0ZXN0
+    secret: testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttest
     access-token-expire: 1200
     refresh-token-expire: 604800
 
