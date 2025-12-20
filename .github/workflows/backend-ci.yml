@@ -60,6 +60,11 @@ jobs:
             - name: Build without tests
               run: ./gradlew build -x test --no-daemon
 
+            - name: Create env file from GitHub Secret
+              run: |
+                echo "${{ secrets.ENV_FILE }}" > src/main/resources/.env.properties
+
+
             - name: Run Unit Tests
               run: ./gradlew clean test --no-daemon
 
