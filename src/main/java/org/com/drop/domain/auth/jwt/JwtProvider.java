@@ -7,7 +7,9 @@ import org.springframework.stereotype.Component;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtProvider {
@@ -16,7 +18,12 @@ public class JwtProvider {
 
 	public String createAccessToken(String username) {
 		Date now = new Date();
-		Date expire = new Date(now.getTime() + jwtProperties.getAccessTokenExpire() * 1000);
+		long expireSec = jwtProperties.getAccessTokenExpire();
+		Date expire = new Date(now.getTime() + expireSec * 1000);
+
+		log.info("now        = {}", now);
+		log.info("expireSec = {}", expireSec);
+		log.info("expireAt  = {}", expire);
 
 		return Jwts.builder()
 			.setSubject(username)

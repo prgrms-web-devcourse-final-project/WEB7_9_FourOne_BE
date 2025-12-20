@@ -2,7 +2,7 @@ spring:
     config:
         import: optional:file:.env.properties
     profiles:
-        active: prod
+        active: dev
     output:
         ansi:
             enabled: always
@@ -72,8 +72,8 @@ spring:
 
 jwt:
     secret: ${JWT_KEY}
-    access-expire-minutes: 20
-    refresh-expire-days: 7
+    access-token-expire: 1200
+    refresh-token-expire: 604800
     issuer: "DROP"
 
 # --- Logging ---
@@ -87,4 +87,3 @@ logging:
         org.springframework.security: DEBUG
         org.springframework.security.oauth2: TRACE
         org.springframework.web: INFO
-
