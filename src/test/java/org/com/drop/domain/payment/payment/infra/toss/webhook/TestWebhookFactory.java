@@ -1,7 +1,9 @@
 package org.com.drop.domain.payment.payment.infra.toss.webhook;
 
 import org.com.drop.domain.payment.payment.infra.toss.webhook.dto.TossWebhookRequest;
+import org.junit.jupiter.api.Disabled;
 
+@Disabled
 public class TestWebhookFactory {
 
 	private TestWebhookFactory() {
@@ -43,5 +45,3 @@ public class TestWebhookFactory {
 		);
 	}
 }
-
-
