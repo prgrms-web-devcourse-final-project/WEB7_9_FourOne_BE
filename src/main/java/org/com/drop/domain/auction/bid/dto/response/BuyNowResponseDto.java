@@ -2,14 +2,15 @@ package org.com.drop.domain.auction.bid.dto.response;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 public record BuyNowResponseDto(
 
 	Long auctionId,
 	String auctionStatus,
 	Long winnerId,
-	Integer finalPrice,
+	Long finalPrice,
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	LocalDateTime winTime
-	// Long paymentRequestId,
-	// String paymentStatus
 ) {
 }
