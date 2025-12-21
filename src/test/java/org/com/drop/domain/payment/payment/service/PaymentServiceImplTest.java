@@ -1,7 +1,6 @@
 package org.com.drop.domain.payment.payment.service;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 import java.time.LocalDateTime;
 
@@ -14,43 +13,19 @@ import org.com.drop.domain.payment.settlement.repository.SettlementRepository;
 import org.com.drop.domain.winner.domain.Winner;
 import org.com.drop.domain.winner.repository.WinnerRepository;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest(
-	properties = {
-		"springdoc.api-docs.enabled=false",
-		"springdoc.swagger-ui.enabled=false"
-	}
-)
+@SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
-@ImportAutoConfiguration(
-	exclude = {
-		WebMvcAutoConfiguration.class,
-		SecurityAutoConfiguration.class
-	}
-)
 class PaymentServiceImplTest {
-
-	@Container
-	static MySQLContainer<?> mysql =
-		new MySQLContainer<>("mysql:8.0")
-			.withDatabaseName("test")
-			.withUsername("test")
-			.withPassword("test");
 	@Autowired
 	PaymentRepository paymentRepository;
 	@Autowired
@@ -59,19 +34,10 @@ class PaymentServiceImplTest {
 	WinnerRepository winnerRepository;
 	@MockitoBean
 	SecurityFilterChain securityFilterChain;
-	TossPaymentsClient tossPaymentsClient = mock(TossPaymentsClient.class);
-	CustomerKeyGenerator customerKeyGenerator = mock(CustomerKeyGenerator.class);
-
-	@DynamicPropertySource
-	static void overrideProps(DynamicPropertyRegistry registry) {
-		registry.add("spring.datasource.url", mysql::getJdbcUrl);
-		registry.add("spring.datasource.username", mysql::getUsername);
-		registry.add("spring.datasource.password", mysql::getPassword);
-		registry.add("spring.datasource.driver-class-name",
-			() -> "com.mysql.cj.jdbc.Driver");
-		registry.add("spring.jpa.hibernate.ddl-auto",
-			() -> "create-drop");
-	}
+	@Mock
+	TossPaymentsClient tossPaymentsClient;
+	@Mock
+	CustomerKeyGenerator customerKeyGenerator;
 
 	@Test
 	void createPayment_createsRequestedPaymentWithSellerId() {

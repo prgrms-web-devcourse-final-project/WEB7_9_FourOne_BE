@@ -1,12 +1,15 @@
 package org.com.drop.domain.auction.product.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
+import org.com.drop.domain.auction.product.dto.ProductSearchResponse;
 import org.com.drop.domain.auction.product.entity.BookMark;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.entity.ProductImage;
@@ -14,6 +17,7 @@ import org.com.drop.domain.auction.product.repository.BookmarkRepository;
 import org.com.drop.domain.auction.product.repository.ProductImageRepository;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.entity.User;
+import org.com.drop.global.aws.AmazonS3Client;
 import org.com.drop.global.exception.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +33,7 @@ public class ProductService {
 	private final ProductImageRepository  productImageRepository;
 	private final AuctionRepository auctionRepository;
 	private final BookmarkRepository bookmarkRepository;
-
+	private final AmazonS3Client amazonS3Client;
 	public void validUser(Product product, User actor) {
 		if (!product.getSeller().getId().equals(actor.getId())) {
 			throw ErrorCode.USER_INACTIVE_USER
@@ -67,12 +71,13 @@ public class ProductService {
 			request.description(),
 			request.category(),
 			request.subCategory());
+		productRepository.save(product);
 		addProductImages(product, request.imagesFiles());
-		return productRepository.save(product);
+		return product;
 	}
 
 	@Transactional
-	public List<ProductImage> addProductImages(Product product, List<String> imageUrls) {
+	public void addProductImages(Product product, List<String> imageUrls) {
 
 		List<ProductImage> images = imageUrls.stream()
 			.map(url -> new ProductImage(product, url))
@@ -88,7 +93,7 @@ public class ProductService {
 			current.setTail(next);
 		}
 
-		return images;
+		productImageRepository.saveAll(images);
 	}
 
 
@@ -99,6 +104,35 @@ public class ProductService {
 				ErrorCode.PRODUCT_NOT_FOUND
 					.serviceException("productId=%d", id)
 			);
+	}
+
+	public ProductSearchResponse findProductWithImgById(Long id) {
+		Product product = findProductById(id);
+		List<String> images = getSortedImageUrls(productImageRepository.findAllByProductId(product.getId()));
+
+		return new ProductSearchResponse(product, images);
+	}
+
+	public List<String> getSortedImageUrls(List<ProductImage> images) {
+		Optional<ProductImage> start = images.stream()
+			.filter(img -> img.getPreImg() == null).findFirst();
+
+		if (start.isEmpty()) {
+			System.out.println("이미지 없다.");
+			return Collections.emptyList();
+		}
+
+		List<String> sortedUrls = new ArrayList<>();
+		ProductImage current = start.get();
+
+		while (current != null) {
+			System.out.println(current);
+			sortedUrls.add(amazonS3Client.getPresignedUrl(current.getImageUrl()));
+			current = current.getTrailImg();
+
+		}
+
+		return sortedUrls;
 	}
 
 	@Transactional

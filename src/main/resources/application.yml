@@ -6,6 +6,15 @@ spring:
     output:
         ansi:
             enabled: always
+    cloud:
+      aws:
+        credentials:
+          access-key: ${AWS_ACCESS_KEY:none}
+          secret-key: ${AWS_SECRET_KEY:none}
+        s3:
+          bucket: ${AWS_S3_BUCKET}
+        region:
+          static: ${AWS_S3_REGION}
 
     # --- Datasource / JPA ---
     datasource:
@@ -63,8 +72,8 @@ spring:
 
 jwt:
     secret: ${JWT_KEY}
-    access-expire-minutes: 20
-    refresh-expire-days: 7
+    access-token-expire: 1200
+    refresh-token-expire: 604800
     issuer: "DROP"
 
 # --- Logging ---
@@ -78,4 +87,3 @@ logging:
         org.springframework.security: DEBUG
         org.springframework.security.oauth2: TRACE
         org.springframework.web: INFO
-

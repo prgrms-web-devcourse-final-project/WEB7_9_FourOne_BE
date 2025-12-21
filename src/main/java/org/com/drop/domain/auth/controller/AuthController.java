@@ -13,7 +13,9 @@ import org.com.drop.domain.auth.email.dto.EmailSendResponse;
 import org.com.drop.domain.auth.email.dto.EmailVerifyRequest;
 import org.com.drop.domain.auth.email.dto.EmailVerifyResponse;
 import org.com.drop.domain.auth.service.AuthService;
+import org.com.drop.domain.auth.store.RefreshTokenStore;
 import org.com.drop.domain.user.entity.User;
+import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
 import org.springframework.http.HttpHeaders;
@@ -23,13 +25,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -38,8 +40,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthController {
 
-	private final AuthService authService;
 	static final int CACHE_TTL_SECONDS = 7 * 24 * 60 * 60;
+	private final AuthService authService;
+	private final RefreshTokenStore refreshTokenStore;
 
 	private <T> RsData<T> createSuccessRsData(int status, T data) {
 		return new RsData<>(status, data);
@@ -92,9 +95,12 @@ public class AuthController {
 		LocalLoginResponse response = authService.login(dto);
 
 		String refreshToken = authService.createRefreshToken(response.email());
+		refreshTokenStore.save(response.email(), refreshToken, CACHE_TTL_SECONDS);
 
 		ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
 			.httpOnly(true)
+			.secure(true)
+			.sameSite("None")
 			.path("/")
 			.maxAge(CACHE_TTL_SECONDS)
 			.build();
@@ -114,6 +120,8 @@ public class AuthController {
 
 		ResponseCookie expiredCookie = ResponseCookie.from("refreshToken", "")
 			.httpOnly(true)
+			.secure(true)
+			.sameSite("None")
 			.path("/")
 			.maxAge(0)
 			.build();
@@ -126,12 +134,14 @@ public class AuthController {
 	}
 
 	@PostMapping("/refresh")
-	public RsData<TokenRefreshResponse> refresh(HttpServletRequest request) {
+	public RsData<TokenRefreshResponse> refresh(
+		@CookieValue(value = "refreshToken", required = false) String refreshToken) {
 
-		String refreshToken = (String) request.getAttribute("validRefreshToken");
+		if (refreshToken == null) {
+			throw ErrorCode.AUTH_TOKEN_INVALID.serviceException("Refresh token cookie missing");
+		}
 
 		TokenRefreshResponse response = authService.refresh(refreshToken);
-
 		return createSuccessRsData(200, response);
 	}
 
