@@ -6,9 +6,9 @@ import java.util.Optional;
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
 import org.com.drop.domain.auction.bid.entity.Bid;
-import org.com.drop.domain.auction.bid.entity.Winner;
 import org.com.drop.domain.auction.bid.repository.BidRepository;
-import org.com.drop.domain.auction.bid.repository.WinnerRepository;
+import org.com.drop.domain.winner.domain.Winner;
+import org.com.drop.domain.winner.repository.WinnerRepository;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
 import org.springframework.stereotype.Service;
@@ -55,8 +55,9 @@ public class WinnerService {
 
 		Winner winner = Winner.builder()
 			.auction(auction)
-			.user(topBid.getBidder())
-			.finalPrice(topBid.getBidAmount().intValue())
+			.sellerId(auction.getProduct().getSeller().getId())
+			.userId(topBid.getBidder().getId())
+			.finalPrice(topBid.getBidAmount())
 			.winTime(now)
 			.build();
 
@@ -64,6 +65,5 @@ public class WinnerService {
 
 		auction.end(now);
 
-		//결제도메인이벤트
 	}
 }

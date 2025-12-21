@@ -10,13 +10,13 @@ import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
 import org.com.drop.domain.auction.bid.dto.request.BidRequestDto;
 import org.com.drop.domain.auction.bid.entity.Bid;
-import org.com.drop.domain.auction.bid.entity.Winner;
 import org.com.drop.domain.auction.bid.repository.BidRepository;
-import org.com.drop.domain.auction.bid.repository.WinnerRepository;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
+import org.com.drop.domain.winner.domain.Winner;
+import org.com.drop.domain.winner.repository.WinnerRepository;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
 import org.junit.jupiter.api.DisplayName;
@@ -100,7 +100,7 @@ class WinnerServiceTest {
 		Winner winner = winnerRepository.findByAuction_Id(auction.getId())
 			.orElseThrow(); // findByAuctionId는 네 리포지토리 메서드에 맞게 변경
 
-		assertThat(winner.getUser()).isEqualTo(bidder2);
+		assertThat(winner.getUserId()).isEqualTo(bidder2.getId());
 		assertThat(winner.getFinalPrice()).isEqualTo(12_000);
 	}
 
@@ -240,7 +240,7 @@ class WinnerServiceTest {
 
 		List<Winner> winners = winnerRepository.findAllByAuction_Id(auction.getId());
 		assertThat(winners).hasSize(1);
-		assertThat(winners.get(0).getUser()).isEqualTo(bidder2);
+		assertThat(winners.get(0).getUserId()).isEqualTo(bidder2.getId());
 		assertThat(winners.get(0).getFinalPrice()).isEqualTo(12_000);
 
 	}

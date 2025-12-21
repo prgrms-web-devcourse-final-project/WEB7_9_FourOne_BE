@@ -10,12 +10,12 @@ import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
 import org.com.drop.domain.auction.bid.dto.request.BidRequestDto;
 import org.com.drop.domain.auction.bid.dto.response.BuyNowResponseDto;
-import org.com.drop.domain.auction.bid.entity.Winner;
-import org.com.drop.domain.auction.bid.repository.WinnerRepository;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
+import org.com.drop.domain.winner.domain.Winner;
+import org.com.drop.domain.winner.repository.WinnerRepository;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
 import org.junit.jupiter.api.DisplayName;
@@ -103,7 +103,7 @@ class BuyNowServiceTest {
 		Winner winner = winnerRepository.findByAuction_Id(auction.getId()).orElseThrow();
 		assertThat(winner.getFinalPrice()).isEqualTo(50_000);
 		// Lazy 문제 나면 fetch join or ID만 검증
-		assertThat(winner.getUser().getId()).isEqualTo(buyer.getId());
+		assertThat(winner.getUserId()).isEqualTo(buyer.getId());
 	}
 
 	@DisplayName("즉시구매를_두번_호출하면_두번째는_예외이고_winner는_하나만_존재한다")

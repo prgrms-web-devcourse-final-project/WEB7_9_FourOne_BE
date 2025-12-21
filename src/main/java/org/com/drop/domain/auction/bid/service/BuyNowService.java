@@ -5,10 +5,10 @@ import java.time.LocalDateTime;
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
 import org.com.drop.domain.auction.bid.dto.response.BuyNowResponseDto;
-import org.com.drop.domain.auction.bid.entity.Winner;
-import org.com.drop.domain.auction.bid.repository.WinnerRepository;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
+import org.com.drop.domain.winner.domain.Winner;
+import org.com.drop.domain.winner.repository.WinnerRepository;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
 import org.springframework.stereotype.Service;
@@ -59,8 +59,9 @@ public class BuyNowService {
 
 		Winner winner = Winner.builder()
 			.auction(auction)
-			.user(buyer)
-			.finalPrice(auction.getBuyNowPrice().intValue())
+			.sellerId(auction.getProduct().getSeller().getId())
+			.userId(buyer.getId())
+			.finalPrice(Long.valueOf(auction.getBuyNowPrice()))
 			.winTime(now)
 			.build();
 
