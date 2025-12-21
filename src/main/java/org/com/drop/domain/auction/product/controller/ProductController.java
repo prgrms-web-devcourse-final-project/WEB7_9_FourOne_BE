@@ -3,13 +3,16 @@ package org.com.drop.domain.auction.product.controller;
 import org.com.drop.domain.auction.product.dto.BookmarkCreateResponse;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
 import org.com.drop.domain.auction.product.dto.ProductCreateResponse;
+import org.com.drop.domain.auction.product.dto.ProductSearchResponse;
 import org.com.drop.domain.auction.product.entity.BookMark;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.service.ProductService;
 import org.com.drop.domain.user.entity.User;
+import org.com.drop.global.aws.AmazonS3Client;
 import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -26,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 public class ProductController {
 
 	private final ProductService productService;
+	private final AmazonS3Client  amazonS3Client;
 
 	@PostMapping
 	public RsData<ProductCreateResponse> addProduct(
@@ -77,6 +81,25 @@ public class ProductController {
 		productService.deleteBookmark(productId, actor);
 		return new RsData<>(
 			null
+		);
+	}
+
+	@GetMapping("/img")
+	public RsData<String> getImageUrl(
+		@LoginUser User actor
+	) {
+		String url = amazonS3Client.createPresignedUrl("products/%d".formatted(actor.getId()));
+		return new RsData<>(url);
+	}
+
+	@GetMapping("/{productId}")
+	public RsData<ProductSearchResponse> getProduct(
+		@PathVariable Long productId
+	) {
+		ProductSearchResponse product = productService.findProductWithImgById(productId);
+		return new RsData<>(
+			200,
+			product
 		);
 	}
 
