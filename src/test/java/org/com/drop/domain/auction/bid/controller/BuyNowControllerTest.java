@@ -70,7 +70,7 @@ class BuyNowControllerTest {
 			auctionId,
 			"ENDED",
 			555L,
-			50_000,
+			50_000L,
 			LocalDateTime.of(2025, 12, 5, 15, 50, 0)
 		);
 
