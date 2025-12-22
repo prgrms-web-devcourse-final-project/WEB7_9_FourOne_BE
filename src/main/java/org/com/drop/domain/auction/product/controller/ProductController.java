@@ -90,7 +90,7 @@ public class ProductController {
 		@LoginUser User actor,
 		@Valid @RequestBody List<PreSignedUrlRequest> preSignedUrlRequest
 	) {
-		List<String> url = amazonS3Client.createPresignedUrls(preSignedUrlRequest);
+		List<String> url = amazonS3Client.createPresignedUrls(preSignedUrlRequest, actor);
 		return new RsData<>(url);
 	}
 }

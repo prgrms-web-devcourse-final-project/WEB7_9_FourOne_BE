@@ -1,6 +1,7 @@
 package org.com.drop.domain.auction.product.controller;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.hamcrest.Matchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
@@ -19,6 +20,7 @@ import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.controller.UserController;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
+import org.com.drop.global.aws.PreSignedUrlRequest;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -647,20 +649,19 @@ public class ProductControllerTest {
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("Url 발급 - 성공")
 			void t6() throws Exception {
-				String jsonContent = String.format(
-					"""
-							{
-								"content": "%s",
-								"latitude" : %s, 
-								"longitude" : %s
-							}
-							"""
+				List<PreSignedUrlRequest> requests = List.of(
+					new PreSignedUrlRequest("image/jpeg", 1024L),
+					new PreSignedUrlRequest("image/png", 2048L)
 				);
+
+				String jsonContent = objectMapper.writeValueAsString(requests);
+
 				ResultActions resultActions = mvc
 					.perform(
 						post("/api/v1/products/img")
 							.contentType(MediaType.APPLICATION_JSON)
 							.content(jsonContent)
+							.with(csrf())
 					)
 					.andDo(print());
 
@@ -669,13 +670,12 @@ public class ProductControllerTest {
 					.andExpect(handler().methodName("getImageUrl"))
 					.andExpect(status().isOk())
 					.andExpect(jsonPath("$.code").value("SUCCESS"))
-					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
-
-				Product product = productRepository.findById(productId).get();
-
-				resultActions
-					.andExpect(jsonPath("$.data").isNotEmpty());
-
+					.andExpect(jsonPath("$.status").value("200"))
+					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."))
+					.andExpect(jsonPath("$.data").isArray())
+					.andExpect(jsonPath("$.data.length()").value(2))
+					.andExpect(jsonPath("$.data[0]").value(containsString(".jpg")))
+					.andExpect(jsonPath("$.data[1]").value(containsString(".png")));
 			}
 
 			@Test
