@@ -3,7 +3,7 @@ FROM gradle:jdk-21-and-23-graal-jammy AS builder
 
 # 작업 디렉토리 설정
 WORKDIR /app
-
+COPY .env.properties .env.properties
 # Gradle 래퍼 관련 파일 먼저 복사 (gradlew 스크립트와 설정 디렉토리)
 COPY gradlew .
 COPY gradle gradle
@@ -21,9 +21,6 @@ RUN ./gradlew dependencies --no-daemon
 
 # 소스 코드 복사
 COPY src src
-
-ARG ENV_FILE_CONTENT
-RUN echo "$ENV_FILE_CONTENT" > .env.properties
 
 # 애플리케이션 빌드
 RUN ./gradlew build --no-daemon \
