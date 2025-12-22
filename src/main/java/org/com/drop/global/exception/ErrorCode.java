@@ -37,6 +37,7 @@ public enum ErrorCode {
 	AUTH_ACCESS_DENIED("1016", HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
 	AUTH_PASSWORD_MISMATCH("1017", HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다."),
 	AUTH_NOT_VERIFIED("1018", HttpStatus.FORBIDDEN, "이메일 인증이 완료되지 않았습니다. 인증을 먼저 진행해주세요."),
+	AUTH_USER_DELETED("1019", HttpStatus.FORBIDDEN, "이미 탈퇴된 회원입니다."),
 
 	//users
 	USER_NOT_FOUND("1100", HttpStatus.NOT_FOUND, "해당 사용자를 찾을 수 없습니다."),

@@ -23,7 +23,6 @@ import org.com.drop.domain.user.entity.User.UserRole;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -162,6 +161,11 @@ public class AuthService {
 					.serviceException("email=%s", dto.email())
 			);
 
+		if (user.getDeletedAt() != null) {
+			throw ErrorCode.AUTH_USER_DELETED
+				.serviceException("이미 탈퇴된 회원입니다. userId=%d", user.getId());
+		}
+
 		if (!passwordEncoder.matches(dto.password(), user.getPassword())) {
 			throw ErrorCode.AUTH_UNAUTHORIZED
 				.serviceException("userId=%d (password mismatch)", user.getId());
@@ -180,14 +184,9 @@ public class AuthService {
 	}
 
 	public void logout() {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-		if (authentication == null || !authentication.isAuthenticated()) {
-			throw ErrorCode.AUTH_UNAUTHORIZED
-				.serviceException("No authenticated user found for logout.");
-		}
-
-		String email = authentication.getName();
+		String email = SecurityContextHolder.getContext()
+			.getAuthentication()
+			.getName();
 
 		refreshTokenStore.delete(email);
 	}
