@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.tika.Tika;
-import org.com.drop.domain.auction.product.entity.ProductImage;
+import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -37,14 +36,14 @@ public class AmazonS3Client {
 	private final S3Client s3Client;
 	private final Tika tika = new Tika();
 
-	public List<String> createPresignedUrls(List<PreSignedUrlRequest> requests) {
+	public List<String> createPresignedUrls(List<PreSignedUrlRequest> requests, User actor) {
 		return requests.stream()
-			.map(this::generateSinglePresignedUrl)
+			.map(req -> generateSinglePresignedUrl(req, actor))
 			.toList();
 	}
 
-	private String generateSinglePresignedUrl(PreSignedUrlRequest req) {
-		String path = generateFileName(req.contentType());
+	private String generateSinglePresignedUrl(PreSignedUrlRequest req, User actor) {
+		String path = generateFileName(req.contentType(), actor);
 
 		PutObjectRequest putObjectRequest = PutObjectRequest.builder()
 			.bucket(bucket)
@@ -59,13 +58,12 @@ public class AmazonS3Client {
 			.putObjectRequest(putObjectRequest)
 			.build();
 
-		// 3. URL 생성
 		String url = s3Presigner.presignPutObject(preSignRequest).url().toString();
 
 		return url;
 	}
 
-	private String generateFileName(String contentType) {
+	private String generateFileName(String contentType, User actor) {
 		String uuid = UUID.randomUUID().toString();
 		String extension = switch (contentType) {
 			case "image/jpeg" -> ".jpg";
@@ -74,25 +72,7 @@ public class AmazonS3Client {
 			case "image/gif"  -> ".gif";
 			default -> throw new ServiceException(ErrorCode.INVALID_IMAGE_TYPE, "지원하지 않는 형식입니다: " + contentType);
 		};
-		return uuid + extension;
-	}
-
-	private void validImage(ResponseInputStream<GetObjectResponse> input, String key) {
-		try {
-			String contentType = tika.detect(input);
-			Long contentLength = input.response().contentLength();
-
-			if (contentLength > 10 * 1024 * 1024) {
-				deleteFile(key);
-				throw new ServiceException(ErrorCode.INVALID_IMAGE_SIZE, ErrorCode.INVALID_IMAGE_SIZE.getMessage());
-			}
-			if (contentType == null || !contentType.startsWith("image/")) {
-				deleteFile(key);
-				throw new ServiceException(ErrorCode.INVALID_IMAGE_TYPE, ErrorCode.INVALID_IMAGE_TYPE.getMessage());
-			}
-		} catch (IOException e) {
-			throw new ServiceException(ErrorCode.VALIDATION_ERROR, "파일 분석 중 오류 발생: " + key);
-		}
+		return actor.getId() + uuid + extension;
 	}
 
 	public void verifyImage(List<String> keys) {
@@ -102,46 +82,41 @@ public class AmazonS3Client {
 					GetObjectRequest.builder().bucket(bucket).key(key).range("bytes=0-1024").build();
 
 				ResponseInputStream<GetObjectResponse> is = s3Client.getObject(getObjectRequest);
-				validImage(is, key);
+				try {
+					String contentType = tika.detect(is);
+					Long contentLength = is.response().contentLength();
+
+					if (contentLength > 10 * 1024 * 1024) {
+						updateS3Tag(key, "deleted");
+						throw new ServiceException(
+							ErrorCode.INVALID_IMAGE_SIZE, ErrorCode.INVALID_IMAGE_SIZE.getMessage());
+					}
+					if (contentType == null || !contentType.startsWith("image/")) {
+						updateS3Tag(key, "deleted");
+						throw new ServiceException(
+							ErrorCode.INVALID_IMAGE_TYPE, ErrorCode.INVALID_IMAGE_TYPE.getMessage());
+					}
+				} catch (IOException e) {
+					throw new ServiceException(ErrorCode.VALIDATION_ERROR, "파일 분석 중 오류 발생: " + key);
+				}
 			} catch (Exception e) {
 				throw new ServiceException(ErrorCode.VALIDATION_ERROR, "이미지를 찾을 수 없습니다 : " + key);
 			}
 		}
 		for (String key : keys) {
-			updateS3Tag(key);
+			updateS3Tag(key, "valid");
 		}
 	}
 
-	private void updateS3Tag(String key) {
+	public void updateS3Tag(String key, String status) {
 		Tagging newTagging = Tagging.builder()
-			.tagSet(Tag.builder().key("status").value("valid").build())
+			.tagSet(Tag.builder().key("status").value(status).build())
 			.build();
 
 		PutObjectTaggingRequest taggingRequest = PutObjectTaggingRequest.builder()
 			.bucket(bucket).key(key).tagging(newTagging).build();
 
 		s3Client.putObjectTagging(taggingRequest);
-	}
-
-	private void deleteFile(String key) {
-		try {
-			s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
-		} catch (Exception e) {
-			throw ErrorCode.INVALID_IMAGE_DETELE.serviceException("올바르지 않은 이미지 삭제에 실패했습니다. : " + key);
-		}
-	}
-
-	public void deleteFiles(List<ProductImage> keys) {
-		for (ProductImage key : keys) {
-			try {
-				s3Client.deleteObject(
-					DeleteObjectRequest.builder().bucket(bucket).key(key.getImageUrl()).build()
-				);
-			} catch (Exception e) {
-				log.warn("이미지 삭제 실패 : " + key);
-			}
-		}
-
 	}
 
 	public String getPresignedUrl(String key) {

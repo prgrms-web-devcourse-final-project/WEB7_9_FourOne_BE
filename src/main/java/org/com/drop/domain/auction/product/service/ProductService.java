@@ -160,7 +160,9 @@ public class ProductService {
 	public void deleteProductImage(Product product, User actor) {
 		if (product.getSeller().getId().equals(actor.getId())) {
 			List<ProductImage> keys = productImageRepository.deleteByProduct(product);
-			amazonS3Client.deleteFiles(keys);
+			for (ProductImage key : keys) {
+				amazonS3Client.updateS3Tag(key.getImageUrl(), "deleted");
+			}
 		}
 	}
 
