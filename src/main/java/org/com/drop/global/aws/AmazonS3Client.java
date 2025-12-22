@@ -58,9 +58,7 @@ public class AmazonS3Client {
 			.putObjectRequest(putObjectRequest)
 			.build();
 
-		String url = s3Presigner.presignPutObject(preSignRequest).url().toString();
-
-		return url;
+		return s3Presigner.presignPutObject(preSignRequest).url().toString();
 	}
 
 	private String generateFileName(String contentType, User actor) {
@@ -79,7 +77,7 @@ public class AmazonS3Client {
 		for (String key : keys) {
 			try {
 				GetObjectRequest getObjectRequest =
-					GetObjectRequest.builder().bucket(bucket).key(key).range("bytes=0-1024").build();
+					GetObjectRequest.builder().bucket(bucket).key(key).build();
 
 				ResponseInputStream<GetObjectResponse> is = s3Client.getObject(getObjectRequest);
 				try {
@@ -100,7 +98,7 @@ public class AmazonS3Client {
 					throw new ServiceException(ErrorCode.VALIDATION_ERROR, "파일 분석 중 오류 발생: " + key);
 				}
 			} catch (Exception e) {
-				throw new ServiceException(ErrorCode.VALIDATION_ERROR, "이미지를 찾을 수 없습니다 : " + key);
+				throw new ServiceException(ErrorCode.VALIDATION_ERROR, e.getMessage() + " 이미지를 찾을 수 없습니다 : " + key);
 			}
 		}
 		for (String key : keys) {
