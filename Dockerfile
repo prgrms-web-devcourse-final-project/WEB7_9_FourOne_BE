@@ -19,6 +19,9 @@ COPY naver-checkstyle-rules.xml .
 # 종속성 설치
 RUN ./gradlew dependencies --no-daemon
 
+ARG ENV_FILE_CONTENT
+RUN echo "$ENV_FILE_CONTENT" > .env.properties
+
 # 소스 코드 복사
 COPY src src
 
