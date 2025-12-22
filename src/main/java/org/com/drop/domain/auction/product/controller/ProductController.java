@@ -3,7 +3,6 @@ package org.com.drop.domain.auction.product.controller;
 import org.com.drop.domain.auction.product.dto.BookmarkCreateResponse;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
 import org.com.drop.domain.auction.product.dto.ProductCreateResponse;
-import org.com.drop.domain.auction.product.dto.ProductSearchResponse;
 import org.com.drop.domain.auction.product.entity.BookMark;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.service.ProductService;
@@ -91,16 +90,4 @@ public class ProductController {
 		String url = amazonS3Client.createPresignedUrl("products/%d".formatted(actor.getId()));
 		return new RsData<>(url);
 	}
-
-	@GetMapping("/{productId}")
-	public RsData<ProductSearchResponse> getProduct(
-		@PathVariable Long productId
-	) {
-		ProductSearchResponse product = productService.findProductWithImgById(productId);
-		return new RsData<>(
-			200,
-			product
-		);
-	}
-
 }
