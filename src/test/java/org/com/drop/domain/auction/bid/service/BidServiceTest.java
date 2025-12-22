@@ -97,7 +97,7 @@ class BidServiceTest {
 		BidRequestDto requestDto = new BidRequestDto(15_000L); // 시작가 10_000 + minStep 1_000 이상
 
 		//when
-		BidResponseDto responseDto = bidService.placeBid(auction.getId(), bidder.getEmail(), requestDto);
+		BidResponseDto responseDto = bidService.placeBid(auction.getId(), bidder.getId(), requestDto);
 
 		//then
 		assertThat(responseDto.isHighestBidder()).isTrue();
@@ -118,7 +118,7 @@ class BidServiceTest {
 		BidRequestDto requestDto = new BidRequestDto(10_500L); // 최소 입찰 가능 금액 11_000 미만
 
 		// when & then
-		assertThatThrownBy(() -> bidService.placeBid(auction.getId(), user.getEmail(), requestDto))
+		assertThatThrownBy(() -> bidService.placeBid(auction.getId(), user.getId(), requestDto))
 			.isInstanceOf(ServiceException.class)
 			.hasMessageContaining("입찰 금액이 현재 최고가보다 낮거나 최소 입찰 단위를 충족하지 못했습니다.");
 

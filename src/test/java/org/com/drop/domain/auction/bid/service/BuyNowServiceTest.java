@@ -189,6 +189,6 @@ class BuyNowServiceTest {
 
 	private void placeBid(Auction auction, User bidder, long amount) {
 		BidRequestDto dto = new BidRequestDto(amount); // 네 실제 DTO에 맞게 수정!
-		bidService.placeBid(auction.getId(), bidder.getEmail(), dto);
+		bidService.placeBid(auction.getId(), bidder.getId(), dto);
 	}
 }

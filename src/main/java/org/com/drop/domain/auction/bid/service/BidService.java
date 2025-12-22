@@ -26,9 +26,9 @@ public class BidService {
 	private final AuctionRepository auctionRepository;
 
 	@Transactional
-	public BidResponseDto placeBid(Long auctionId, String userEmail, BidRequestDto requestDto) {
+	public BidResponseDto placeBid(Long auctionId, Long userId, BidRequestDto requestDto) {
 
-		User bidder = userRepository.findByEmail(userEmail)
+		User bidder = userRepository.findById(userId)
 			.orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND, "해당 사용자를 찾을 수 없습니다."));
 
 		Auction auction = auctionRepository.findById(auctionId)
