@@ -626,7 +626,7 @@ public class ProductControllerTest {
 	}
 
 	@Nested
-	@Disabled //aws 계정 있어야 하기 때문에 dev로 가는 코드에서는 disable 했습니다.
+	//@Disabled //aws 계정 있어야 하기 때문에 dev로 가는 코드에서는 disable 했습니다.
 	class PreSigned {
 		@Nested
 		class MakeUrl {
@@ -656,7 +656,7 @@ public class ProductControllerTest {
 
 			@Test
 			@DisplayName("Url 발급 - 실패 (로그인 없음)")
-			void t5_3() throws Exception {
+			void t6_1() throws Exception {
 				ResultActions resultActions = mvc
 					.perform(
 						get("/api/v1/products/img")
@@ -664,6 +664,35 @@ public class ProductControllerTest {
 					.andDo(print());
 				resultActions.andExpect(status().isUnauthorized());
 			}
+
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("Url 등록 확인 - 성공")
+			void t6_2() throws Exception {
+				String jsonContent = String.format(
+					"""
+							{
+								"key": "b67103865cff09c2638b8e8e8551175b18db2253.jpg"
+							}
+							"""
+				);
+				ResultActions resultActions = mvc
+					.perform(
+						get("/api/v1/products/img/complete")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+							.with(csrf())
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("completeUpload"))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.code").value("SUCCESS"))
+					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
+			}
+
 		}
 	}
 
