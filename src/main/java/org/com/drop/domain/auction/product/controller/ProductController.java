@@ -1,5 +1,7 @@
 package org.com.drop.domain.auction.product.controller;
 
+import java.util.UUID;
+
 import org.com.drop.domain.auction.product.dto.BookmarkCreateResponse;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
 import org.com.drop.domain.auction.product.dto.ProductCreateResponse;
@@ -8,6 +10,7 @@ import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.service.ProductService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.aws.AmazonS3Client;
+import org.com.drop.global.aws.PreSignedUrlRequest;
 import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -85,9 +89,21 @@ public class ProductController {
 
 	@GetMapping("/img")
 	public RsData<String> getImageUrl(
-		@LoginUser User actor
+		@LoginUser User actor,
+		@Valid @RequestParam PreSignedUrlRequest preSignedUrlRequest
 	) {
-		String url = amazonS3Client.createPresignedUrl("products/%d".formatted(actor.getId()));
+		String extension = preSignedUrlRequest.contentType().split("/")[1];
+		String path = "products/%d/%s.%s".formatted(actor.getId(), UUID.randomUUID(), extension);
+		String url = amazonS3Client.createPresignedUrl(path, preSignedUrlRequest);
 		return new RsData<>(url);
+	}
+
+	@GetMapping("/img/complete")
+	public RsData<String> completeUpload(
+		@RequestBody String key
+	) {
+		amazonS3Client.verifyImageAsync(key);
+
+		return new RsData<>(null);
 	}
 }
