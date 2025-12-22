@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
+import org.com.drop.domain.auction.bid.bidEvent.BidSuccessEvent;
 import org.com.drop.domain.auction.bid.dto.request.BidRequestDto;
 import org.com.drop.domain.auction.bid.dto.response.BidHistoryResponse;
 import org.com.drop.domain.auction.bid.dto.response.BidResponseDto;
@@ -15,6 +16,7 @@ import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class BidService {
 	private final BidRepository bidRepository;
 	private final UserRepository userRepository;
 	private final AuctionRepository auctionRepository;
+	private final ApplicationEventPublisher eventPublisher;
 
 	@Transactional
 	public BidResponseDto placeBid(Long auctionId, Long userId, BidRequestDto requestDto) {
@@ -71,6 +74,8 @@ public class BidService {
 			.build();
 
 		bidRepository.save(bid);
+
+		eventPublisher.publishEvent(new BidSuccessEvent(auctionId, bidAmount));
 
 		boolean isHighestBidder = true;
 		Long currentHighestBid = bidAmount;
