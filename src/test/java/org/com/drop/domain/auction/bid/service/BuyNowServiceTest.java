@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
 import org.com.drop.domain.auction.bid.dto.request.BidRequestDto;
+import org.com.drop.domain.auction.bid.dto.request.BuyNowRequestDto;
 import org.com.drop.domain.auction.bid.dto.response.BuyNowResponseDto;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
@@ -64,7 +65,9 @@ class BuyNowServiceTest {
 			)
 		);
 
-		assertThatThrownBy(() -> buyNowService.buyNow(auction.getId(), buyer.getId()))
+		BuyNowRequestDto dto = new BuyNowRequestDto(50_000L);
+
+		assertThatThrownBy(() -> buyNowService.buyNow(auction.getId(), buyer.getId(), dto))
 			.isInstanceOf(ServiceException.class)
 			.hasMessageContaining("즉시 구매가 불가능한 상품입니다.");
 	}
@@ -89,7 +92,9 @@ class BuyNowServiceTest {
 			Auction.AuctionStatus.LIVE
 		));
 
-		BuyNowResponseDto res = buyNowService.buyNow(auction.getId(), buyer.getId());
+		BuyNowRequestDto dto = new BuyNowRequestDto(50_000L);
+
+		BuyNowResponseDto res = buyNowService.buyNow(auction.getId(), buyer.getId(), dto);
 
 		assertThat(res.auctionId()).isEqualTo(auction.getId());
 		assertThat(res.auctionStatus()).isEqualTo("ENDED");
@@ -126,10 +131,12 @@ class BuyNowServiceTest {
 		Auction saved = auctionRepository.findById(auction.getId()).orElseThrow();
 		assertThat(saved.getBuyNowPrice()).isNotNull();
 
-		buyNowService.buyNow(auction.getId(), buyer.getId());
+		BuyNowRequestDto dto = new BuyNowRequestDto(50_000L);
+
+		buyNowService.buyNow(auction.getId(), buyer.getId(), dto);
 
 		ServiceException ex = catchThrowableOfType(
-			() -> buyNowService.buyNow(auction.getId(), buyer.getId()),
+			() -> buyNowService.buyNow(auction.getId(), buyer.getId(), dto),
 			ServiceException.class
 		);
 
