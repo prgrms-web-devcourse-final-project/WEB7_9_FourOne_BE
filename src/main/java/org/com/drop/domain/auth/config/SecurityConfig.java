@@ -38,9 +38,9 @@ public class SecurityConfig {
 				.requestMatchers("/error").permitAll()
 				.requestMatchers(
 					"/api/v1/auth/login",
-					"/api/v1/auth/signup",
-					"/api/v1/auth/verify",
-					"/api/v1/auth/send-code",
+					"/api/v1/auth/local/signup",
+					"/api/v1/auth/email/verify-code",
+					"/api/v1/auth/email/send-code",
 					"/api/v1/auth/refresh"
 				).permitAll()
 				.requestMatchers("/api/v1/auth/logout").authenticated()

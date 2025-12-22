@@ -6,7 +6,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,8 +17,14 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-@Disabled
-@SpringBootTest
+@SpringBootTest(properties = {
+	"spring.cloud.aws.s3.region=ap-northeast-2",
+	"spring.cloud.aws.credentials.access-key=dummy",
+	"spring.cloud.aws.credentials.secret-key=dummy",
+	"spring.cloud.aws.stack.auto=false",
+	"spring.cloud.aws.s3.bucket=test-bucket",
+	"AWS_S3_BUCKET=test-bucket"
+})
 @AutoConfigureMockMvc
 @Transactional
 @ActiveProfiles("test")
@@ -63,5 +68,28 @@ class AuthLoginIntegrationTest {
 			.andExpect(status().isOk())
 			.andExpect(cookie().exists("refreshToken"))
 			.andExpect(jsonPath("$.data.accessToken").exists());
+	}
+
+	@Test
+	@DisplayName("로그인 실패 - 비밀번호 불일치")
+	void login_fail_invalid_password() throws Exception {
+		User user = User.builder()
+			.email("fail@test.com")
+			.password(passwordEncoder.encode("correct-password"))
+			.nickname("failer")
+			.loginType(User.LoginType.LOCAL)
+			.role(User.UserRole.USER)
+			.build();
+		userRepository.saveAndFlush(user);
+
+		mockMvc.perform(post("/api/v1/auth/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+                      {
+                         "email": "fail@test.com",
+                         "password": "wrong-password"
+                      }
+                   """))
+			.andExpect(status().isUnauthorized());
 	}
 }
