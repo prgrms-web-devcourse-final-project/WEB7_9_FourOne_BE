@@ -50,17 +50,17 @@ public class AuthService {
 
 		if (!verificationCodeStore.isVerified(dto.email())) {
 			throw ErrorCode.AUTH_CODE_EXPIRED
-				.serviceException("email=%s", dto.email());
+				.serviceException("인증되지 않은 이메일입니다: email=%s", dto.email());
 		}
 
 		if (userRepository.existsByEmail(dto.email())) {
 			throw ErrorCode.AUTH_DUPLICATE_EMAIL
-				.serviceException("email=%s", dto.email());
+				.serviceException("중복된 이메일입니다: email=%s", dto.email());
 		}
 
 		if (userRepository.existsByNickname(dto.nickname())) {
 			throw ErrorCode.AUTH_DUPLICATE_NICKNAME
-				.serviceException("nickname=%s", dto.nickname());
+				.serviceException("중복된 닉네임입니다: nickname=%s", dto.nickname());
 		}
 
 		User user = User.builder()
@@ -82,19 +82,20 @@ public class AuthService {
 	public EmailSendResponse sendVerificationCode(String email) {
 		if (userRepository.existsByEmail(email)) {
 			throw ErrorCode.AUTH_DUPLICATE_EMAIL
-				.serviceException("email=%s (이미 등록된 이메일)", email);
+				.serviceException("이미 가입된 이메일입니다: email=%s", email);
 		}
 
 		String code = generateRandomCode();
 
 		try {
 			verificationCodeStore.saveCode(email, code);
+			emailService.sendVerificationEmail(email, code);
 		} catch (Exception e) {
+			verificationCodeStore.removeCode(email);
 			throw ErrorCode.AUTH_EMAIL_SEND_FAILED
-				.serviceException("Redis 저장 실패로 인한 이메일 발송 실패: email=%s", email);
+				.serviceException("이메일 발송 중 오류 발생: email=%s, error=%s", email, e.getMessage());
 		}
 
-		emailService.sendVerificationEmail(email, code);
 		return EmailSendResponse.now();
 	}
 
@@ -127,7 +128,7 @@ public class AuthService {
 
 		if (!passwordEncoder.matches(request.password(), user.getPassword())) {
 			throw ErrorCode.AUTH_PASSWORD_MISMATCH
-				.serviceException("userId=%d", user.getId());
+				.serviceException("비밀번호 불일치로 탈퇴 실패: userId=%d", user.getId());
 		}
 
 		if (userHasActiveAuctionsOrTrades(user)) {

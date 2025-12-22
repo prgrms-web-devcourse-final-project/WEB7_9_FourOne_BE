@@ -26,7 +26,7 @@ public class VerificationCodeStore {
 			CODE_TTL_MINUTES,
 			TimeUnit.MINUTES
 		);
-		log.info("Redis에 인증 코드 저장 완료. Key: {}, TTL: {}분", key, CODE_TTL_MINUTES);
+		log.debug("Redis에 인증 코드 저장 완료. Key: {}, TTL: {}분", key, CODE_TTL_MINUTES);
 	}
 
 	public String getCode(String email) {
