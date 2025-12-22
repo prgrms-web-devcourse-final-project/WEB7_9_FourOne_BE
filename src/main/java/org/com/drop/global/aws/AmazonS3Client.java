@@ -58,7 +58,65 @@ public class AmazonS3Client {
 			.putObjectRequest(putObjectRequest)
 			.build();
 
-		return s3Presigner.presignPutObject(preSignRequest).url().toString();
+		String url = s3Presigner.presignPutObject(preSignRequest).url().toString();
+
+		return url;
+	}
+
+	private String generateFileName(String contentType, User actor) {
+		String uuid = UUID.randomUUID().toString();
+		String extension = switch (contentType) {
+			case "image/jpeg" -> ".jpg";
+			case "image/png"  -> ".png";
+			case "image/webp" -> ".webp";
+			case "image/gif"  -> ".gif";
+			default -> throw new ServiceException(ErrorCode.INVALID_IMAGE_TYPE, "지원하지 않는 형식입니다: " + contentType);
+		};
+		return actor.getId() + uuid + extension;
+	}
+
+	public void verifyImage(List<String> keys) {
+		for (String key : keys) {
+			try {
+				GetObjectRequest getObjectRequest =
+					GetObjectRequest.builder().bucket(bucket).key(key).range("bytes=0-1024").build();
+
+				ResponseInputStream<GetObjectResponse> is = s3Client.getObject(getObjectRequest);
+				try {
+					String contentType = tika.detect(is);
+					Long contentLength = is.response().contentLength();
+
+					if (contentLength > 10 * 1024 * 1024) {
+						updateS3Tag(key, "deleted");
+						throw new ServiceException(
+							ErrorCode.INVALID_IMAGE_SIZE, ErrorCode.INVALID_IMAGE_SIZE.getMessage());
+					}
+					if (contentType == null || !contentType.startsWith("image/")) {
+						updateS3Tag(key, "deleted");
+						throw new ServiceException(
+							ErrorCode.INVALID_IMAGE_TYPE, ErrorCode.INVALID_IMAGE_TYPE.getMessage());
+					}
+				} catch (IOException e) {
+					throw new ServiceException(ErrorCode.VALIDATION_ERROR, "파일 분석 중 오류 발생: " + key);
+				}
+			} catch (Exception e) {
+				throw new ServiceException(ErrorCode.VALIDATION_ERROR, "이미지를 찾을 수 없습니다 : " + key);
+			}
+		}
+		for (String key : keys) {
+			updateS3Tag(key, "valid");
+		}
+	}
+
+	public void updateS3Tag(String key, String status) {
+		Tagging newTagging = Tagging.builder()
+			.tagSet(Tag.builder().key("status").value(status).build())
+			.build();
+
+		PutObjectTaggingRequest taggingRequest = PutObjectTaggingRequest.builder()
+			.bucket(bucket).key(key).tagging(newTagging).build();
+
+		s3Client.putObjectTagging(taggingRequest);
 	}
 
 	private String generateFileName(String contentType, User actor) {
