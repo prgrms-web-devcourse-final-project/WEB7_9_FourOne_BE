@@ -36,7 +36,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.transaction.Transactional;
 
-@Disabled
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
@@ -147,6 +146,7 @@ public class ProductControllerTest {
 			@Test
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 출품 - 성공")
+			@Disabled //aws 계정 있어야 하기 때문에 dev로 가는 코드에서는 disable 했습니다.
 			void t1() throws Exception {
 				setUp(name, description, category, subCategory, images);
 
@@ -586,6 +586,7 @@ public class ProductControllerTest {
 	}
 
 	@Nested
+	@Disabled //aws 계정 있어야 하기 때문에 dev로 가는 코드에서는 disable 했습니다.
 	class PreSigned {
 		@Nested
 		class MakeUrl {

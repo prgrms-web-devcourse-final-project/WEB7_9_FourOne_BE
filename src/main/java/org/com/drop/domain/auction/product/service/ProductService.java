@@ -118,7 +118,6 @@ public class ProductService {
 			.filter(img -> img.getPreImg() == null).findFirst();
 
 		if (start.isEmpty()) {
-			System.out.println("이미지 없다.");
 			return Collections.emptyList();
 		}
 
@@ -126,7 +125,6 @@ public class ProductService {
 		ProductImage current = start.get();
 
 		while (current != null) {
-			System.out.println(current);
 			sortedUrls.add(amazonS3Client.getPresignedUrl(current.getImageUrl()));
 			current = current.getTrailImg();
 
