@@ -11,8 +11,8 @@ import java.time.LocalDateTime;
 import org.com.drop.domain.auction.bid.dto.request.BidRequestDto;
 import org.com.drop.domain.auction.bid.dto.response.BidResponseDto;
 import org.com.drop.domain.auction.bid.service.BidService;
+import org.com.drop.domain.auth.config.SecurityConfig;
 import org.com.drop.domain.auth.jwt.JwtProvider;
-import org.com.drop.domain.auth.service.RefreshTokenFilter;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.service.UserService;
 import org.com.drop.global.exception.ErrorCode;
@@ -22,6 +22,7 @@ import org.com.drop.global.security.auth.LoginUserArgumentResolver;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -30,14 +31,15 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-@WebMvcTest(BidController.class)
+@WebMvcTest(controllers = BidController.class, excludeAutoConfiguration = UserDetailsServiceAutoConfiguration.class)
 @AutoConfigureMockMvc
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, SecurityConfig.class})
 class BidControllerTest {
 
 
@@ -47,8 +49,6 @@ class BidControllerTest {
 	@MockitoBean
 	JwtProvider jwtProvider;
 
-	@MockitoBean
-	private RefreshTokenFilter refreshTokenFilter;
 
 	@MockitoBean
 	UserService userService;
@@ -133,7 +133,7 @@ class BidControllerTest {
 			.setControllerAdvice(new GlobalExceptionHandler())
 			.build();
 
-		given(bidService.placeBid(auctionId, appUser.getEmail(), new BidRequestDto(10000L)))
+		given(bidService.placeBid(auctionId, appUser.getId(), new BidRequestDto(10000L)))
 			.willThrow(new ServiceException(ErrorCode.AUCTION_BID_AMOUNT_TOO_LOW,
 				"입찰 금액이 현재 최고가보다 낮거나 최소 입찰 단위를 충족하지 못했습니다."));
 
@@ -155,7 +155,8 @@ class BidControllerTest {
 
 	@DisplayName("로그인하지 않은 사용자가 입찰요청시 403 응답한다")
 	@Test
-	void returns401WhenAnonymousUserBids() throws Exception {
+	@WithAnonymousUser
+	void returns403WhenAnonymousUserBids() throws Exception {
 		// given
 		Long auctionId = 12345L;
 
