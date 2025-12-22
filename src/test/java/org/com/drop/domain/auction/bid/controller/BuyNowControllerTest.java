@@ -2,6 +2,7 @@ package org.com.drop.domain.auction.bid.controller;
 
 import static org.mockito.BDDMockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.time.LocalDateTime;
@@ -18,6 +19,7 @@ import org.com.drop.global.security.auth.LoginUserArgumentResolver;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,7 +30,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-@WebMvcTest(BuyNowController.class)
+@WebMvcTest(controllers = BuyNowController.class, excludeAutoConfiguration = UserDetailsServiceAutoConfiguration.class)
 @AutoConfigureMockMvc(addFilters = false)
 class BuyNowControllerTest {
 	@Autowired
@@ -87,6 +89,7 @@ class BuyNowControllerTest {
 				post("/auctions/{auctionId}/buy-now", auctionId)
 					.contentType("application/json")
 			)
+			.andDo(print())
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data.auctionId").value(12345))
 			.andExpect(jsonPath("$.data.auctionStatus").value("ENDED"))
@@ -125,6 +128,7 @@ class BuyNowControllerTest {
 				post("/auctions/{auctionId}/buy-now", auctionId)
 					.contentType("application/json")
 			)
+			.andDo(print())
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.httpStatus").value(400))
 			.andExpect(jsonPath("$.code").value("AUCTION_BUY_NOW_NOT_AVAILABLE"))
