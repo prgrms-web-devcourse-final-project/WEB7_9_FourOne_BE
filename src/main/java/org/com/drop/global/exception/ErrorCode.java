@@ -86,7 +86,7 @@ public enum ErrorCode {
 	PAY_ALREADY_PROCESSED("1307", HttpStatus.CONFLICT, "이미 처리된 결제 입니다."),
 	PAY_ALREADY_CANCELED_PAYMENT("1308", HttpStatus.CONFLICT, "이미 취소된 결제입니다."),
 	PAY_NOT_FOUND_METHOD("1309", HttpStatus.NOT_FOUND, "지원되지 않는 결제 수단입니다."),
-
+	USER_PAYMENT_METHOD_ALREADY_EXISTS("1114", HttpStatus.CONFLICT, "이미 등록된 카드입니다."),
 	//purchases
 	PURCHASE_INVALID_STATUS("1400", HttpStatus.CONFLICT, "구매 확정이 불가능한 상태입니다.(현재 상태: READY)"),
 
