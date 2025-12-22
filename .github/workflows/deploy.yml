@@ -69,6 +69,10 @@ jobs:
         id: export_image
         run: echo "image_name=drop" >> $GITHUB_OUTPUT
 
+      - name: Create env file from GitHub Secret
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env.properties
+
       - name: 빌드 앤 푸시
         uses: docker/build-push-action@v3
         with:
