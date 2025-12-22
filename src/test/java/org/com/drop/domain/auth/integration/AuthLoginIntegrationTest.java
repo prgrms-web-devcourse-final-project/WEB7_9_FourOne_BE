@@ -1,19 +1,24 @@
 package org.com.drop.domain.auth.integration;
 
+import static org.mockito.BDDMockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,11 +38,22 @@ class AuthLoginIntegrationTest {
 	@Autowired
 	MockMvc mockMvc;
 
+	@MockitoBean
+	StringRedisTemplate stringRedisTemplate;
+
+	@MockitoBean
+	ValueOperations<String, String> valueOperations;
+
 	@Autowired
 	UserRepository userRepository;
 
 	@Autowired
 	PasswordEncoder passwordEncoder;
+
+	@BeforeEach
+	void setUp() {
+		given(stringRedisTemplate.opsForValue()).willReturn(valueOperations);
+	}
 
 	@Test
 	@DisplayName("로그인 성공")

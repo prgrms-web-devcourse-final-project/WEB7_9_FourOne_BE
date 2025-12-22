@@ -10,11 +10,13 @@ import org.com.drop.domain.auth.dto.LocalLoginResponse;
 import org.com.drop.domain.auth.dto.LocalSignUpRequest;
 import org.com.drop.domain.auth.dto.LocalSignUpResponse;
 import org.com.drop.domain.auth.service.AuthService;
+import org.com.drop.domain.auth.store.RefreshTokenStore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
@@ -44,6 +46,12 @@ class AuthControllerTest {
 
 	@MockitoBean
 	AuthService authService;
+
+	@MockitoBean
+	StringRedisTemplate stringRedisTemplate;
+
+	@MockitoBean
+	RefreshTokenStore refreshTokenStore;
 
 	@Test
 	@DisplayName("회원가입 성공 - 201 응답 규격 확인")
