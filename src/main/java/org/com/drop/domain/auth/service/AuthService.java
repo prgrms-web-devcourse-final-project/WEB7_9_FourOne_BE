@@ -23,7 +23,6 @@ import org.com.drop.domain.user.entity.User.UserRole;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -50,17 +49,17 @@ public class AuthService {
 
 		if (!verificationCodeStore.isVerified(dto.email())) {
 			throw ErrorCode.AUTH_CODE_EXPIRED
-				.serviceException("email=%s", dto.email());
+				.serviceException("인증되지 않은 이메일입니다: email=%s", dto.email());
 		}
 
 		if (userRepository.existsByEmail(dto.email())) {
 			throw ErrorCode.AUTH_DUPLICATE_EMAIL
-				.serviceException("email=%s", dto.email());
+				.serviceException("중복된 이메일입니다: email=%s", dto.email());
 		}
 
 		if (userRepository.existsByNickname(dto.nickname())) {
 			throw ErrorCode.AUTH_DUPLICATE_NICKNAME
-				.serviceException("nickname=%s", dto.nickname());
+				.serviceException("중복된 닉네임입니다: nickname=%s", dto.nickname());
 		}
 
 		User user = User.builder()
@@ -82,19 +81,20 @@ public class AuthService {
 	public EmailSendResponse sendVerificationCode(String email) {
 		if (userRepository.existsByEmail(email)) {
 			throw ErrorCode.AUTH_DUPLICATE_EMAIL
-				.serviceException("email=%s (이미 등록된 이메일)", email);
+				.serviceException("이미 가입된 이메일입니다: email=%s", email);
 		}
 
 		String code = generateRandomCode();
 
 		try {
 			verificationCodeStore.saveCode(email, code);
+			emailService.sendVerificationEmail(email, code);
 		} catch (Exception e) {
+			verificationCodeStore.removeCode(email);
 			throw ErrorCode.AUTH_EMAIL_SEND_FAILED
-				.serviceException("Redis 저장 실패로 인한 이메일 발송 실패: email=%s", email);
+				.serviceException("이메일 발송 중 오류 발생: email=%s, error=%s", email, e.getMessage());
 		}
 
-		emailService.sendVerificationEmail(email, code);
 		return EmailSendResponse.now();
 	}
 
@@ -127,7 +127,7 @@ public class AuthService {
 
 		if (!passwordEncoder.matches(request.password(), user.getPassword())) {
 			throw ErrorCode.AUTH_PASSWORD_MISMATCH
-				.serviceException("userId=%d", user.getId());
+				.serviceException("비밀번호 불일치로 탈퇴 실패: userId=%d", user.getId());
 		}
 
 		if (userHasActiveAuctionsOrTrades(user)) {
@@ -161,6 +161,11 @@ public class AuthService {
 					.serviceException("email=%s", dto.email())
 			);
 
+		if (user.getDeletedAt() != null) {
+			throw ErrorCode.AUTH_USER_DELETED
+				.serviceException("이미 탈퇴된 회원입니다. userId=%d", user.getId());
+		}
+
 		if (!passwordEncoder.matches(dto.password(), user.getPassword())) {
 			throw ErrorCode.AUTH_UNAUTHORIZED
 				.serviceException("userId=%d (password mismatch)", user.getId());
@@ -179,14 +184,9 @@ public class AuthService {
 	}
 
 	public void logout() {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-		if (authentication == null || !authentication.isAuthenticated()) {
-			throw ErrorCode.AUTH_UNAUTHORIZED
-				.serviceException("No authenticated user found for logout.");
-		}
-
-		String email = authentication.getName();
+		String email = SecurityContextHolder.getContext()
+			.getAuthentication()
+			.getName();
 
 		refreshTokenStore.delete(email);
 	}

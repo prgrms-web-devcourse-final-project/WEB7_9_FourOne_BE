@@ -21,9 +21,9 @@ public class JwtProvider {
 		long expireSec = jwtProperties.getAccessTokenExpire();
 		Date expire = new Date(now.getTime() + expireSec * 1000);
 
-		log.info("now        = {}", now);
-		log.info("expireSec = {}", expireSec);
-		log.info("expireAt  = {}", expire);
+		log.debug("now        = {}", now);
+		log.debug("expireSec = {}", expireSec);
+		log.debug("expireAt  = {}", expire);
 
 		return Jwts.builder()
 			.setSubject(username)

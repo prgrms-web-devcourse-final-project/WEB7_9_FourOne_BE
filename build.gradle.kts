@@ -67,6 +67,9 @@ dependencies {
 	testImplementation("org.testcontainers:testcontainers:1.20.1")
 	testImplementation("org.testcontainers:mysql:1.20.1")
 	testImplementation("org.testcontainers:junit-jupiter:1.20.1")
+
+    //aws
+    implementation("io.awspring.cloud:spring-cloud-aws-starter-s3:3.1.1")
 }
 
 /** ===========================

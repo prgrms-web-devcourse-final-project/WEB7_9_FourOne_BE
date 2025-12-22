@@ -1,25 +1,35 @@
 package org.com.drop.domain.auth.integration;
 
+import static org.mockito.BDDMockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-@Disabled
-@SpringBootTest
+@SpringBootTest(properties = {
+	"spring.cloud.aws.s3.region=ap-northeast-2",
+	"spring.cloud.aws.credentials.access-key=dummy",
+	"spring.cloud.aws.credentials.secret-key=dummy",
+	"spring.cloud.aws.stack.auto=false",
+	"spring.cloud.aws.s3.bucket=test-bucket",
+	"AWS_S3_BUCKET=test-bucket"
+})
 @AutoConfigureMockMvc
 @Transactional
 @ActiveProfiles("test")
@@ -28,11 +38,22 @@ class AuthLoginIntegrationTest {
 	@Autowired
 	MockMvc mockMvc;
 
+	@MockitoBean
+	StringRedisTemplate stringRedisTemplate;
+
+	@MockitoBean
+	ValueOperations<String, String> valueOperations;
+
 	@Autowired
 	UserRepository userRepository;
 
 	@Autowired
 	PasswordEncoder passwordEncoder;
+
+	@BeforeEach
+	void setUp() {
+		given(stringRedisTemplate.opsForValue()).willReturn(valueOperations);
+	}
 
 	@Test
 	@DisplayName("로그인 성공")
@@ -53,15 +74,38 @@ class AuthLoginIntegrationTest {
 		mockMvc.perform(post("/api/v1/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
-						{
-							"email": "test@test.com",
-							"password": "Password123!"
-						}
-					""")
+					{
+						"email": "test@test.com",
+						"password": "Password123!"
+					}
+				""")
 				.with(csrf())
 			)
 			.andExpect(status().isOk())
 			.andExpect(cookie().exists("refreshToken"))
 			.andExpect(jsonPath("$.data.accessToken").exists());
+	}
+
+	@Test
+	@DisplayName("로그인 실패 - 비밀번호 불일치")
+	void login_fail_invalid_password() throws Exception {
+		User user = User.builder()
+			.email("fail@test.com")
+			.password(passwordEncoder.encode("correct-password"))
+			.nickname("failer")
+			.loginType(User.LoginType.LOCAL)
+			.role(User.UserRole.USER)
+			.build();
+		userRepository.saveAndFlush(user);
+
+		mockMvc.perform(post("/api/v1/auth/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+						"email": "fail@test.com",
+						"password": "wrong-password"
+					}
+				"""))
+			.andExpect(status().isUnauthorized());
 	}
 }
