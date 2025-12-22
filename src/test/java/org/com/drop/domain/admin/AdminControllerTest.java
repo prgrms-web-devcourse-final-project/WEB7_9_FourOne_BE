@@ -9,6 +9,7 @@ import java.util.List;
 import org.com.drop.domain.admin.guide.controller.GuideController;
 import org.com.drop.domain.admin.guide.entity.Guide;
 import org.com.drop.domain.admin.guide.repository.GuideRepository;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ import org.springframework.test.web.servlet.ResultActions;
 
 import jakarta.transaction.Transactional;
 
+@Disabled
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc

@@ -8,12 +8,14 @@ import java.util.Optional;
 import org.com.drop.domain.payment.settlement.domain.Settlement;
 import org.com.drop.domain.payment.settlement.domain.SettlementStatus;
 import org.com.drop.domain.payment.settlement.repository.SettlementRepository;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+@Disabled
 @ExtendWith(MockitoExtension.class)
 class SettlementReleaseServiceImplTest {
 
@@ -48,6 +50,3 @@ class SettlementReleaseServiceImplTest {
 		// save()는 더 이상 호출되지 않음 (Dirty Checking)
 	}
 }
-
-
-

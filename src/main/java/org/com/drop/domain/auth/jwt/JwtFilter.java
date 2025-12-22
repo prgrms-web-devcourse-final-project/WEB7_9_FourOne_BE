@@ -14,7 +14,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
@@ -22,10 +24,10 @@ public class JwtFilter extends OncePerRequestFilter {
 	private final JwtProvider jwtProvider;
 	private final UserDetailsService userDetailsService;
 
-	@Override
-	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-		return request.getRequestURI().equals("/api/v1/auth/refresh");
-	}
+	// @Override
+	// protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+	// 	return request.getRequestURI().equals("/api/v1/auth/refresh");
+	// }
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request,
@@ -47,7 +49,7 @@ public class JwtFilter extends OncePerRequestFilter {
 				SecurityContextHolder.getContext().setAuthentication(auth);
 
 			} catch (Exception e) {
-				// 토큰 invalid → 그냥 다음 필터로 넘김(401은 컨트롤러 단에서)
+				log.error("JWT Authentication failed: {}", e.getMessage());
 			}
 		}
 

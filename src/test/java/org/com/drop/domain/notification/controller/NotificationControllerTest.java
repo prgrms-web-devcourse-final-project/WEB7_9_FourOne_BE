@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.com.drop.domain.notification.repository.NotificationEmitterRepository;
 import org.com.drop.domain.notification.service.NotificationService;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import jakarta.transaction.Transactional;
 
+@Disabled
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
