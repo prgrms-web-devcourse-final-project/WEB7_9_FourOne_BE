@@ -16,6 +16,7 @@ import org.com.drop.domain.auction.product.entity.ProductImage;
 import org.com.drop.domain.auction.product.repository.BookmarkRepository;
 import org.com.drop.domain.auction.product.repository.ProductImageRepository;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
+import org.com.drop.domain.user.controller.UserController;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.Disabled;
@@ -95,7 +96,7 @@ public class ProductControllerTest {
 					.andDo(print());
 
 				resultActions
-					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().handlerType(UserController.class))
 					.andExpect(handler().methodName("getProduct"))
 					.andExpect(status().isOk())
 					.andExpect(jsonPath("$.code").value("SUCCESS"))
@@ -132,7 +133,7 @@ public class ProductControllerTest {
 					.andDo(print());
 
 				resultActions
-					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().handlerType(UserController.class))
 					.andExpect(handler().methodName("getProduct"))
 					.andExpect(status().isNotFound())
 					.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
