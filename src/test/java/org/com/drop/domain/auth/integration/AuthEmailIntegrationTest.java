@@ -60,10 +60,10 @@ class AuthEmailIntegrationTest {
 		mockMvc.perform(post("/api/v1/auth/email/send-code")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
-                  {
-                     "email": "verify@test.com"
-                  }
-               """))
+					{
+						"email": "verify@test.com"
+					}
+				"""))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value(202));
 
@@ -89,11 +89,11 @@ class AuthEmailIntegrationTest {
 		mockMvc.perform(post("/api/v1/auth/email/verify-code")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(String.format("""
-                {
-                   "email": "%s",
-                   "code": "%s"
-                }
-             """, email, code)))
+					{
+						"email": "%s",
+					"code": "%s"
+					}
+				""", email, code)))
 			.andExpect(status().isOk());
 
 		verify(stringRedisTemplate, times(1)).delete("email_code:" + email);
@@ -108,11 +108,11 @@ class AuthEmailIntegrationTest {
 		mockMvc.perform(post("/api/v1/auth/email/verify-code")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
-                      {
-                         "email": "verify@test.com",
-                         "code": "123456"
-                      }
-                   """))
+					{
+						"email": "verify@test.com",
+						"code": "123456"
+					}
+				"""))
 			.andExpect(status().isBadRequest());
 	}
 
@@ -124,11 +124,11 @@ class AuthEmailIntegrationTest {
 		mockMvc.perform(post("/api/v1/auth/email/verify-code")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
-                      {
-                         "email": "verify@test.com",
-                         "code": "123456"
-                      }
-                   """))
+					{
+						"email": "verify@test.com",
+						"code": "123456"
+					}
+				"""))
 			.andExpect(status().isGone());
 	}
 }

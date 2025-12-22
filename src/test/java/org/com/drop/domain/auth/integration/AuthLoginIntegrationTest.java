@@ -58,11 +58,11 @@ class AuthLoginIntegrationTest {
 		mockMvc.perform(post("/api/v1/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
-						{
-							"email": "test@test.com",
-							"password": "Password123!"
-						}
-					""")
+					{
+						"email": "test@test.com",
+						"password": "Password123!"
+					}
+				""")
 				.with(csrf())
 			)
 			.andExpect(status().isOk())
@@ -85,11 +85,11 @@ class AuthLoginIntegrationTest {
 		mockMvc.perform(post("/api/v1/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
-                      {
-                         "email": "fail@test.com",
-                         "password": "wrong-password"
-                      }
-                   """))
+					{
+						"email": "fail@test.com",
+						"password": "wrong-password"
+					}
+				"""))
 			.andExpect(status().isUnauthorized());
 	}
 }
