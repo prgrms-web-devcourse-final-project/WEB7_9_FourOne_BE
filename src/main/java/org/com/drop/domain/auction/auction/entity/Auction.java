@@ -3,6 +3,8 @@ package org.com.drop.domain.auction.auction.entity;
 import java.time.LocalDateTime;
 
 import org.com.drop.domain.auction.product.entity.Product;
+import org.com.drop.global.exception.ErrorCode;
+import org.com.drop.global.exception.ServiceException;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -47,7 +49,7 @@ public class Auction {
 	private Integer buyNowPrice;
 
 	@Column(nullable = false)
-	private Integer midBidStep;
+	private Integer minBidStep;
 
 	@Column(nullable = false)
 	private LocalDateTime startAt;
@@ -62,20 +64,29 @@ public class Auction {
 	private LocalDateTime deletedAt;
 
 	public enum AuctionStatus { SCHEDULED, LIVE, ENDED, CANCELLED }
+
 	public Auction(
 		Product product,
 		Integer startPrice,
 		Integer buyNowPrice,
-		Integer midBidStep,
+		Integer minBidStep,
 		LocalDateTime startAt,
 		LocalDateTime endAt,
 		AuctionStatus status) {
 		this.product = product;
 		this.startPrice = startPrice;
 		this.buyNowPrice = buyNowPrice;
-		this.midBidStep = midBidStep;
+		this.minBidStep = minBidStep;
 		this.startAt = startAt;
 		this.endAt = endAt;
 		this.status = status;
+	}
+
+	public void end(LocalDateTime now) {
+		if (this.status != AuctionStatus.LIVE) {
+			throw new ServiceException(ErrorCode.AUCTION_NOT_LIVE, "진행 중인 경매가 아닙니다.");
+		}
+		this.status = AuctionStatus.ENDED;
+		this.endAt = now;
 	}
 }

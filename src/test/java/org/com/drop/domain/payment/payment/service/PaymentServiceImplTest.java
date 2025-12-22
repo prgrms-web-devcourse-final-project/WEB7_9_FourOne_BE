@@ -1,15 +1,24 @@
 package org.com.drop.domain.payment.payment.service;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.com.drop.domain.auction.product.entity.Product.Category.GAME;
+import static org.com.drop.domain.auction.product.entity.Product.SubCategory.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
+import org.com.drop.domain.auction.auction.entity.Auction;
+import org.com.drop.domain.auction.auction.repository.AuctionRepository;
+import org.com.drop.domain.auction.product.entity.Product;
+import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.payment.payment.domain.Payment;
 import org.com.drop.domain.payment.payment.domain.PaymentStatus;
 import org.com.drop.domain.payment.payment.infra.toss.TossPaymentsClient;
 import org.com.drop.domain.payment.payment.infra.toss.util.CustomerKeyGenerator;
 import org.com.drop.domain.payment.payment.repository.PaymentRepository;
 import org.com.drop.domain.payment.settlement.repository.SettlementRepository;
+import org.com.drop.domain.user.entity.User;
+import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.domain.winner.domain.Winner;
 import org.com.drop.domain.winner.repository.WinnerRepository;
 import org.junit.jupiter.api.Test;
@@ -39,10 +48,65 @@ class PaymentServiceImplTest {
 	@Mock
 	CustomerKeyGenerator customerKeyGenerator;
 
+	@Autowired
+	ProductRepository productRepository;
+
+	@Autowired
+	AuctionRepository auctionRepository;
+
+	@Autowired
+	UserRepository userRepository;
+
+	private User createDummyUser(String name) {
+		User user = User.builder()
+			.email(name + "+" + UUID.randomUUID() + "@example.com")
+			.nickname(name + UUID.randomUUID())
+			.password("12345678")
+			.loginType(User.LoginType.LOCAL)
+			.role(User.UserRole.USER)
+			.createdAt(LocalDateTime.now())
+			.penaltyCount(0)
+			.build();
+		return userRepository.save(user);
+	}
+
+	private Auction createLiveAuction(Product product) {
+		LocalDateTime now = LocalDateTime.now();
+
+		Auction auction = Auction.builder()
+			.product(product)
+			.startPrice(10_000)
+			.minBidStep(1_000)
+			.buyNowPrice(null)
+			.startAt(now.minusHours(1))
+			.endAt(now.plusHours(1))
+			.status(Auction.AuctionStatus.LIVE)
+			.build();
+
+		return auctionRepository.save(auction);
+	}
+
 	@Test
 	void createPayment_createsRequestedPaymentWithSellerId() {
 
+		User seller = createDummyUser("판매자1");
+
+		Product product	= productRepository.save(
+			Product.builder()
+				.seller(seller)
+				.name("Test Product")
+				.description("Test Description")
+				.category(GAME)
+				.subcategory(ETC)
+				.createdAt(LocalDateTime.now())
+				.bookmarkCount(0)
+				.build()
+		);
+
+		Auction auction = createLiveAuction(product);
+
 		Winner winner = new Winner();
+		ReflectionTestUtils.setField(winner, "auction", auction);
 		ReflectionTestUtils.setField(winner, "sellerId", 10L);
 		ReflectionTestUtils.setField(winner, "userId", 20L);
 		ReflectionTestUtils.setField(winner, "finalPrice", 1000L);
@@ -68,7 +132,23 @@ class PaymentServiceImplTest {
 	@Test
 	void confirmPaymentByWebhook_isIdempotent_doNotDuplicateSettlement() {
 
+		User seller = createDummyUser("판매자1");
+
+		Product product	= productRepository.save(
+			Product.builder()
+				.seller(seller)
+				.name("Test Product")
+				.description("Test Description")
+				.category(GAME)
+				.subcategory(ETC)
+				.createdAt(LocalDateTime.now())
+				.bookmarkCount(0)
+				.build()
+		);
+		Auction auction = createLiveAuction(product);
+
 		Winner winner = new Winner();
+		ReflectionTestUtils.setField(winner, "auction", auction);
 		ReflectionTestUtils.setField(winner, "sellerId", 10L);
 		ReflectionTestUtils.setField(winner, "userId", 20L);
 		ReflectionTestUtils.setField(winner, "finalPrice", 1000L);

@@ -3,11 +3,11 @@ package org.com.drop.domain.user.service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
+import org.com.drop.domain.auction.bid.entity.Bid;
 import org.com.drop.domain.auction.product.entity.BookMark;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.entity.ProductImage;
@@ -23,6 +23,7 @@ import org.com.drop.domain.user.dto.UpdateProfileResponse;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +37,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Primary
 public class UserService implements UserDetailsService {
 
 	private final UserRepository userRepository;

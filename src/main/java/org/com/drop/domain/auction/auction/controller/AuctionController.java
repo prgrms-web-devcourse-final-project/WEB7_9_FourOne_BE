@@ -4,9 +4,16 @@ import org.com.drop.domain.auction.auction.dto.AuctionCreateRequest;
 import org.com.drop.domain.auction.auction.dto.AuctionCreateResponse;
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.service.AuctionService;
+import org.com.drop.domain.auction.bid.dto.request.BidRequestDto;
+import org.com.drop.domain.auction.bid.dto.request.BuyNowRequestDto;
+import org.com.drop.domain.auction.bid.dto.response.BidResponseDto;
+import org.com.drop.domain.auction.bid.dto.response.BuyNowResponseDto;
+import org.com.drop.domain.auction.bid.service.BidService;
+import org.com.drop.domain.auction.bid.service.BuyNowService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +29,10 @@ public class AuctionController {
 
 	private final AuctionService auctionService;
 
+	private final BuyNowService buyNowService;
+
+	private final BidService bidService;
+
 	@PostMapping
 	public RsData<AuctionCreateResponse> addProduct(
 		@LoginUser User actor,
@@ -32,5 +43,25 @@ public class AuctionController {
 			201,
 			new AuctionCreateResponse(auction)
 		);
+	}
+
+	@PostMapping("/{auctionId}/buy-now")
+	public RsData<BuyNowResponseDto> buyNow(
+		@PathVariable Long auctionId,
+		@LoginUser User user,
+		@RequestBody @Valid BuyNowRequestDto requestDto
+	) {
+		BuyNowResponseDto dto = buyNowService.buyNow(auctionId, user.getId(), requestDto);
+		return new RsData<>(dto);
+	}
+
+	@PostMapping("/{auctionId}/bids")
+	public RsData<BidResponseDto> placeBid(
+		@PathVariable Long auctionId,
+		@LoginUser User user,
+		@RequestBody @Valid BidRequestDto requestDto
+	) {
+		BidResponseDto dto = bidService.placeBid(auctionId, user.getId(), requestDto);
+		return new RsData<>(dto);
 	}
 }
