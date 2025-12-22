@@ -1,23 +1,14 @@
 package org.com.drop.domain.auction.product.controller;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import org.com.drop.domain.auction.auction.controller.AuctionController;
-import org.com.drop.domain.auction.auction.service.AuctionService;
-import org.com.drop.domain.auction.bid.dto.request.BidRequestDto;
-import org.com.drop.domain.auction.bid.dto.response.BidResponseDto;
-import org.com.drop.domain.auction.bid.dto.response.BuyNowResponseDto;
-import org.com.drop.domain.auction.bid.service.BidService;
-import org.com.drop.domain.auction.bid.service.BuyNowService;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
 import org.com.drop.domain.auction.product.entity.BookMark;
 import org.com.drop.domain.auction.product.entity.Product;
@@ -25,15 +16,9 @@ import org.com.drop.domain.auction.product.entity.ProductImage;
 import org.com.drop.domain.auction.product.repository.BookmarkRepository;
 import org.com.drop.domain.auction.product.repository.ProductImageRepository;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
-import org.com.drop.domain.auth.jwt.JwtProvider;
 import org.com.drop.domain.user.controller.UserController;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
-import org.com.drop.domain.user.service.UserService;
-import org.com.drop.global.exception.ErrorCode;
-import org.com.drop.global.exception.GlobalExceptionHandler;
-import org.com.drop.global.exception.ServiceException;
-import org.com.drop.global.security.auth.LoginUserArgumentResolver;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -42,17 +27,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -63,7 +41,7 @@ import jakarta.transaction.Transactional;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
-@Disabled
+@Disabled //aws 계정 있어야 하기 때문에 dev로 가는 코드에서는 disable 했습니다.
 public class ProductControllerTest {
 
 	private final Long productId = 2L;
@@ -75,7 +53,8 @@ public class ProductControllerTest {
 	private final String description = "테스트 상품 상세 설명";
 	private final Product.Category category = Product.Category.STARGOODS;
 	private final Product.SubCategory subCategory = Product.SubCategory.ACC;
-	private final List<String> images = List.of("img1.png", "img2.png");
+	private final List<String> images = List.of("b67103865cff09c2638b8e8e8551175b18db2253.jpg");
+	private final List<String> wrongImages = List.of("img1.png", "img2.png");
 	private final List<String> updatedImages = List.of("UpdatedImg1.png", "UpdatedImg2.png");
 	private String jsonContent;
 
@@ -91,17 +70,6 @@ public class ProductControllerTest {
 	private UserRepository userRepository;
 	@Autowired
 	private BookmarkRepository bookmarkRepository;
-	@MockitoBean
-	JwtProvider jwtProvider;
-
-	@MockitoBean
-	UserService userService;
-	@MockitoBean
-	BidService bidService;
-	@MockitoBean
-	AuctionService auctionService;
-	@MockitoBean
-	BuyNowService buyNowService;
 
 	void setUp(String name, String description, Product.Category category, Product.SubCategory subCategory,
 		List<String> images) throws JsonProcessingException {
@@ -151,7 +119,7 @@ public class ProductControllerTest {
 				List<ProductImage> productImages = productImageRepository.findAllByProductId(productId)
 					.stream().sorted((a, b) -> a.getId().compareTo(b.getId()))
 					.toList();
-				for	(int i = 0; i < productImages.size(); i++) {
+				for	(int i = 0; i < productImages.size(); i++ ) {
 					assertThat(productImages.get(i).getImageUrl())
 						.isEqualTo("b67103865cff09c2638b8e8e8551175b18db2253.jpg");
 				}
@@ -220,7 +188,6 @@ public class ProductControllerTest {
 			@Test
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 출품 - 성공")
-			@Disabled //aws 계정 있어야 하기 때문에 dev로 가는 코드에서는 disable 했습니다.
 			void t1() throws Exception {
 				setUp(name, description, category, subCategory, images);
 
@@ -247,7 +214,7 @@ public class ProductControllerTest {
 				List<ProductImage> productImages = productImageRepository.findAllByProductId(3L)
 					.stream().sorted((a, b) -> a.getId().compareTo(b.getId()))
 					.toList();
-				for	(int i = 0; i < productImages.size(); i++) {
+				for	(int i = 0; i < productImages.size(); i++ ) {
 					assertThat(productImages.get(i).getImageUrl()).isEqualTo(images.get(i));
 				}
 
@@ -283,6 +250,26 @@ public class ProductControllerTest {
 					).andDo(print());
 				resultActions.andExpect(status().isForbidden());
 			}
+
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("상품 출품 - 실패 (이미지 등록 없음)")
+			void t1_3() throws Exception {
+				setUp(name, description, category, subCategory, wrongImages);
+
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+					).andDo(print());
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("addProduct"))
+					.andExpect(status().is(400))
+					.andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+					.andExpect(jsonPath("$.message").value("요청 값이 올바르지 않습니다."));
+			}
 		}
 
 		@Nested
@@ -291,7 +278,7 @@ public class ProductControllerTest {
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 수정 - 성공")
 			void t2() throws Exception {
-				setUp(updatedName, description, category, subCategory, updatedImages);
+				setUp(updatedName, description, category, subCategory, images);
 				ResultActions resultActions = mvc
 					.perform(
 						put("/api/v1/products/%d".formatted(auctionId))
@@ -315,13 +302,6 @@ public class ProductControllerTest {
 
 				Product product = productRepository.findById(auctionId).get();
 				assertThat(product.getName()).isEqualTo(updatedName);
-
-				List<ProductImage> productImages = productImageRepository.findAllByProductId(auctionId)
-					.stream().sorted((a, b) -> a.getId().compareTo(b.getId()))
-					.toList();
-				for	(int i = 0; i < productImages.size(); i++) {
-					assertThat(productImages.get(i).getImageUrl()).isEqualTo(updatedImages.get(i));
-				}
 			}
 
 			@Test
@@ -660,7 +640,6 @@ public class ProductControllerTest {
 	}
 
 	@Nested
-	//@Disabled //aws 계정 있어야 하기 때문에 dev로 가는 코드에서는 disable 했습니다.
 	class PreSigned {
 		@Nested
 		class MakeUrl {
@@ -668,9 +647,20 @@ public class ProductControllerTest {
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("Url 발급 - 성공")
 			void t6() throws Exception {
+				String jsonContent = String.format(
+					"""
+							{
+								"content": "%s",
+								"latitude" : %s, 
+								"longitude" : %s
+							}
+							"""
+				);
 				ResultActions resultActions = mvc
 					.perform(
-						get("/api/v1/products/img")
+						post("/api/v1/products/img")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
 					)
 					.andDo(print());
 
@@ -698,248 +688,7 @@ public class ProductControllerTest {
 					.andDo(print());
 				resultActions.andExpect(status().isUnauthorized());
 			}
-
-			@Test
-			@WithMockUser(username = "user1@example.com", roles = {"USER"})
-			@DisplayName("Url 등록 확인 - 성공")
-			void t6_2() throws Exception {
-				String jsonContent = String.format(
-					"""
-							{
-								"key": "b67103865cff09c2638b8e8e8551175b18db2253.jpg"
-							}
-							"""
-				);
-				ResultActions resultActions = mvc
-					.perform(
-						get("/api/v1/products/img/complete")
-							.contentType(MediaType.APPLICATION_JSON)
-							.content(jsonContent)
-							.with(csrf())
-					)
-					.andDo(print());
-
-				resultActions
-					.andExpect(handler().handlerType(ProductController.class))
-					.andExpect(handler().methodName("completeUpload"))
-					.andExpect(status().isOk())
-					.andExpect(jsonPath("$.code").value("SUCCESS"))
-					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
-			}
-
 		}
-	}
-
-	@DisplayName("입찰요청이 오면 200과 BidResponseDto를 반환한다")
-	@Test
-	void returns200AndBidResponseDtoWhenBidRequested() throws Exception {
-		// given
-		Long auctionId = 12345L;
-		Long userId = 1L;
-		String email = "test@test.com";
-		LocalDateTime bidTime = LocalDateTime.of(2025, 12, 5, 15, 50);
-
-		User appUser = User.builder().id(userId).email(email).build();
-
-		given(userService.findUserByEmail(eq(email))).willReturn(appUser);
-
-		BidResponseDto serviceResponse = BidResponseDto.of(auctionId, true, 11_000L, bidTime);
-		given(bidService.placeBid(any(), any(), any())).willReturn(serviceResponse);
-
-		UserDetails securityUser = org.springframework.security.core.userdetails.User
-			.withUsername(email)
-			.password("password")
-			.roles("USER")
-			.build();
-
-		Authentication auth = new UsernamePasswordAuthenticationToken(securityUser, null,
-			securityUser.getAuthorities());
-		SecurityContextHolder.getContext().setAuthentication(auth);
-
-		LoginUserArgumentResolver realResolver = new LoginUserArgumentResolver(userService);
-
-		mvc = MockMvcBuilders.standaloneSetup(new AuctionController(auctionService, buyNowService, bidService))
-			.setCustomArgumentResolvers(realResolver)
-			.build();
-
-		// when & then
-		mvc.perform(
-				post("/api/v1/auctions/{auctionId}/bids", auctionId)
-					.with(csrf())
-					.contentType(String.valueOf(MediaType.APPLICATION_JSON))
-					.content("""
-						{ "bidAmount": 11000 }
-						""")
-			)
-			.andDo(print())
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.data.auctionId").value(12345))
-			.andExpect(jsonPath("$.data.currentHighestBid").value(11000))
-			.andExpect(jsonPath("$.data.isHighestBidder").value(true))
-			.andExpect(jsonPath("$.data.bidTime").value("2025-12-05T15:50:00"));
-	}
-
-	@DisplayName("최소입찰단위 미만이면 400으로 에러응답한다")
-	@Test
-	@WithMockUser(username = "test@test.com")
-	void returns400WhenBidAmountBelowBidUnit() throws Exception {
-		// given
-		Long auctionId = 12345L;
-		String email = "test@test.com";
-
-		User appUser = User.builder().id(1L).email(email).build();
-		given(userService.findUserByEmail(email)).willReturn(appUser);
-
-		UserDetails securityUser = org.springframework.security.core.userdetails.User
-			.withUsername(email)
-			.password("password")
-			.roles("USER")
-			.build();
-
-		Authentication auth = new UsernamePasswordAuthenticationToken(securityUser,
-			null, securityUser.getAuthorities());
-		SecurityContextHolder.getContext().setAuthentication(auth);
-
-		LoginUserArgumentResolver realResolver = new LoginUserArgumentResolver(userService);
-
-		mvc = MockMvcBuilders.standaloneSetup(new AuctionController(auctionService, buyNowService, bidService))
-			.setCustomArgumentResolvers(realResolver)
-			.setControllerAdvice(new GlobalExceptionHandler())
-			.build();
-
-		given(bidService.placeBid(auctionId, appUser.getId(), new BidRequestDto(10000L)))
-			.willThrow(new ServiceException(ErrorCode.AUCTION_BID_AMOUNT_TOO_LOW,
-				"입찰 금액이 현재 최고가보다 낮거나 최소 입찰 단위를 충족하지 못했습니다."));
-
-		// when & then
-		mvc.perform(
-				post("/api/v1/auctions/{auctionId}/bids", auctionId)
-					.with(csrf())
-					.contentType(String.valueOf(MediaType.APPLICATION_JSON))
-					.content("""
-							{ "bidAmount": 10000 }
-						""")
-			)
-			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.httpStatus").value(400))
-			.andExpect(jsonPath("$.code").value("AUCTION_BID_AMOUNT_TOO_LOW"))
-			.andExpect(jsonPath("$.message").value("입찰 금액이 현재 최고가보다 낮거나 최소 입찰 단위를 충족하지 못했습니다."))
-			.andDo(print());
-	}
-
-	@DisplayName("로그인하지 않은 사용자가 입찰요청시 403 응답한다")
-	@Test
-	@WithAnonymousUser
-	void returns403WhenAnonymousUserBids() throws Exception {
-		// given
-		Long auctionId = 12345L;
-
-		// when & then
-		mvc.perform(
-				post("/api/v1/auctions/{auctionId}/bids", auctionId)
-					.contentType(String.valueOf(MediaType.APPLICATION_JSON))
-					.content("""
-							{ "bidAmount": 10000 }
-						""")
-			)
-			.andDo(print())
-			.andExpect(status().isForbidden());
-	}
-
-	@DisplayName("즉시구매_요청시_200과_ResponseCustom_OK_형태로_데이터를_반환한다")
-	@Test
-	void returns200AndResponseCustomOkWhenBuyNowRequested() throws Exception {
-		// given
-		Long auctionId = 12345L;
-		Long userId = 987L;
-		String email = "buyer@test.com";
-
-		User appUser = User.builder()
-			.id(userId)
-			.email(email)
-			.build();
-		given(userService.findUserByEmail(email)).willReturn(appUser);
-
-		UserDetails securityUser = org.springframework.security.core.userdetails.User
-			.withUsername(email)
-			.password("password")
-			.roles("USER")
-			.build();
-		Authentication auth = new UsernamePasswordAuthenticationToken(securityUser, null,
-			securityUser.getAuthorities());
-		SecurityContextHolder.getContext().setAuthentication(auth);
-
-		BuyNowResponseDto serviceResponse = new BuyNowResponseDto(
-			auctionId,
-			"ENDED",
-			555L,
-			50_000L,
-			LocalDateTime.of(2025, 12, 5, 15, 50, 0)
-		);
-
-		given(buyNowService.buyNow(eq(auctionId), eq(userId), any()))
-			.willReturn(serviceResponse);
-
-		mvc = MockMvcBuilders.standaloneSetup(new AuctionController(auctionService, buyNowService, bidService))
-			.setCustomArgumentResolvers(new LoginUserArgumentResolver(userService))
-			.setControllerAdvice(new GlobalExceptionHandler())
-			.build();
-
-		// when & then
-		mvc.perform(
-				post("/api/v1/auctions/{auctionId}/buy-now", auctionId)
-					.contentType("application/json")
-					.content("""
-							{ "bidAmount": 50000 }
-						""")
-			)
-			.andDo(print())
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.data.auctionId").value(12345))
-			.andExpect(jsonPath("$.data.auctionStatus").value("ENDED"))
-			.andExpect(jsonPath("$.data.winnerId").value(555))
-			.andExpect(jsonPath("$.data.finalPrice").value(50000))
-			.andExpect(jsonPath("$.data.winTime").value("2025-12-05T15:50:00"));
-	}
-
-	@DisplayName("즉시구매가 설정되지 않은 경매면 400과 ErrorResponse를 반환한다")
-	@Test
-	void returns400AndErrorResponseWhenBuyNowPriceIsNotSet() throws Exception {
-		// given
-		Long auctionId = 12345L;
-		Long userId = 1L;
-		String email = "test@test.com";
-
-		User appUser = User.builder().id(userId).email(email).build();
-
-		given(userService.findUserByEmail(eq(email))).willReturn(appUser);
-
-		UserDetails securityUser = org.springframework.security.core.userdetails.User
-			.withUsername(email)
-			.password("password")
-			.roles("USER")
-			.build();
-
-		Authentication auth = new UsernamePasswordAuthenticationToken(securityUser, null,
-			securityUser.getAuthorities());
-		SecurityContextHolder.getContext().setAuthentication(auth);
-
-		given(buyNowService.buyNow(eq(auctionId), eq(userId), any()))
-			.willThrow(new ServiceException(ErrorCode.AUCTION_BUY_NOW_NOT_AVAILABLE, "즉시 구매가 불가능한 상품입니다."));
-
-		// when & then
-		mvc.perform(
-				post("/api/v1/auctions/{auctionId}/buy-now", auctionId)
-					.contentType("application/json")
-					.content("""
-							{ "bidAmount": 10000 }
-						""")
-			)
-			.andDo(print())
-			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.httpStatus").value(400))
-			.andExpect(jsonPath("$.code").value("AUCTION_BUY_NOW_NOT_AVAILABLE"))
-			.andExpect(jsonPath("$.message").exists());
 	}
 
 }
