@@ -109,7 +109,7 @@ public class BidIntegrationTest {
 
 		//when
 		ResultActions result = mockMvc.perform(
-			post("api/v1/auctions/{auctionId}/bids", auction.getId())
+			post("/api/v1/auctions/{auctionId}/bids", auction.getId())
 				.contentType(String.valueOf(MediaType.APPLICATION_JSON))
 				.content(objectMapper.writeValueAsString(biddto))
 				.with(user(bidderEmail).roles("USER"))
@@ -146,7 +146,7 @@ public class BidIntegrationTest {
 		BidRequestDto badRequest = new BidRequestDto(5000L);
 
 		ResultActions result = mockMvc.perform(
-			post("api/v1/auctions/{auctionId}/bids", auction.getId())
+			post("/api/v1/auctions/{auctionId}/bids", auction.getId())
 				.contentType(String.valueOf(MediaType.APPLICATION_JSON))
 				.content(objectMapper.writeValueAsString(badRequest))
 				.with(user(bidderEmail).roles("USER"))
@@ -168,14 +168,14 @@ public class BidIntegrationTest {
 		User loser = createUser("loser@test.com", "패배자");
 		User winner = createUser("winner@test.com", "낙찰자");
 
-		mockMvc.perform(post("api/v1/auctions/{auctionId}/bids", auction.getId())
+		mockMvc.perform(post("/api/v1/auctions/{auctionId}/bids", auction.getId())
 			.contentType(String.valueOf(MediaType.APPLICATION_JSON))
 			.content(objectMapper.writeValueAsString(new BidRequestDto(1200L)))
 			.with(user(loser.getEmail()).roles("USER")) // 리졸버용 이메일
 			.with(csrf())
 		).andExpect(status().isOk());
 
-		mockMvc.perform(post("api/v1/auctions/{auctionId}/bids", auction.getId())
+		mockMvc.perform(post("/api/v1/auctions/{auctionId}/bids", auction.getId())
 			.contentType(String.valueOf(MediaType.APPLICATION_JSON))
 			.content(objectMapper.writeValueAsString(new BidRequestDto(2000L)))
 			.with(user(winner.getEmail()).roles("USER"))
