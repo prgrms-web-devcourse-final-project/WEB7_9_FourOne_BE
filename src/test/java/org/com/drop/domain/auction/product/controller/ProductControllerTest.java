@@ -88,6 +88,7 @@ public class ProductControllerTest {
 		class Read {
 			@Test
 			@DisplayName("상품 조회 - 성공")
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			void t1() throws Exception {
 				ResultActions resultActions = mvc
 					.perform(
@@ -125,6 +126,7 @@ public class ProductControllerTest {
 
 			@Test
 			@DisplayName("상품 조회 - 실패 - 상품 없음")
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			void t1_1() throws Exception {
 				ResultActions resultActions = mvc
 					.perform(
@@ -139,6 +141,43 @@ public class ProductControllerTest {
 					.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
 					.andExpect(jsonPath("$.httpStatus").value("404"))
 					.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
+			}
+
+			@Test
+			@DisplayName("상품 조회 - 실패 - 로그인 없음")
+			void t1_2() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						get("/api/v1/products/%d".formatted(productId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(UserController.class))
+					.andExpect(handler().methodName("getProduct"))
+					.andExpect(status().is(401))
+					.andExpect(jsonPath("$.code").value("USER_UNAUTHORIZED"))
+					.andExpect(jsonPath("$.httpStatus").value("401"))
+					.andExpect(jsonPath("$.message").value("로그인이 필요합니다."));
+			}
+
+			@Test
+			@DisplayName("상품 조회 - 실패 - 계정 다름")
+			@WithMockUser(username = "user2@example.com", roles = {"USER"})
+			void t1_3() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						get("/api/v1/products/%d".formatted(productId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(UserController.class))
+					.andExpect(handler().methodName("getProduct"))
+					.andExpect(status().is(403))
+					.andExpect(jsonPath("$.code").value("USER_INACTIVE_USER"))
+					.andExpect(jsonPath("$.httpStatus").value("403"))
+					.andExpect(jsonPath("$.message").value("권한이 없는 사용자입니다"));
 			}
 		}
 

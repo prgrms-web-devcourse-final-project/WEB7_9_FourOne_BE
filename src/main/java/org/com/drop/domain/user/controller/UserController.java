@@ -2,7 +2,9 @@ package org.com.drop.domain.user.controller;
 
 import org.com.drop.domain.auction.product.dto.ProductSearchResponse;
 import org.com.drop.domain.auction.product.service.ProductService;
+import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.rsdata.RsData;
+import org.com.drop.global.security.auth.LoginUser;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,9 +19,10 @@ public class UserController {
 	private final ProductService productService;
 	@GetMapping("products/{productId}")
 	public RsData<ProductSearchResponse> getProduct(
+		@LoginUser User actor,
 		@PathVariable Long productId
 	) {
-		ProductSearchResponse product = productService.findProductWithImgById(productId);
+		ProductSearchResponse product = productService.findProductWithImgById(productId, actor);
 		return new RsData<>(
 			200,
 			product

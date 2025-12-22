@@ -106,8 +106,9 @@ public class ProductService {
 			);
 	}
 
-	public ProductSearchResponse findProductWithImgById(Long id) {
+	public ProductSearchResponse findProductWithImgById(Long id, User actor) {
 		Product product = findProductById(id);
+		validUser(product, actor);
 		List<String> images = getSortedImageUrls(productImageRepository.findAllByProductId(product.getId()));
 
 		return new ProductSearchResponse(product, images);
