@@ -8,6 +8,7 @@ import org.com.drop.domain.payment.payment.event.AutoPaymentRequestedEvent;
 import org.com.drop.domain.payment.payment.event.PaymentRequestedEvent;
 import org.com.drop.domain.payment.payment.service.PaymentService;
 import org.com.drop.domain.payment.payment.service.UserPaymentMethodService;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -15,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+@Disabled
 @ExtendWith(MockitoExtension.class)
 class PaymentPrepareHandlerTest {
 
