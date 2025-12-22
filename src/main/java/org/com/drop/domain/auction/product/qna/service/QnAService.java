@@ -63,9 +63,9 @@ public class QnAService {
 
 
 	@Transactional
-	public void deleteAnswer(Long qnaId, User actor) {
+	public void deleteAnswer(Long answerId, User actor) {
 
-		Answer answer = answerFindById(qnaId);
+		Answer answer = answerFindById(answerId);
 
 		if (!answer.getAnswerer().equals(actor)) {
 			throw ErrorCode.USER_INACTIVE_USER

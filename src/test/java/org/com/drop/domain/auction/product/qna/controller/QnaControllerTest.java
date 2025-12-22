@@ -297,7 +297,7 @@ public class QnaControllerTest {
 				void t3() throws Exception {
 					ResultActions resultActions = mvc
 						.perform(
-							delete("/api/v1/products/%d/qna/%d".formatted(productId, answerId))
+							delete("/api/v1/products/%d/qna/%d/%d".formatted(productId, questionId, answerId))
 								.with(csrf())
 						)
 						.andDo(print());
@@ -319,7 +319,7 @@ public class QnaControllerTest {
 				void t3_1() throws Exception {
 					ResultActions resultActions = mvc
 						.perform(
-							delete("/api/v1/products/%d/qna/%d".formatted(productId, wrongAnswerId))
+							delete("/api/v1/products/%d/qna/%d/%d".formatted(productId, questionId, wrongAnswerId))
 								.with(csrf())
 						)
 						.andDo(print());
@@ -337,7 +337,7 @@ public class QnaControllerTest {
 				void t1_3() throws Exception {
 					ResultActions resultActions = mvc
 						.perform(
-							delete("/api/v1/products/%d/qna/%d".formatted(productId, wrongAnswerId))
+							delete("/api/v1/products/%d/qna/%d/%d".formatted(productId, questionId, answerId))
 								.with(csrf())
 						)
 						.andDo(print());
