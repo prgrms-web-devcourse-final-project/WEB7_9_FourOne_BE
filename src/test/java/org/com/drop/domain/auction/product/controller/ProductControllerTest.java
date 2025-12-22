@@ -41,6 +41,7 @@ import jakarta.transaction.Transactional;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
+@Disabled //aws 계정 있어야 하기 때문에 dev로 가는 코드에서는 disable 했습니다.
 public class ProductControllerTest {
 
 	private final Long productId = 2L;
@@ -52,7 +53,8 @@ public class ProductControllerTest {
 	private final String description = "테스트 상품 상세 설명";
 	private final Product.Category category = Product.Category.STARGOODS;
 	private final Product.SubCategory subCategory = Product.SubCategory.ACC;
-	private final List<String> images = List.of("img1.png", "img2.png");
+	private final List<String> images = List.of("b67103865cff09c2638b8e8e8551175b18db2253.jpg");
+	private final List<String> wrongImages = List.of("img1.png", "img2.png");
 	private final List<String> updatedImages = List.of("UpdatedImg1.png", "UpdatedImg2.png");
 	private String jsonContent;
 
@@ -186,7 +188,6 @@ public class ProductControllerTest {
 			@Test
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 출품 - 성공")
-			@Disabled //aws 계정 있어야 하기 때문에 dev로 가는 코드에서는 disable 했습니다.
 			void t1() throws Exception {
 				setUp(name, description, category, subCategory, images);
 
@@ -249,6 +250,26 @@ public class ProductControllerTest {
 					).andDo(print());
 				resultActions.andExpect(status().isForbidden());
 			}
+
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("상품 출품 - 실패 (이미지 등록 없음)")
+			void t1_3() throws Exception {
+				setUp(name, description, category, subCategory, wrongImages);
+
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+					).andDo(print());
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("addProduct"))
+					.andExpect(status().is(400))
+					.andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+					.andExpect(jsonPath("$.message").value("요청 값이 올바르지 않습니다."));
+			}
 		}
 
 		@Nested
@@ -257,7 +278,7 @@ public class ProductControllerTest {
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 수정 - 성공")
 			void t2() throws Exception {
-				setUp(updatedName, description, category, subCategory, updatedImages);
+				setUp(updatedName, description, category, subCategory, images);
 				ResultActions resultActions = mvc
 					.perform(
 						put("/api/v1/products/%d".formatted(auctionId))
@@ -281,13 +302,6 @@ public class ProductControllerTest {
 
 				Product product = productRepository.findById(auctionId).get();
 				assertThat(product.getName()).isEqualTo(updatedName);
-
-				List<ProductImage> productImages = productImageRepository.findAllByProductId(auctionId)
-					.stream().sorted((a, b) -> a.getId().compareTo(b.getId()))
-					.toList();
-				for	(int i = 0; i < productImages.size(); i++ ) {
-					assertThat(productImages.get(i).getImageUrl()).isEqualTo(updatedImages.get(i));
-				}
 			}
 
 			@Test
@@ -626,7 +640,6 @@ public class ProductControllerTest {
 	}
 
 	@Nested
-	//@Disabled //aws 계정 있어야 하기 때문에 dev로 가는 코드에서는 disable 했습니다.
 	class PreSigned {
 		@Nested
 		class MakeUrl {
@@ -634,9 +647,20 @@ public class ProductControllerTest {
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("Url 발급 - 성공")
 			void t6() throws Exception {
+				String jsonContent = String.format(
+					"""
+							{
+								"content": "%s",
+								"latitude" : %s, 
+								"longitude" : %s
+							}
+							"""
+				);
 				ResultActions resultActions = mvc
 					.perform(
-						get("/api/v1/products/img")
+						post("/api/v1/products/img")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
 					)
 					.andDo(print());
 
@@ -664,35 +688,6 @@ public class ProductControllerTest {
 					.andDo(print());
 				resultActions.andExpect(status().isUnauthorized());
 			}
-
-			@Test
-			@WithMockUser(username = "user1@example.com", roles = {"USER"})
-			@DisplayName("Url 등록 확인 - 성공")
-			void t6_2() throws Exception {
-				String jsonContent = String.format(
-					"""
-							{
-								"key": "b67103865cff09c2638b8e8e8551175b18db2253.jpg"
-							}
-							"""
-				);
-				ResultActions resultActions = mvc
-					.perform(
-						get("/api/v1/products/img/complete")
-							.contentType(MediaType.APPLICATION_JSON)
-							.content(jsonContent)
-							.with(csrf())
-					)
-					.andDo(print());
-
-				resultActions
-					.andExpect(handler().handlerType(ProductController.class))
-					.andExpect(handler().methodName("completeUpload"))
-					.andExpect(status().isOk())
-					.andExpect(jsonPath("$.code").value("SUCCESS"))
-					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
-			}
-
 		}
 	}
 

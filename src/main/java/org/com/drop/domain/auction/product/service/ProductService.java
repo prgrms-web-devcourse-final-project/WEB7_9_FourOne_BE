@@ -78,6 +78,7 @@ public class ProductService {
 
 	@Transactional
 	public void addProductImages(Product product, List<String> imageUrls) {
+		amazonS3Client.verifyImage(imageUrls);
 
 		List<ProductImage> images = imageUrls.stream()
 			.map(url -> new ProductImage(product, url))
@@ -158,7 +159,8 @@ public class ProductService {
 	@Transactional
 	public void deleteProductImage(Product product, User actor) {
 		if (product.getSeller().getId().equals(actor.getId())) {
-			productImageRepository.deleteByProduct(product);
+			List<ProductImage> keys = productImageRepository.deleteByProduct(product);
+			amazonS3Client.deleteFiles(keys);
 		}
 	}
 

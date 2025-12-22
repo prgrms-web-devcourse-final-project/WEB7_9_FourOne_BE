@@ -19,6 +19,7 @@ public enum ErrorCode {
 	INVALID_IMAGE_SIZE("908", HttpStatus.BAD_REQUEST, "파일 크기는 10MB를 초과할 수 없습니다."),
 	INVALID_IMAGE_TYPE("909", HttpStatus.BAD_REQUEST, "이미지 파일만 업로드 가능합니다."),
 	INVALID_IMAGE_UPLOAD("910", HttpStatus.BAD_REQUEST, "올바르지 않은 이미지가 업로드 되어 삭제 되었습니다."),
+	INVALID_IMAGE_DETELE("911", HttpStatus.BAD_REQUEST, "잘못된 이미지 삭제에 실패했습니다."),
 
 	//auth
 	AUTH_MISSING_EMAIL("1000", HttpStatus.BAD_REQUEST, "이메일은 필수 입력 항목입니다."),
