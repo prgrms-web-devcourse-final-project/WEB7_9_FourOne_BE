@@ -16,6 +16,7 @@ import org.com.drop.domain.auction.product.entity.ProductImage;
 import org.com.drop.domain.auction.product.repository.BookmarkRepository;
 import org.com.drop.domain.auction.product.repository.ProductImageRepository;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
+import org.com.drop.domain.user.controller.UserController;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.Disabled;
@@ -36,7 +37,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.transaction.Transactional;
 
-@Disabled
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
@@ -88,6 +88,7 @@ public class ProductControllerTest {
 		class Read {
 			@Test
 			@DisplayName("상품 조회 - 성공")
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			void t1() throws Exception {
 				ResultActions resultActions = mvc
 					.perform(
@@ -96,7 +97,7 @@ public class ProductControllerTest {
 					.andDo(print());
 
 				resultActions
-					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().handlerType(UserController.class))
 					.andExpect(handler().methodName("getProduct"))
 					.andExpect(status().isOk())
 					.andExpect(jsonPath("$.code").value("SUCCESS"))
@@ -125,6 +126,7 @@ public class ProductControllerTest {
 
 			@Test
 			@DisplayName("상품 조회 - 실패 - 상품 없음")
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			void t1_1() throws Exception {
 				ResultActions resultActions = mvc
 					.perform(
@@ -133,12 +135,49 @@ public class ProductControllerTest {
 					.andDo(print());
 
 				resultActions
-					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().handlerType(UserController.class))
 					.andExpect(handler().methodName("getProduct"))
 					.andExpect(status().isNotFound())
 					.andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"))
 					.andExpect(jsonPath("$.httpStatus").value("404"))
 					.andExpect(jsonPath("$.message").value("요청하신 상품 ID를 찾을 수 없습니다."));
+			}
+
+			@Test
+			@DisplayName("상품 조회 - 실패 - 로그인 없음")
+			void t1_2() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						get("/api/v1/products/%d".formatted(productId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(UserController.class))
+					.andExpect(handler().methodName("getProduct"))
+					.andExpect(status().is(401))
+					.andExpect(jsonPath("$.code").value("USER_UNAUTHORIZED"))
+					.andExpect(jsonPath("$.httpStatus").value("401"))
+					.andExpect(jsonPath("$.message").value("로그인이 필요합니다."));
+			}
+
+			@Test
+			@DisplayName("상품 조회 - 실패 - 계정 다름")
+			@WithMockUser(username = "user2@example.com", roles = {"USER"})
+			void t1_3() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						get("/api/v1/products/%d".formatted(productId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(UserController.class))
+					.andExpect(handler().methodName("getProduct"))
+					.andExpect(status().is(403))
+					.andExpect(jsonPath("$.code").value("USER_INACTIVE_USER"))
+					.andExpect(jsonPath("$.httpStatus").value("403"))
+					.andExpect(jsonPath("$.message").value("권한이 없는 사용자입니다"));
 			}
 		}
 
@@ -147,6 +186,7 @@ public class ProductControllerTest {
 			@Test
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 출품 - 성공")
+			@Disabled //aws 계정 있어야 하기 때문에 dev로 가는 코드에서는 disable 했습니다.
 			void t1() throws Exception {
 				setUp(name, description, category, subCategory, images);
 
@@ -586,6 +626,7 @@ public class ProductControllerTest {
 	}
 
 	@Nested
+	@Disabled //aws 계정 있어야 하기 때문에 dev로 가는 코드에서는 disable 했습니다.
 	class PreSigned {
 		@Nested
 		class MakeUrl {
