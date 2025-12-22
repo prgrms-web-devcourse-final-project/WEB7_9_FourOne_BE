@@ -16,7 +16,6 @@ import org.com.drop.domain.auction.product.qna.entity.Question;
 import org.com.drop.domain.auction.product.qna.repository.AnswerRepository;
 import org.com.drop.domain.auction.product.qna.repository.QuestionRepository;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -33,7 +32,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.transaction.Transactional;
 
-@Disabled
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
