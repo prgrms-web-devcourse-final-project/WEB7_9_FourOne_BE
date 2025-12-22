@@ -1,17 +1,17 @@
 package org.com.drop.global.initdata;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import org.com.drop.domain.admin.guide.entity.Guide;
 import org.com.drop.domain.admin.guide.repository.GuideRepository;
 import org.com.drop.domain.auction.auction.dto.AuctionCreateRequest;
 import org.com.drop.domain.auction.auction.service.AuctionService;
-import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
 import org.com.drop.domain.auction.product.entity.Product;
+import org.com.drop.domain.auction.product.entity.ProductImage;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnAAnswerRequest;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnACreateRequest;
 import org.com.drop.domain.auction.product.qna.service.QnAService;
+import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.auction.product.service.ProductService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
@@ -30,6 +30,7 @@ public class InitData {
 
 	private final UserRepository userRepository;
 	private final ProductService productService;
+	private final ProductRepository productRepository;
 	private final AuctionService auctionService;
 	private final QnAService qnAService;
 	private final GuideRepository  guideRepository;
@@ -71,24 +72,27 @@ public class InitData {
 			.build();
 		userRepository.save(user2);
 
-		List<String> images = List.of("b67103865cff09c2638b8e8e8551175b18db2253.jpg");
-		ProductCreateRequest productCreateRequest1 = new ProductCreateRequest(
-			"상품명",
-			"설명",
-			Product.Category.STARGOODS,
-			Product.SubCategory.ACC,
-			images
-		);
-		Product product1 = productService.addProduct(productCreateRequest1, user1);
+		String image = "b67103865cff09c2638b8e8e8551175b18db2253.jpg";
 
-		ProductCreateRequest productCreateRequest2 = new ProductCreateRequest(
-			"상품명",
-			"설명",
+		Product product1 = new Product(
+			user1,
+			"상품1",
+			"상품설명1",
 			Product.Category.STARGOODS,
-			Product.SubCategory.ACC,
-			images
+			Product.SubCategory.ACC
 		);
-		Product product2 = productService.addProduct(productCreateRequest2, user1);
+		productRepository.save(product1);
+		ProductImage productImage1 = new ProductImage(product1, image);
+
+		Product product2 = new Product(
+			user1,
+			"상품1",
+			"상품설명1",
+			Product.Category.STARGOODS,
+			Product.SubCategory.ACC
+		);
+		productRepository.save(product2);
+		ProductImage productImage2 = new ProductImage(product2, image);
 
 		AuctionCreateRequest auctionCreateRequest1 = new AuctionCreateRequest(
 			product1.getId(),
