@@ -2,30 +2,85 @@ package org.com.drop.domain.user.controller;
 
 import org.com.drop.domain.auction.product.dto.ProductSearchResponse;
 import org.com.drop.domain.auction.product.service.ProductService;
+import org.com.drop.domain.user.dto.MyBidPageResponse;
+import org.com.drop.domain.user.dto.MyBookmarkPageResponse;
+import org.com.drop.domain.user.dto.MyPageResponse;
+import org.com.drop.domain.user.dto.MyProductPageResponse;
+import org.com.drop.domain.user.dto.UpdateProfileRequest;
+import org.com.drop.domain.user.dto.UpdateProfileResponse;
 import org.com.drop.domain.user.entity.User;
+import org.com.drop.domain.user.service.UserService;
 import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
 public class UserController {
+
 	private final ProductService productService;
+	private final UserService userService;
+
 	@GetMapping("products/{productId}")
 	public RsData<ProductSearchResponse> getProduct(
 		@LoginUser User actor,
 		@PathVariable Long productId
 	) {
-		ProductSearchResponse product = productService.findProductWithImgById(productId, actor);
-		return new RsData<>(
-			200,
-			product
-		);
+		ProductSearchResponse response = productService.findProductWithImgById(productId, actor);
+		return new RsData<>(response);
+	}
+
+	@GetMapping("user/me")
+	public RsData<MyPageResponse> me(
+		@LoginUser User user) {
+
+		MyPageResponse response = userService.getMe(user);
+		return new RsData<>(response);
+	}
+
+	@GetMapping("/me/products")
+	public RsData<MyProductPageResponse> getMyProducts(
+		@LoginUser User user,
+		@RequestParam(defaultValue = "1") int page) {
+
+		MyProductPageResponse response = userService.getMyProducts(user, page);
+		return new RsData<>(response);
+	}
+
+	@GetMapping("/me/auctions")
+	public RsData<MyBidPageResponse> getMyBids(
+		@LoginUser User user,
+		@RequestParam(defaultValue = "1") int page) {
+
+		MyBidPageResponse response = userService.getMyBids(user, page);
+		return new RsData<>(response);
+	}
+
+	@GetMapping("user/me/bookmarks")
+	public RsData<MyBookmarkPageResponse> getMyBookmarks(
+		@LoginUser User user,
+		@RequestParam(defaultValue = "1") int page) {
+
+		MyBookmarkPageResponse response = userService.getMyBookmarks(user, page);
+		return new RsData<>(response);
+	}
+
+	@PatchMapping("user/me/profile")
+	public RsData<UpdateProfileResponse> updateProfile(
+		@LoginUser User user,
+		@Valid @RequestBody UpdateProfileRequest dto) {
+
+		UpdateProfileResponse response = userService.updateProfile(user, dto);
+		return new RsData<>(response);
 	}
 }
