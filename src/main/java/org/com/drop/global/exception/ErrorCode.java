@@ -16,6 +16,10 @@ public enum ErrorCode {
 	INVALID_AUTHENTICATION("905", HttpStatus.BAD_REQUEST, "잘못된 인증입니다."),
 	INTERNAL_SERVER_ERROR("906", HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요."),
 	VALIDATION_ERROR("907", HttpStatus.BAD_REQUEST, "요청 값이 올바르지 않습니다."),
+	INVALID_IMAGE_SIZE("908", HttpStatus.BAD_REQUEST, "파일 크기는 10MB를 초과할 수 없습니다."),
+	INVALID_IMAGE_TYPE("909", HttpStatus.BAD_REQUEST, "이미지 파일만 업로드 가능합니다."),
+	INVALID_IMAGE_UPLOAD("910", HttpStatus.BAD_REQUEST, "올바르지 않은 이미지가 업로드 되어 삭제 되었습니다."),
+	INVALID_IMAGE_DETELE("911", HttpStatus.BAD_REQUEST, "잘못된 이미지 삭제에 실패했습니다."),
 
 	//auth
 	AUTH_MISSING_EMAIL("1000", HttpStatus.BAD_REQUEST, "이메일은 필수 입력 항목입니다."),
