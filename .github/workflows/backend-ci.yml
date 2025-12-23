@@ -64,12 +64,16 @@ jobs:
               run: |
                 echo "${{ secrets.ENV_FILE }}" > .env.properties
 
-
             - name: Run Unit Tests
-              run: ./gradlew clean test --no-daemon
+              run: ./gradlew test \
+                -Dspring.config.import=optional:file:.env.properties \
+                --no-daemon
 
             - name: Run Full Tests (Unit + Integration)
-              run: ./gradlew clean fullTest --no-daemon
+              run: ./gradlew fullTest \
+                -Dspring.config.import=optional:file:.env.properties \
+                --no-daemon
+
 
             - name: Generate JaCoCo Unit Test Report
               if: always()
