@@ -59,9 +59,9 @@ public class NotificationService {
 
 	public Notification findById( User  actor, Long notificationId) {
 		Notification notification = notificationRepository.findById(notificationId)
-			.orElseThrow(()-> new ServiceException(ErrorCode.NOTIFICATION_NOT_FOUND, null));
+			.orElseThrow(()-> new ServiceException(ErrorCode.NOTIFICATION_NOT_FOUND, "알림 없습니다."));
 		if (!notification.getId().equals(actor.getId())) {
-			throw new ServiceException(ErrorCode.AUTH_ACCESS_DENIED, null);
+			throw new ServiceException(ErrorCode.AUTH_ACCESS_DENIED, "권한이 없습니다.");
 		}
 		return notification;
 	}
