@@ -5,10 +5,13 @@ import java.util.Optional;
 
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.product.entity.Product;
+import org.com.drop.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AuctionRepository extends JpaRepository<Auction, Long> {
 	Optional<Auction> findByProductId(Long id);
 
-	List<Auction> findByProductInAndDeletedAtIsNullOrderByCreatedAtDesc(List<Product> products);
+	List<Auction> findByProductInAndDeletedAtIsNullOrderByIdDesc(List<Product> products);
+
+	boolean existsByProductSellerAndStatus(User seller, Auction.AuctionStatus status);
 }

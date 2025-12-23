@@ -303,8 +303,6 @@ class AuthServiceTest {
 			verify(userRepository, never()).save(any(User.class));
 			verify(refreshTokenStore, never()).delete(anyString());
 		}
-
-		// Todo: 진행 중인 경매가 있을 경우 실패 테스트
 	}
 
 	@Nested

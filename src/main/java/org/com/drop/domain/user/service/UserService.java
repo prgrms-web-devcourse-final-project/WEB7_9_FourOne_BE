@@ -1,13 +1,14 @@
 package org.com.drop.domain.user.service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
 import org.com.drop.domain.auction.bid.entity.Bid;
+import org.com.drop.domain.auction.bid.repository.BidRepository;
 import org.com.drop.domain.auction.product.entity.BookMark;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.entity.ProductImage;
@@ -22,6 +23,8 @@ import org.com.drop.domain.user.dto.UpdateProfileRequest;
 import org.com.drop.domain.user.dto.UpdateProfileResponse;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
+import org.com.drop.domain.winner.domain.Winner;
+import org.com.drop.domain.winner.repository.WinnerRepository;
 import org.com.drop.global.exception.ErrorCode;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
@@ -45,6 +48,8 @@ public class UserService implements UserDetailsService {
 	private final BookmarkRepository bookmarkRepository;
 	private final ProductRepository productRepository;
 	private final ProductImageRepository productImageRepository;
+	private final BidRepository bidRepository;
+	private final WinnerRepository winnerRepository;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -73,12 +78,6 @@ public class UserService implements UserDetailsService {
 		return MyPageResponse.of(user);
 	}
 
-	// Todo: bid 엔티티 추가되면 이어 구현
-	@Transactional(readOnly = true)
-	public List<MyBidPageResponse> getMyAuctions(User user, int page, String status) {
-		return new ArrayList<>();
-	}
-
 	@Transactional(readOnly = true)
 	public MyBookmarkPageResponse getMyBookmarks(User user, int page) {
 		validatePageNumber(page);
@@ -102,8 +101,8 @@ public class UserService implements UserDetailsService {
 				.serviceException("이미 사용 중인 닉네임입니다: nickname=%s", dto.nickname());
 		}
 
-		if (dto.profileImageUrl() != null && user.getUserProfile() != null) {
-			if (!user.getUserProfile().equals(dto.profileImageUrl())) {
+		if (dto.profileImageUrl() != null && !dto.profileImageUrl().equals(user.getUserProfile())) {
+			if (user.getUserProfile() != null) {
 				// TODO: 이미지 S3 삭제 로직 추가
 			}
 		}
@@ -128,22 +127,20 @@ public class UserService implements UserDetailsService {
 	@Transactional(readOnly = true)
 	public MyProductPageResponse getMyProducts(User user, int page) {
 		validatePageNumber(page);
-		Pageable pageable = PageRequest.of(page - 1, 10);
+		Pageable pageable = PageRequest.of(page - 1, 20);
 
 		Page<Product> productPage = productRepository.findBySellerAndDeletedAtIsNullOrderByCreatedAtDesc(user, pageable);
 		List<Product> products = productPage.getContent();
 
 		List<Long> productIds = products.stream().map(Product::getId).toList();
 		Map<Long, String> imageMap = getProductMainImageMapByIds(productIds);
-
-		List<Auction> auctions = auctionRepository.findByProductInAndDeletedAtIsNullOrderByCreatedAtDesc(products);
+		List<Auction> auctions = auctionRepository.findByProductInAndDeletedAtIsNullOrderByIdDesc(products);
 
 		Map<Long, Auction> latestAuctionMap = auctions.stream()
-			.collect(Collectors.toMap(
-				a -> a.getProduct().getId(),
-				a -> a,
-				(existing, replacement) -> existing
-			));
+			.collect(Collectors.toMap(a -> a.getProduct().getId(), a -> a, (e, r) -> e));
+
+		Map<Long, Long> bidCountMap = bidRepository.countByAuctionIn(auctions).stream()
+			.collect(Collectors.toMap(data -> (Long) data[0], data -> (Long) data[1]));
 
 		List<MyProductPageResponse.MyProductResponse> dtoList = products.stream()
 			.map(product -> {
@@ -156,11 +153,11 @@ public class UserService implements UserDetailsService {
 					product.getName(),
 					imageMap.get(product.getId()),
 					status,
-					0, // Todo: 최고가 로직
+					auction != null ? auction.getStartPrice() : 0,
 					auction != null ? auction.getStartPrice() : 0,
 					auction != null ? auction.getEndAt() : null,
 					product.getBookmarkCount().longValue(),
-					0L, // Todo: 입찰수 로직
+					auction != null ? bidCountMap.getOrDefault(auction.getId(), 0L) : 0L,
 					calculateRemainingTime(auction)
 				);
 			})
@@ -179,49 +176,45 @@ public class UserService implements UserDetailsService {
 		validatePageNumber(page);
 		Pageable pageable = PageRequest.of(page - 1, 20);
 
-		Page<Bid> bidPage = bidRepository.findMyParticipation(user, pageable);
+		Page<Bid> bidPage = bidRepository.findMyLatestBidsPerAuction(user, pageable);
+		List<Auction> auctions = bidPage.getContent().stream().map(Bid::getAuction).toList();
 
-		List<Long> productIds = bidPage.getContent().stream()
-			.map(b -> b.getAuction().getProduct().getId()).toList();
-		Map<Long, String> imageMap = getProductMainImageMapByIds(productIds);
+		Map<Long, Winner> winnerMap = winnerRepository.findByAuctionIn(auctions).stream()
+			.collect(Collectors.toMap(w -> w.getAuction().getId(), w -> w));
+
+		Map<Long, String> imageMap = getProductMainImageMapByIds(
+			auctions.stream().map(a -> a.getProduct().getId()).toList()
+		);
 
 		List<MyBidPageResponse.MyBidResponse> dtoList = bidPage.getContent().stream()
 			.map(bid -> {
 				Auction auction = bid.getAuction();
-				String bidStatus = determineBidStatus(user, auction);
+				Winner winner = winnerMap.get(auction.getId());
 
-				Integer finalBid = "WIN".equals(bidStatus) ? auction.getCurrentHighestBid() : null;
+				String bidStatus = determineStatusWithWinner(user, auction, winner);
 
 				return new MyBidPageResponse.MyBidResponse(
 					auction.getId(),
 					auction.getProduct().getId(),
 					auction.getProduct().getName(),
 					imageMap.get(auction.getProduct().getId()),
-					bid.getAmount(),
-					finalBid,
+					bid.getBidAmount().intValue(),
+					(winner != null && winner.getUserId().equals(user.getId())) ? winner.getFinalPrice().intValue() : null,
 					bidStatus,
 					auction.getEndAt()
 				);
 			})
-			.filter(dto -> statusParam.equalsIgnoreCase("ALL") || dto.status().equalsIgnoreCase(statusParam))
+			.filter(dto -> "ALL".equalsIgnoreCase(statusParam) || dto.status().equalsIgnoreCase(statusParam))
 			.toList();
 
-		return new MyBidPageResponse(
-			bidPage.getNumber() + 1,
-			bidPage.getTotalPages(),
-			bidPage.getTotalElements(),
-			dtoList
-		);
+		return new MyBidPageResponse(bidPage.getNumber() + 1, bidPage.getTotalPages(), bidPage.getTotalElements(), dtoList);
 	}
 
-	private String determineBidStatus(User user, Auction auction) {
-		LocalDateTime now = LocalDateTime.now();
-
-		if (auction.getStatus() == Auction.AuctionStatus.LIVE || auction.getEndAt().isAfter(now)) {
+	private String determineStatusWithWinner(User user, Auction auction, Winner winner) {
+		if (auction.getStatus() == Auction.AuctionStatus.LIVE || auction.getEndAt().isAfter(LocalDateTime.now())) {
 			return "ONGOING";
 		}
-
-		if (auction.getHighestBidder() != null && auction.getHighestBidder().equals(user)) {
+		if (winner != null && winner.getUserId().equals(user.getId())) {
 			return "WIN";
 		}
 		return "LOSE";
@@ -236,13 +229,6 @@ public class UserService implements UserDetailsService {
 	private void validatePageNumber(int page) {
 		if (page < 1) {
 			throw ErrorCode.USER_PAGE_OUT_OF_RANGE.serviceException("페이지 번호 오류: page=%d", page);
-		}
-	}
-
-	private void validateProductStatus(String status) {
-		List<String> validStatuses = List.of("ALL", "PENDING", "SCHEDULED", "LIVE", "ENDED", "CANCELLED");
-		if (!validStatuses.contains(status)) {
-			throw ErrorCode.PRODUCT_INVALID_STATUS.serviceException("유효하지 않은 조회 상태입니다: %s", status);
 		}
 	}
 

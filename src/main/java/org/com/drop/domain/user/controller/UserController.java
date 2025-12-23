@@ -57,12 +57,13 @@ public class UserController {
 		return new RsData<>(response);
 	}
 
-	@GetMapping("/me/auctions")
+	@GetMapping("/me/bids")
 	public RsData<MyBidPageResponse> getMyBids(
 		@LoginUser User user,
-		@RequestParam(defaultValue = "1") int page) {
+		@RequestParam(defaultValue = "1") int page,
+		@RequestParam(defaultValue = "ALL") String status) {
 
-		MyBidPageResponse response = userService.getMyBids(user, page);
+		MyBidPageResponse response = userService.getMyBids(user, page, status);
 		return new RsData<>(response);
 	}
 
