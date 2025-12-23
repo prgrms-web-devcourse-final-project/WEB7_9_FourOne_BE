@@ -100,7 +100,7 @@ public class AmazonS3Client {
 					throw new ServiceException(ErrorCode.VALIDATION_ERROR, "파일 분석 중 오류 발생: " + key);
 				}
 			} catch (Exception e) {
-				throw new ServiceException(ErrorCode.VALIDATION_ERROR, "이미지를 찾을 수 없습니다 : " + key);
+				throw new ServiceException(ErrorCode.INVALID_IMAGE, "이미지를 찾을 수 없습니다 : " + key);
 			}
 		}
 		for (String key : keys) {

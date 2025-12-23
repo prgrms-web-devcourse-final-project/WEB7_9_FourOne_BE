@@ -21,7 +21,6 @@ import org.com.drop.domain.user.controller.UserController;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.aws.PreSignedUrlRequest;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -43,7 +42,7 @@ import jakarta.transaction.Transactional;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
-@Disabled //aws 계정 있어야 하기 때문에 dev로 가는 코드에서는 disable 했습니다.
+//@Disabled //aws 계정 있어야 하기 때문에 dev로 가는 코드에서는 disable 했습니다.
 public class ProductControllerTest {
 
 	private final Long productId = 2L;
@@ -93,7 +92,7 @@ public class ProductControllerTest {
 			@Test
 			@DisplayName("상품 조회 - 성공")
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
-			void t1() throws Exception {
+			void t0() throws Exception {
 				ResultActions resultActions = mvc
 					.perform(
 						get("/api/v1/products/%d".formatted(productId))
@@ -131,7 +130,7 @@ public class ProductControllerTest {
 			@Test
 			@DisplayName("상품 조회 - 실패 - 상품 없음")
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
-			void t1_1() throws Exception {
+			void t0_1() throws Exception {
 				ResultActions resultActions = mvc
 					.perform(
 						get("/api/v1/products/%d".formatted(wrongProductId))
@@ -149,7 +148,7 @@ public class ProductControllerTest {
 
 			@Test
 			@DisplayName("상품 조회 - 실패 - 로그인 없음")
-			void t1_2() throws Exception {
+			void t0_2() throws Exception {
 				ResultActions resultActions = mvc
 					.perform(
 						get("/api/v1/products/%d".formatted(productId))
@@ -168,7 +167,7 @@ public class ProductControllerTest {
 			@Test
 			@DisplayName("상품 조회 - 실패 - 계정 다름")
 			@WithMockUser(username = "user2@example.com", roles = {"USER"})
-			void t1_3() throws Exception {
+			void t0_3() throws Exception {
 				ResultActions resultActions = mvc
 					.perform(
 						get("/api/v1/products/%d".formatted(productId))
@@ -223,25 +222,8 @@ public class ProductControllerTest {
 			}
 
 			@Test
-			@WithMockUser(username = "user1@example.com", roles = {"USER"})
-			@DisplayName("상품 출품 - 실패 - 필수값(이름) 누락")
-			void t1_1() throws Exception {
-				setUp("", description, category, subCategory, images);
-				ResultActions resultActions = mvc
-					.perform(
-						post("/api/v1/products")
-							.contentType(MediaType.APPLICATION_JSON)
-							.content(jsonContent)
-					)
-					.andDo(print());
-
-				resultActions
-					.andExpect(status().isBadRequest());
-			}
-
-			@Test
 			@DisplayName("상품 출품 - 실패 (로그인 없음)")
-			void t1_2() throws Exception {
+			void t1_1() throws Exception {
 				setUp(name, description, category, subCategory, images);
 
 				ResultActions resultActions = mvc
@@ -255,8 +237,117 @@ public class ProductControllerTest {
 
 			@Test
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
-			@DisplayName("상품 출품 - 실패 (이미지 등록 없음)")
+			@DisplayName("상품 출품 - 실패 - 필수값(이름) 누락")
+			void t1_2() throws Exception {
+				setUp("", description, category, subCategory, images);
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("addProduct"))
+					.andExpect(status().is(400))
+					.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_PRODUCT_NAME"))
+					.andExpect(jsonPath("$.httpStatus").value("400"))
+					.andExpect(jsonPath("$.message").value("상품명은 필수 항목 입니다."));
+			}
+
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("상품 출품 - 실패 - 필수값(내용) 누락")
 			void t1_3() throws Exception {
+				setUp(name, "", category, subCategory, images);
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("addProduct"))
+					.andExpect(status().is(400))
+					.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_PRODUCT_DESCRIPTION"))
+					.andExpect(jsonPath("$.httpStatus").value("400"))
+					.andExpect(jsonPath("$.message").value("상품 설명은 필수 항목 입니다."));
+			}
+
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("상품 출품 - 실패 - 필수값(카테고리) 누락")
+			void t1_4() throws Exception {
+				setUp(name, description, null, subCategory, images);
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("addProduct"))
+					.andExpect(status().is(400))
+					.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_PRODUCT_CATEGORY"))
+					.andExpect(jsonPath("$.httpStatus").value("400"))
+					.andExpect(jsonPath("$.message").value("상품 카테고리는 필수 항목 입니다."));
+			}
+
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("상품 출품 - 실패 - 필수값(서브 카테고리) 누락")
+			void t1_5() throws Exception {
+				setUp(name, description, category, null, images);
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("addProduct"))
+					.andExpect(status().is(400))
+					.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_PRODUCT_SUB_CATEGORY"))
+					.andExpect(jsonPath("$.httpStatus").value("400"))
+					.andExpect(jsonPath("$.message").value("상품 하위 카테고리는 필수 항목 입니다."));
+			}
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("상품 출품 - 실패 - 필수값(이미지) 누락")
+			void t1_6() throws Exception {
+				setUp(name, description, category, subCategory, null);
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("addProduct"))
+					.andExpect(status().is(400))
+					.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_PRODUCT_IMAGE"))
+					.andExpect(jsonPath("$.httpStatus").value("400"))
+					.andExpect(jsonPath("$.message").value("상품 이미지는 필수 항목 입니다."));
+			}
+
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("상품 출품 - 실패 (이미지 등록 안되어 있음.)")
+			void t1_() throws Exception {
 				setUp(name, description, category, subCategory, wrongImages);
 
 				ResultActions resultActions = mvc
@@ -269,8 +360,8 @@ public class ProductControllerTest {
 					.andExpect(handler().handlerType(ProductController.class))
 					.andExpect(handler().methodName("addProduct"))
 					.andExpect(status().is(400))
-					.andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
-					.andExpect(jsonPath("$.message").value("요청 값이 올바르지 않습니다."));
+					.andExpect(jsonPath("$.code").value("INVALID_IMAGE"))
+					.andExpect(jsonPath("$.message").value("올바르지 않은 이미지 입니다."));
 			}
 		}
 
