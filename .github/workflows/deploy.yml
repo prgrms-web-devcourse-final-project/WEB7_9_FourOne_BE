@@ -69,7 +69,7 @@ jobs:
         id: export_image
         run: echo "image_name=drop" >> $GITHUB_OUTPUT
 
-      - name: Create env file from GitHub Secret
+      - name: Create env file
         run: |
           echo "${{ secrets.ENV_FILE }}" > .env.properties
 

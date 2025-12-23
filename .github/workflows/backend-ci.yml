@@ -31,6 +31,10 @@ jobs:
               with:
                   fetch-depth: 0
 
+            - name: Create env file from GitHub Secret
+              run: |
+                echo "${{ secrets.ENV_FILE }}" > .env.properties
+
             - name: Ensure base commit is fetched (PR only)
               if: github.event_name == 'pull_request'
               run: |
@@ -60,16 +64,12 @@ jobs:
             - name: Build without tests
               run: ./gradlew build -x test --no-daemon
 
-            - name: Create env file from GitHub Secret
-              run: |
-                echo "${{ secrets.ENV_FILE }}" > .env.properties
-
-
             - name: Run Unit Tests
-              run: ./gradlew clean test --no-daemon
+              run: ./gradlew test -Dspring.config.import=optional:file:.env.properties --no-daemon
 
             - name: Run Full Tests (Unit + Integration)
-              run: ./gradlew clean fullTest --no-daemon
+              run: ./gradlew fullTest -Dspring.config.import=optional:file:.env.properties --no-daemon
+
 
             - name: Generate JaCoCo Unit Test Report
               if: always()
