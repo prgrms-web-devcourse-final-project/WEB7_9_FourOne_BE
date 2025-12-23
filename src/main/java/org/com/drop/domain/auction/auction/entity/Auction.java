@@ -65,16 +65,6 @@ public class Auction {
 
 	public enum AuctionStatus { SCHEDULED, LIVE, ENDED, CANCELLED }
 
-	public void end(LocalDateTime now) {
-		if (this.status != AuctionStatus.LIVE) {
-			throw new ServiceException(ErrorCode.AUCTION_NOT_LIVE, "진행 중인 경매가 아닙니다.");
-		}
-		this.status = AuctionStatus.ENDED;
-		this.endAt = now;
-	}
-
-
-
 	public Auction(
 		Product product,
 		Integer startPrice,
@@ -90,5 +80,13 @@ public class Auction {
 		this.startAt = startAt;
 		this.endAt = endAt;
 		this.status = status;
+	}
+
+	public void end(LocalDateTime now) {
+		if (this.status != AuctionStatus.LIVE) {
+			throw new ServiceException(ErrorCode.AUCTION_NOT_LIVE, "진행 중인 경매가 아닙니다.");
+		}
+		this.status = AuctionStatus.ENDED;
+		this.endAt = now;
 	}
 }
