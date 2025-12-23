@@ -8,6 +8,9 @@ import org.com.drop.domain.notification.service.NotificationService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,10 +37,12 @@ public class NotificationController {
 
 	@GetMapping
 	public RsData<List<NotificationResponse>> getNotification(
-		@LoginUser User actor
+		@LoginUser User actor,
+		@PageableDefault(size = 20, sort = "sendAt", direction = Sort.Direction.DESC)
+		Pageable pageable
 	) {
 		List<NotificationResponse> notificationList =
-			notificationService.findByUser(actor).stream().map(NotificationResponse::new).toList();
+			notificationService.findByUser(actor, pageable).stream().map(NotificationResponse::new).toList();
 		return new RsData<>(
 			notificationList
 		);

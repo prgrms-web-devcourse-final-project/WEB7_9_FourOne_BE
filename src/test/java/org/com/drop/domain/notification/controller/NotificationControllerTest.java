@@ -22,6 +22,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -205,8 +208,13 @@ public class NotificationControllerTest {
 					.andExpect(jsonPath("$.data").isArray())
 					.andExpect(jsonPath("$.data.length()").value(2));
 
-				List<Notification> notifications =
-					notificationRepository.findAllByUserId(userId);
+				Page<Notification> page =
+					notificationRepository.findAllByUserId(
+						userId,
+						PageRequest.of(0, 20, Sort.by("sendAt").descending())
+					);
+
+				List<Notification> notifications = page.getContent();
 
 				for (int i = 0; i < notifications.size(); i++) {
 					Notification notif = notifications.get(i);
@@ -216,7 +224,6 @@ public class NotificationControllerTest {
 						.andExpect(jsonPath("$.data[" + i + "].userId").value(notif.getUser().getId()))
 						.andExpect(jsonPath("$.data[" + i + "].message").value(notif.getMessage()));
 				}
-
 			}
 
 			@Test

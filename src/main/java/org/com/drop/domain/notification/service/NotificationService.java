@@ -1,13 +1,13 @@
 package org.com.drop.domain.notification.service;
 
-import java.util.List;
-
 import org.com.drop.domain.notification.entity.Notification;
 import org.com.drop.domain.notification.repository.NotificationEmitterRepository;
 import org.com.drop.domain.notification.repository.NotificationRepository;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -66,8 +66,8 @@ public class NotificationService {
 		return notification;
 	}
 
-	public List<Notification> findByUser(User actor) {
-		return notificationRepository.findAllByUserId(actor.getId());
+	public Page<Notification> findByUser(User actor, Pageable pageable) {
+		return notificationRepository.findAllByUserId(actor.getId(), pageable);
 	}
 
 	@Transactional
