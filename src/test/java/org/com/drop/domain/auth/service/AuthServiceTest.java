@@ -6,6 +6,8 @@ import static org.mockito.Mockito.*;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import org.com.drop.domain.auction.auction.repository.AuctionRepository;
+import org.com.drop.domain.auction.bid.repository.BidRepository;
 import org.com.drop.domain.auth.dto.GetCurrentUserInfoResponse;
 import org.com.drop.domain.auth.dto.LocalLoginRequest;
 import org.com.drop.domain.auth.dto.LocalLoginResponse;
@@ -65,6 +67,12 @@ class AuthServiceTest {
 
 	@Mock
 	private VerificationCodeStore verificationCodeStore;
+
+	@Mock
+	private AuctionRepository auctionRepository;
+
+	@Mock
+	private BidRepository bidRepository;
 
 	private User mockUser;
 
