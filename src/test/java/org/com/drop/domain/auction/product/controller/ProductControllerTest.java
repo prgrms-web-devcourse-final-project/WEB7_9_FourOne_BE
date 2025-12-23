@@ -20,7 +20,6 @@ import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.controller.UserController;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -42,7 +41,7 @@ import jakarta.transaction.Transactional;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
-@Disabled //aws 계정 있어야 하기 때문에 dev로 가는 코드에서는 disable 했습니다.
+//@Disabled //aws 계정 있어야 하기 때문에 dev로 가는 코드에서는 disable 했습니다.
 public class ProductControllerTest {
 
 	private final Long productId = 2L;
@@ -906,17 +905,18 @@ public class ProductControllerTest {
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("Url 발급 - 실패 (파일 타입 오류)")
 			void t6_2() throws Exception {
+				// 예시: 탭 문자를 사용하여 들여쓰기 수정
 				String jsonContent = String.format(
 					"""
-						{
-						  "requests": [
-						    {
-						      "contentType": "text/png",
-						      "contentLength": 1024
-						    }
-						  ]
-						}
-							"""
+					{
+						"requests": [
+							{
+								"contentType": "text/png",
+								"contentLength": 1024
+							}
+						]
+					}
+					"""
 				);
 
 				ResultActions resultActions = mvc
@@ -942,17 +942,18 @@ public class ProductControllerTest {
 			void t6_3() throws Exception {
 				long oversizedValue = 20 * 1024 * 1024; // 20MB
 
+				// 예시: 탭 문자를 사용하여 들여쓰기 수정
 				String jsonContent = String.format(
 					"""
-					   {
-						 "requests": [
-						   {
-							 "contentType": "image/png",
-							 "contentLength": %d
-						   }
-						 ]
-					   }
-					""", oversizedValue
+					{
+						"requests": [
+							{
+								"contentType": "image/png",
+								"contentLength": %d
+							}
+						]
+					}
+					""".formatted(oversizedValue)
 				);
 
 				ResultActions resultActions = mvc
@@ -976,15 +977,15 @@ public class ProductControllerTest {
 			void t6_4() throws Exception {
 				String jsonContent = String.format(
 					"""
-						{
-						  "requests": [
-						    {
-						      "contentType": "",
-						      "contentLength": 1024
-						    }
-						  ]
-						}
-							"""
+					{
+						"requests": [
+							{
+								"contentType": "",
+								"contentLength": 1024
+							}
+						]
+					}
+					"""
 				);
 
 				ResultActions resultActions = mvc
@@ -1010,14 +1011,14 @@ public class ProductControllerTest {
 			void t6_5() throws Exception {
 				String jsonContent = String.format(
 					"""
-					   {
-						 "requests": [
-						   {
-							 "contentType": "image/png",
-							 "contentLength": ""
-						   }
-						 ]
-					   }
+					{
+						"requests": [
+							{
+								"contentType": "image/png",
+								"contentLength": ""
+							}
+						]
+					}
 					"""
 				);
 

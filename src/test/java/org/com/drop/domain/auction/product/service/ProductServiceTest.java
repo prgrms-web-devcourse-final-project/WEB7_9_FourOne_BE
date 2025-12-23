@@ -40,7 +40,7 @@ public class ProductServiceTest {
 	private String testProductName = "new 테스트 상품명";
 	private String wrongImageUrl = "잘못된 이미지 url";
 	@BeforeEach
-	void setUp(){
+	void setUp() {
 		testUser = userRepository.findById(1L).get();
 	}
 	@Nested
@@ -55,7 +55,6 @@ public class ProductServiceTest {
 
 			assertThatThrownBy(() -> productService.addProduct(request, testUser))
 				.isInstanceOf(RuntimeException.class);
-
 			assertThat(productRepository.findByName(testProductName).size()).isEqualTo(0);
 			assertThat(productImageRepository.findByImageUrl(wrongImageUrl).size()).isEqualTo(0);
 		}
