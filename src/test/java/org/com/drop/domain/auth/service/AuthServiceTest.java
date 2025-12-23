@@ -529,7 +529,8 @@ class AuthServiceTest {
 		void deleteAccount_fail_hasActiveAuctions() {
 			// Given
 			when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-			when(auctionRepository.existsByProductSellerAndStatus(any(User.class), eq(Auction.AuctionStatus.LIVE))).thenReturn(true);
+			when(auctionRepository.existsByProductSellerAndStatus(any(User.class), eq(Auction.AuctionStatus.LIVE)))
+				.thenReturn(true);
 
 			// When & Then
 			ServiceException exception = assertThrows(ServiceException.class,
@@ -543,8 +544,10 @@ class AuthServiceTest {
 		void deleteAccount_fail_hasActiveBids() {
 			// Given
 			when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-			when(auctionRepository.existsByProductSellerAndStatus(any(User.class), eq(Auction.AuctionStatus.LIVE))).thenReturn(false);
-			when(bidRepository.existsByBidderAndAuctionStatus(any(User.class), eq(Auction.AuctionStatus.LIVE))).thenReturn(true);
+			when(auctionRepository.existsByProductSellerAndStatus(any(User.class), eq(Auction.AuctionStatus.LIVE)))
+				.thenReturn(false);
+			when(bidRepository.existsByBidderAndAuctionStatus(any(User.class), eq(Auction.AuctionStatus.LIVE)))
+				.thenReturn(true);
 
 			// When & Then
 			ServiceException exception = assertThrows(ServiceException.class,

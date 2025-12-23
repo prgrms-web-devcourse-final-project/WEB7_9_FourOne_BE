@@ -195,7 +195,8 @@ class UserServiceTest {
 			Product product = Product.builder().id(10L).name("내 상품").bookmarkCount(5).build();
 			Page<Product> productPage = new PageImpl<>(List.of(product));
 
-			when(productRepository.findBySellerAndDeletedAtIsNullOrderByCreatedAtDesc(eq(mockUser), any(Pageable.class)))
+			when(productRepository
+				.findBySellerAndDeletedAtIsNullOrderByCreatedAtDesc(eq(mockUser), any(Pageable.class)))
 				.thenReturn(productPage);
 
 			Auction auction = Auction.builder()
