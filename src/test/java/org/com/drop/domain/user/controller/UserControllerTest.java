@@ -21,6 +21,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -62,6 +63,9 @@ class UserControllerTest {
 
 	@MockitoBean
 	private StringRedisTemplate stringRedisTemplate;
+
+	@MockitoBean
+	ApplicationRunner baseInitData;
 
 	private User mockActor;
 
