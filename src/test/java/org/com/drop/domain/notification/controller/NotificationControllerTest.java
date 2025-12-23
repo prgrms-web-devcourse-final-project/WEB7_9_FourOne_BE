@@ -53,7 +53,7 @@ public class NotificationControllerTest {
 	private NotificationRepository notificationRepository;
 
 	@Nested
-	class SSE {
+	class Sse {
 		@Test
 		@WithMockUser(username = "user1@example.com", roles = {"USER"})
 		@DisplayName("SSE 연결 후 알림 발송 - 성공")
