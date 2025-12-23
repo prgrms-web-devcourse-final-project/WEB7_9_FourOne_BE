@@ -25,6 +25,7 @@ import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.domain.winner.domain.Winner;
 import org.com.drop.domain.winner.repository.WinnerRepository;
+import org.com.drop.global.aws.AmazonS3Client;
 import org.com.drop.global.exception.ErrorCode;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
@@ -50,6 +51,7 @@ public class UserService implements UserDetailsService {
 	private final ProductImageRepository productImageRepository;
 	private final BidRepository bidRepository;
 	private final WinnerRepository winnerRepository;
+	private final AmazonS3Client amazonS3Client;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -101,13 +103,14 @@ public class UserService implements UserDetailsService {
 				.serviceException("이미 사용 중인 닉네임입니다: nickname=%s", dto.nickname());
 		}
 
-		if (dto.profileImageUrl() != null && !dto.profileImageUrl().equals(user.getUserProfile())) {
-			if (user.getUserProfile() != null) {
-				// TODO: 이미지 S3 삭제 로직 추가
-			}
+		String oldImageUrl = user.getUserProfile();
+		String newImageUrl = dto.profileImageUrl();
+
+		if (oldImageUrl != null && !oldImageUrl.equals(newImageUrl)) {
+			amazonS3Client.updateS3Tag(oldImageUrl, "deleted");
 		}
 
-		user.updateProfile(dto.nickname(), dto.profileImageUrl());
+		user.updateProfile(dto.nickname(), newImageUrl);
 		userRepository.save(user);
 
 		return UpdateProfileResponse.of(user);
@@ -190,7 +193,6 @@ public class UserService implements UserDetailsService {
 			.map(bid -> {
 				Auction auction = bid.getAuction();
 				Winner winner = winnerMap.get(auction.getId());
-
 				String bidStatus = determineStatusWithWinner(user, auction, winner);
 
 				return new MyBidPageResponse.MyBidResponse(
@@ -204,7 +206,6 @@ public class UserService implements UserDetailsService {
 					auction.getEndAt()
 				);
 			})
-			.filter(dto -> "ALL".equalsIgnoreCase(statusParam) || dto.status().equalsIgnoreCase(statusParam))
 			.toList();
 
 		return new MyBidPageResponse(bidPage.getNumber() + 1, bidPage.getTotalPages(), bidPage.getTotalElements(), dtoList);

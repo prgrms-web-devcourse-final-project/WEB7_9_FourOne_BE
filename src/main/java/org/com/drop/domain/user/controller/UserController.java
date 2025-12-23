@@ -1,5 +1,7 @@
 package org.com.drop.domain.user.controller;
 
+import java.util.List;
+
 import org.com.drop.domain.auction.product.dto.ProductSearchResponse;
 import org.com.drop.domain.auction.product.service.ProductService;
 import org.com.drop.domain.user.dto.MyBidPageResponse;
@@ -10,11 +12,14 @@ import org.com.drop.domain.user.dto.UpdateProfileRequest;
 import org.com.drop.domain.user.dto.UpdateProfileResponse;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.service.UserService;
+import org.com.drop.global.aws.AmazonS3Client;
+import org.com.drop.global.aws.PreSignedUrlRequest;
 import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,6 +35,7 @@ public class UserController {
 
 	private final ProductService productService;
 	private final UserService userService;
+	private final AmazonS3Client amazonS3Client;
 
 	@GetMapping("products/{productId}")
 	public RsData<ProductSearchResponse> getProduct(
@@ -83,5 +89,14 @@ public class UserController {
 
 		UpdateProfileResponse response = userService.updateProfile(user, dto);
 		return new RsData<>(response);
+	}
+
+	@PostMapping("/user/me/profile/img")
+	public RsData<List<String>> getProfileImageUrl(
+		@LoginUser User actor,
+		@Valid @RequestBody List<PreSignedUrlRequest> preSignedUrlRequest
+	) {
+		List<String> url = amazonS3Client.createPresignedUrls(preSignedUrlRequest, actor);
+		return new RsData<>(url);
 	}
 }
