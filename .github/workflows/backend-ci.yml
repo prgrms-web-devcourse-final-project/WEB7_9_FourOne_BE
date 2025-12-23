@@ -31,6 +31,10 @@ jobs:
               with:
                   fetch-depth: 0
 
+            - name: Create env file from GitHub Secret
+              run: |
+                echo "${{ secrets.ENV_FILE }}" > .env.properties
+
             - name: Ensure base commit is fetched (PR only)
               if: github.event_name == 'pull_request'
               run: |
@@ -59,10 +63,6 @@ jobs:
 
             - name: Build without tests
               run: ./gradlew build -x test --no-daemon
-
-            - name: Create env file from GitHub Secret
-              run: |
-                echo "${{ secrets.ENV_FILE }}" > .env.properties
 
             - name: Run Unit Tests
               run: ./gradlew test \
