@@ -36,8 +36,8 @@ public class AmazonS3Client {
 	private final S3Client s3Client;
 	private final Tika tika = new Tika();
 
-	public List<String> createPresignedUrls(List<PreSignedUrlRequest> requests, User actor) {
-		return requests.stream()
+	public List<String> createPresignedUrls(PreSignedUrlListRequest requests, User actor) {
+		return requests.requests().stream()
 			.map(req -> generateSinglePresignedUrl(req, actor))
 			.toList();
 	}

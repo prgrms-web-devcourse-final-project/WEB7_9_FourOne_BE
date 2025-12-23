@@ -20,7 +20,6 @@ import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.controller.UserController;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
-import org.com.drop.global.aws.PreSignedUrlRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -857,12 +856,18 @@ public class ProductControllerTest {
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("Url 발급 - 성공")
 			void t6() throws Exception {
-				List<PreSignedUrlRequest> requests = List.of(
-					new PreSignedUrlRequest("image/jpeg", 1024L),
-					new PreSignedUrlRequest("image/png", 2048L)
+				String jsonContent = String.format(
+					"""
+						{
+						  "requests": [
+						    {
+						      "contentType": "image/png",
+						      "contentLength": 1024
+						    }
+						  ]
+						}
+							"""
 				);
-
-				String jsonContent = objectMapper.writeValueAsString(requests);
 
 				ResultActions resultActions = mvc
 					.perform(
@@ -881,9 +886,8 @@ public class ProductControllerTest {
 					.andExpect(jsonPath("$.status").value("200"))
 					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."))
 					.andExpect(jsonPath("$.data").isArray())
-					.andExpect(jsonPath("$.data.length()").value(2))
-					.andExpect(jsonPath("$.data[0]").value(containsString(".jpg")))
-					.andExpect(jsonPath("$.data[1]").value(containsString(".png")));
+					.andExpect(jsonPath("$.data.length()").value(1))
+					.andExpect(jsonPath("$.data[0]").value(containsString(".png")));
 			}
 
 			@Test
@@ -896,6 +900,142 @@ public class ProductControllerTest {
 					.andDo(print());
 				resultActions.andExpect(status().isUnauthorized());
 			}
+
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("Url 발급 - 실패 (파일 타입 오류)")
+			void t6_2() throws Exception {
+				String jsonContent = String.format(
+					"""
+						{
+						  "requests": [
+						    {
+						      "contentType": "text/png",
+						      "contentLength": 1024
+						    }
+						  ]
+						}
+							"""
+				);
+
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products/img")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+							.with(csrf())
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(status().isBadRequest())
+					.andExpect(jsonPath("$.code").value("INVALID_IMAGE_TYPE"))
+					.andExpect(jsonPath("$.httpStatus").value(400))
+					.andExpect(jsonPath("$.message").value("이미지 파일만 업로드 가능합니다."));
+
+			}
+
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("Url 발급 - 실패 (파일 사이즈 오류)")
+			void t6_3() throws Exception {
+				long oversizedValue = 20 * 1024 * 1024; // 20MB
+
+				String jsonContent = String.format(
+					"""
+					   {
+						 "requests": [
+						   {
+							 "contentType": "image/png",
+							 "contentLength": %d
+						   }
+						 ]
+					   }
+					""", oversizedValue
+				);
+
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products/img")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+							.with(csrf())
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(status().isBadRequest())
+					.andExpect(jsonPath("$.code").value("INVALID_IMAGE_SIZE"))
+					.andExpect(jsonPath("$.httpStatus").value("400"))
+					.andExpect(jsonPath("$.message").value("파일 크기는 10MB를 초과할 수 없습니다."));
+			}
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("Url 발급 - 실패 (파일 타입 없음)")
+			void t6_4() throws Exception {
+				String jsonContent = String.format(
+					"""
+						{
+						  "requests": [
+						    {
+						      "contentType": "",
+						      "contentLength": 1024
+						    }
+						  ]
+						}
+							"""
+				);
+
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products/img")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+							.with(csrf())
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(status().isBadRequest())
+					.andExpect(jsonPath("$.code").value("INVALID_IMAGE_TYPE"))
+					.andExpect(jsonPath("$.httpStatus").value(400))
+					.andExpect(jsonPath("$.message").value("이미지 파일만 업로드 가능합니다."));
+
+			}
+
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("Url 발급 - 실패 (파일 사이즈 없음)")
+			void t6_5() throws Exception {
+				String jsonContent = String.format(
+					"""
+					   {
+						 "requests": [
+						   {
+							 "contentType": "image/png",
+							 "contentLength": ""
+						   }
+						 ]
+					   }
+					"""
+				);
+
+				ResultActions resultActions = mvc
+					.perform(
+						post("/api/v1/products/img")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+							.with(csrf())
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(status().isBadRequest())
+					.andExpect(jsonPath("$.code").value("INVALID_IMAGE_SIZE"))
+					.andExpect(jsonPath("$.httpStatus").value("400"))
+					.andExpect(jsonPath("$.message").value("파일 크기는 10MB를 초과할 수 없습니다."));
+			}
+
 		}
 	}
 
