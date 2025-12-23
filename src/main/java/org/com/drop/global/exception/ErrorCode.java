@@ -101,7 +101,11 @@ public enum ErrorCode {
 	AUCTION_INVALID_CATEGORY("1604", HttpStatus.BAD_REQUEST, "유효하지 않은 카테고리입니다."),
 	AUCTION_NOT_LIVE("1606", HttpStatus.BAD_REQUEST, "진행 중인 경매가 아닙니다."),
 	AUCTION_BIDDER_CANNOT_BE_OWNER("1607", HttpStatus.BAD_REQUEST, "경매 상품의 판매자는 입찰할 수 없습니다."),
-	AUCTION_BUY_NOW_NOT_AVAILABLE("1608", HttpStatus.BAD_REQUEST, "즉시 구매가 불가능한 상품입니다.");
+	AUCTION_BUY_NOW_NOT_AVAILABLE("1608", HttpStatus.BAD_REQUEST, "즉시 구매가 불가능한 상품입니다."),
+
+	//notification
+	NOTIFICATION_NOT_FOUND("1708", HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다.");
+
 
 
 	private final String code;
