@@ -16,8 +16,8 @@ public record NotificationResponse(
 			notification.getId(),
 			notification.getUser().getId(),
 			notification.getMessage(),
-			notification.getReadAt(),
-			notification.getSendAt()
+			notification.getSendAt(),
+			notification.getReadAt()
 		);
 	}
 }
