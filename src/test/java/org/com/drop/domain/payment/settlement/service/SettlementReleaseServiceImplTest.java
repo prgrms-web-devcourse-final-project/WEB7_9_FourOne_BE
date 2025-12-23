@@ -8,14 +8,13 @@ import java.util.Optional;
 import org.com.drop.domain.payment.settlement.domain.Settlement;
 import org.com.drop.domain.payment.settlement.domain.SettlementStatus;
 import org.com.drop.domain.payment.settlement.repository.SettlementRepository;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@Disabled
+
 @ExtendWith(MockitoExtension.class)
 class SettlementReleaseServiceImplTest {
 
