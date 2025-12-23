@@ -71,8 +71,9 @@ public class ProductService {
 			request.description(),
 			request.category(),
 			request.subCategory());
-		addProductImages(product, request.imagesFiles());
 		productRepository.save(product);
+		addProductImages(product, request.imagesFiles());
+
 		return product;
 	}
 

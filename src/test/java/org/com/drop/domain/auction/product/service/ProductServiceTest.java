@@ -24,7 +24,6 @@ import jakarta.transaction.Transactional;
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-@Transactional
 public class ProductServiceTest {
 	@Autowired
 	ProductService productService;
@@ -65,6 +64,7 @@ public class ProductServiceTest {
 	{
 		@Test
 		@DisplayName("상품 수정 실패 - 상품 저장 성공, 이미지 저장 실패")
+		@Transactional
 		void t2() {
 			Product product = productService.findProductById(1L);
 			List<String> invalidUrls = List.of("invalid-url");
@@ -84,6 +84,7 @@ public class ProductServiceTest {
 	{
 		@Test
 		@DisplayName("상품 삭제 성공")
+		@Transactional
 		void t3() {
 			productService.deleteProduct(1L, testUser);
 			assertThat(productRepository.findById(1L).get().getDeletedAt()).isNotNull();

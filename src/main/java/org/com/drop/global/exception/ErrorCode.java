@@ -76,6 +76,7 @@ public enum ErrorCode {
 	PRODUCT_ALREADY_ON_AUCTION("1212", HttpStatus.CONFLICT, "이미 경매가 시작된 상품입니다."),
 	PRODUCT_INVALID_STATUS("1213", HttpStatus.BAD_REQUEST, "유효하지 않은 상품 상태입니다"),
 
+
 	//payments
 	PAY_ALREADY_PAID("1300", HttpStatus.CONFLICT, "이미 결제한 상품입니다."),
 	PAY_INVALID_CARD_EXPIRATION("1301", HttpStatus.BAD_REQUEST, "카드 정보를 다시 확인해주세요."),
