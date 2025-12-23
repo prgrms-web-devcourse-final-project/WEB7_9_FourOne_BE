@@ -347,7 +347,7 @@ public class ProductControllerTest {
 			@Test
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 출품 - 실패 (이미지 등록 안되어 있음.)")
-			void t1_() throws Exception {
+			void t1_7() throws Exception {
 				setUp(name, description, category, subCategory, wrongImages);
 
 				ResultActions resultActions = mvc
@@ -421,12 +421,12 @@ public class ProductControllerTest {
 
 			@Test
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
-			@DisplayName("상품 수정 - 실패 (필수값(이름) 누락)")
+			@DisplayName("상품 수정 - 실패 - 필수값(이름) 누락")
 			void t2_2() throws Exception {
 				setUp("", description, category, subCategory, images);
 				ResultActions resultActions = mvc
 					.perform(
-						put("/api/v1/products/%d".formatted(productId))
+						put("/api/v1/products/%d".formatted(auctionId))
 							.contentType(MediaType.APPLICATION_JSON)
 							.content(jsonContent)
 							.with(csrf())
@@ -434,13 +434,130 @@ public class ProductControllerTest {
 					.andDo(print());
 
 				resultActions
-					.andExpect(status().isBadRequest());
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("updateProduct"))
+					.andExpect(status().is(400))
+					.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_PRODUCT_NAME"))
+					.andExpect(jsonPath("$.httpStatus").value("400"))
+					.andExpect(jsonPath("$.message").value("상품명은 필수 항목 입니다."));
+			}
+
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("상품 수정 - 실패 - 필수값(내용) 누락")
+			void t1_3() throws Exception {
+				setUp(name, "", category, subCategory, images);
+				ResultActions resultActions = mvc
+					.perform(
+						put("/api/v1/products/%d".formatted(auctionId))
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+							.with(csrf())
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("updateProduct"))
+					.andExpect(status().is(400))
+					.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_PRODUCT_DESCRIPTION"))
+					.andExpect(jsonPath("$.httpStatus").value("400"))
+					.andExpect(jsonPath("$.message").value("상품 설명은 필수 항목 입니다."));
+			}
+
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("상품 수정 - 실패 - 필수값(카테고리) 누락")
+			void t1_4() throws Exception {
+				setUp(name, description, null, subCategory, images);
+				ResultActions resultActions = mvc
+					.perform(
+						put("/api/v1/products/%d".formatted(auctionId))
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+							.with(csrf())
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("updateProduct"))
+					.andExpect(status().is(400))
+					.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_PRODUCT_CATEGORY"))
+					.andExpect(jsonPath("$.httpStatus").value("400"))
+					.andExpect(jsonPath("$.message").value("상품 카테고리는 필수 항목 입니다."));
+			}
+
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("상품 수정 - 실패 - 필수값(서브 카테고리) 누락")
+			void t1_5() throws Exception {
+				setUp(name, description, category, null, images);
+				ResultActions resultActions = mvc
+					.perform(
+						put("/api/v1/products/%d".formatted(auctionId))
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+							.with(csrf())
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("updateProduct"))
+					.andExpect(status().is(400))
+					.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_PRODUCT_SUB_CATEGORY"))
+					.andExpect(jsonPath("$.httpStatus").value("400"))
+					.andExpect(jsonPath("$.message").value("상품 하위 카테고리는 필수 항목 입니다."));
+			}
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("상품 수정 - 실패 - 필수값(이미지) 누락")
+			void t1_6() throws Exception {
+				setUp(name, description, category, subCategory, null);
+				ResultActions resultActions = mvc
+					.perform(
+						put("/api/v1/products/%d".formatted(auctionId))
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+							.with(csrf())
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("updateProduct"))
+					.andExpect(status().is(400))
+					.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_PRODUCT_IMAGE"))
+					.andExpect(jsonPath("$.httpStatus").value("400"))
+					.andExpect(jsonPath("$.message").value("상품 이미지는 필수 항목 입니다."));
+			}
+
+			@Test
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			@DisplayName("상품 수정 - 실패 (이미지 등록 안되어 있음.)")
+			void t1_() throws Exception {
+				setUp(name, description, category, subCategory, wrongImages);
+				ResultActions resultActions = mvc
+					.perform(
+						put("/api/v1/products/%d".formatted(auctionId))
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+							.with(csrf())
+					)
+					.andDo(print());
+				resultActions
+					.andExpect(handler().handlerType(ProductController.class))
+					.andExpect(handler().methodName("updateProduct"))
+					.andExpect(status().is(400))
+					.andExpect(jsonPath("$.code").value("INVALID_IMAGE"))
+					.andExpect(jsonPath("$.message").value("올바르지 않은 이미지 입니다."));
 			}
 
 			@Test
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 수정 - 실패 (경매 이미 시작)")
-			void t2_3() throws Exception {
+			void t2_9() throws Exception {
 				setUp(updatedName, description, category, subCategory, images);
 				try {
 					Thread.sleep(6000); // 경매 만료되게 6초 대기
@@ -466,7 +583,7 @@ public class ProductControllerTest {
 
 			@Test
 			@DisplayName("상품 수정 - 실패 (로그인 없음)")
-			void t2_4() throws Exception {
+			void t2_10() throws Exception {
 				setUp(updatedName, description, category, subCategory, updatedImages);
 				ResultActions resultActions = mvc
 					.perform(
