@@ -67,7 +67,7 @@ public class NotificationService {
 	}
 
 	public List<Notification> findByUser(User actor) {
-		return notificationRepository.findAllByUser(actor);
+		return notificationRepository.findAllByUserId(actor.getId());
 	}
 
 	@Transactional

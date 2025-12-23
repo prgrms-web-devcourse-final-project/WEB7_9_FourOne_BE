@@ -8,6 +8,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.com.drop.domain.notification.entity.Notification;
@@ -186,8 +188,193 @@ public class NotificationControllerTest {
 					.andExpect(jsonPath("$.code").value("AUTH_ACCESS_DENIED"))
 					.andExpect(jsonPath("$.message").value("접근 권한이 없습니다."));
 			}
+
+			@Test
+			@DisplayName("알림 조회 다건 - 성공")
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			void t5() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						get("/api/v1/notifications")
+					)
+					.andDo(print());
+
+				resultActions.andExpect(status().isOk())
+					.andExpect(jsonPath("$.code").value("SUCCESS"))
+					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."))
+					.andExpect(jsonPath("$.data").isArray())
+					.andExpect(jsonPath("$.data.length()").value(2));
+
+				List<Notification> notifications =
+					notificationRepository.findAllByUserId(userId);
+
+				for (int i = 0; i < notifications.size(); i++) {
+					Notification notif = notifications.get(i);
+
+					resultActions
+						.andExpect(jsonPath("$.data[" + i + "].id").value(notif.getId()))
+						.andExpect(jsonPath("$.data[" + i + "].userId").value(notif.getUser().getId()))
+						.andExpect(jsonPath("$.data[" + i + "].message").value(notif.getMessage()));
+				}
+
+			}
+
+			@Test
+			@DisplayName("알림 조회 다건 - 실패 (로그인 없음)")
+			void t5_1() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						get("/api/v1/notifications/")
+					)
+					.andDo(print());
+				resultActions.andExpect(status().isForbidden());
+			}
 		}
 
+		@Nested
+		class Update {
+			@Test
+			@DisplayName("알림 읽기 - 성공")
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			void t6() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						put("/api/v1/notifications/%d".formatted(notificationId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(NotificationController.class))
+					.andExpect(handler().methodName("readNotification"))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.code").value("SUCCESS"))
+					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."))
+					.andExpect(jsonPath("$.data.sendAt").isNotEmpty());
+
+				Notification after = notificationRepository.findById(notificationId).get();
+				assertThat(after.getReadAt()).isNotNull();
+			}
+
+			@Test
+			@DisplayName("알림 읽기 - 실패 (로그인 없음)")
+			void t6_1() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						put("/api/v1/notifications/%d".formatted(notificationId))
+					)
+					.andDo(print());
+
+				resultActions.andExpect(status().isForbidden());
+			}
+
+			@Test
+			@DisplayName("알림 읽기 - 실패 (알림 없음)")
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			void t6_2() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						put("/api/v1/notifications/%d".formatted(wrongNotificationId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(NotificationController.class))
+					.andExpect(handler().methodName("readNotification"))
+					.andExpect(status().isNotFound())
+					.andExpect(jsonPath("$.code").value("NOTIFICATION_NOT_FOUND"))
+					.andExpect(jsonPath("$.message").value("알림을 찾을 수 없습니다."));
+			}
+
+			@Test
+			@DisplayName("알림 읽기 - 실패 (권한 없음)")
+			@WithMockUser(username = "user2@example.com", roles = {"USER"})
+			void t4_3() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						put("/api/v1/notifications/%d".formatted(notificationId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(NotificationController.class))
+					.andExpect(handler().methodName("readNotification"))
+					.andExpect(status().isForbidden())
+					.andExpect(jsonPath("$.code").value("AUTH_ACCESS_DENIED"))
+					.andExpect(jsonPath("$.message").value("접근 권한이 없습니다."));
+			}
+		}
+
+		@Nested
+		class Delete {
+			@Test
+			@DisplayName("알림 삭제 - 성공")
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			void t6() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						delete("/api/v1/notifications/%d".formatted(notificationId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(NotificationController.class))
+					.andExpect(handler().methodName("deleteNotification"))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.code").value("SUCCESS"))
+					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
+
+				Optional<Notification> after = notificationRepository.findById(notificationId);
+				assertThat(after.isPresent()).isFalse();
+			}
+
+			@Test
+			@DisplayName("알림 삭제 - 실패 (로그인 없음)")
+			void t6_1() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						delete("/api/v1/notifications/%d".formatted(notificationId))
+					)
+					.andDo(print());
+
+				resultActions.andExpect(status().isForbidden());
+			}
+
+			@Test
+			@DisplayName("알림 삭제 - 실패 (알림 없음)")
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			void t6_2() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						delete("/api/v1/notifications/%d".formatted(wrongNotificationId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(NotificationController.class))
+					.andExpect(handler().methodName("deleteNotification"))
+					.andExpect(status().isNotFound())
+					.andExpect(jsonPath("$.code").value("NOTIFICATION_NOT_FOUND"))
+					.andExpect(jsonPath("$.message").value("알림을 찾을 수 없습니다."));
+			}
+
+			@Test
+			@DisplayName("알림 삭제 - 실패 (권한 없음)")
+			@WithMockUser(username = "user2@example.com", roles = {"USER"})
+			void t4_3() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						delete("/api/v1/notifications/%d".formatted(notificationId))
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(NotificationController.class))
+					.andExpect(handler().methodName("deleteNotification"))
+					.andExpect(status().isForbidden())
+					.andExpect(jsonPath("$.code").value("AUTH_ACCESS_DENIED"))
+					.andExpect(jsonPath("$.message").value("접근 권한이 없습니다."));
+			}
+		}
 
 	}
 
