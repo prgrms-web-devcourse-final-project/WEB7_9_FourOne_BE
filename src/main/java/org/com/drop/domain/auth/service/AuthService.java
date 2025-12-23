@@ -3,6 +3,9 @@ package org.com.drop.domain.auth.service;
 import java.time.LocalDateTime;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.com.drop.domain.auction.auction.entity.Auction;
+import org.com.drop.domain.auction.auction.repository.AuctionRepository;
+import org.com.drop.domain.auction.bid.repository.BidRepository;
 import org.com.drop.domain.auth.dto.GetCurrentUserInfoResponse;
 import org.com.drop.domain.auth.dto.LocalLoginRequest;
 import org.com.drop.domain.auth.dto.LocalLoginResponse;
@@ -36,6 +39,8 @@ import lombok.RequiredArgsConstructor;
 public class AuthService {
 
 	private final UserRepository userRepository;
+	private final AuctionRepository auctionRepository;
+	private final BidRepository bidRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final RefreshTokenStore refreshTokenStore;
 	private final JwtProvider jwtProvider;
@@ -150,8 +155,10 @@ public class AuthService {
 	}
 
 	private boolean userHasActiveAuctionsOrTrades(User user) {
-		// TODO: 진행 중인 경매나 입찰이 있는 경우 처리
-		return false;
+		boolean hasActiveSales = auctionRepository.existsByProductSellerAndStatus(user, Auction.AuctionStatus.LIVE);
+		boolean hasActiveBids = bidRepository.existsByBidderAndAuctionStatus(user, Auction.AuctionStatus.LIVE);
+
+		return hasActiveSales || hasActiveBids;
 	}
 
 	public LocalLoginResponse login(LocalLoginRequest dto) {
