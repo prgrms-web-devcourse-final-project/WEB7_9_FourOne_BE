@@ -132,7 +132,8 @@ public class UserService implements UserDetailsService {
 		validatePageNumber(page);
 		Pageable pageable = PageRequest.of(page - 1, 20);
 
-		Page<Product> productPage = productRepository.findBySellerAndDeletedAtIsNullOrderByCreatedAtDesc(user, pageable);
+		Page<Product> productPage = productRepository
+			.findBySellerAndDeletedAtIsNullOrderByCreatedAtDesc(user, pageable);
 		List<Product> products = productPage.getContent();
 
 		List<Long> productIds = products.stream().map(Product::getId).toList();
@@ -140,7 +141,8 @@ public class UserService implements UserDetailsService {
 		List<Auction> auctions = auctionRepository.findByProductInAndDeletedAtIsNullOrderByIdDesc(products);
 
 		Map<Long, Auction> latestAuctionMap = auctions.stream()
-			.collect(Collectors.toMap(a -> a.getProduct().getId(), a -> a, (e, r) -> e));
+			.collect(Collectors.toMap(
+				a -> a.getProduct().getId(), a -> a, (e, r) -> e));
 
 		Map<Long, Long> bidCountMap = bidRepository.countByAuctionIn(auctions).stream()
 			.collect(Collectors.toMap(data -> (Long) data[0], data -> (Long) data[1]));
@@ -201,14 +203,16 @@ public class UserService implements UserDetailsService {
 					auction.getProduct().getName(),
 					imageMap.get(auction.getProduct().getId()),
 					bid.getBidAmount().intValue(),
-					(winner != null && winner.getUserId().equals(user.getId())) ? winner.getFinalPrice().intValue() : null,
+					(winner != null && winner.getUserId()
+						.equals(user.getId())) ? winner.getFinalPrice().intValue() : null,
 					bidStatus,
 					auction.getEndAt()
 				);
 			})
 			.toList();
 
-		return new MyBidPageResponse(bidPage.getNumber() + 1, bidPage.getTotalPages(), bidPage.getTotalElements(), dtoList);
+		return new MyBidPageResponse(bidPage.getNumber() + 1, bidPage.getTotalPages(),
+			bidPage.getTotalElements(), dtoList);
 	}
 
 	private String determineStatusWithWinner(User user, Auction auction, Winner winner) {
@@ -222,7 +226,9 @@ public class UserService implements UserDetailsService {
 	}
 
 	private long calculateRemainingTime(Auction auction) {
-		if (auction == null || auction.getEndAt() == null) return 0;
+		if (auction == null || auction.getEndAt() == null) {
+			return 0;
+		}
 		long seconds = java.time.Duration.between(LocalDateTime.now(), auction.getEndAt()).toSeconds();
 		return Math.max(seconds, 0);
 	}
@@ -234,7 +240,9 @@ public class UserService implements UserDetailsService {
 	}
 
 	private Map<Long, String> getProductMainImageMapByIds(List<Long> productIds) {
-		if (productIds.isEmpty()) return java.util.Collections.emptyMap();
+		if (productIds.isEmpty()) {
+			return java.util.Collections.emptyMap();
+		}
 
 		return productImageRepository.findAllByProductIdIn(productIds).stream()
 			.collect(Collectors.toMap(

@@ -9,4 +9,4 @@ public record UpdateProfileRequest(
 	String nickname,
 
 	String profileImageUrl
-) {}
+) { }

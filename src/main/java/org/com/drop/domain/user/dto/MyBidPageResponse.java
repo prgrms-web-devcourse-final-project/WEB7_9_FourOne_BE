@@ -18,5 +18,5 @@ public record MyBidPageResponse(
 		Integer finalBid,
 		String status,
 		LocalDateTime endAt
-	) {}
+	) { }
 }
