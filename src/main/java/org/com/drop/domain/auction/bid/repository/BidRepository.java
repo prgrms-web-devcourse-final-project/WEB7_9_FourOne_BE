@@ -8,12 +8,17 @@ import org.com.drop.domain.auction.bid.entity.Bid;
 import org.com.drop.domain.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface BidRepository extends JpaRepository<Bid, Long> {
 	Optional<Bid> findTopByAuction_IdOrderByBidAmountDesc(Long auctionId);
+
+	@EntityGraph(attributePaths = {"bidder"})
+	Page<Bid> findAllByAuctionId(Long auctionId, Pageable pageable);
+
 
 	@Query("SELECT b.auction.id, COUNT(b) FROM Bid b WHERE b.auction IN :auctions GROUP BY b.auction.id")
 	List<Object[]> countByAuctionIn(@Param("auctions") List<Auction> auctions);
