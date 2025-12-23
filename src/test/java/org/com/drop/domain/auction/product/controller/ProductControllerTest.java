@@ -707,7 +707,7 @@ public class ProductControllerTest {
 	}
 
 	@Nested
-	class Bid{
+	class Bid {
 		@Autowired
 		MockMvc mockMvc;
 
