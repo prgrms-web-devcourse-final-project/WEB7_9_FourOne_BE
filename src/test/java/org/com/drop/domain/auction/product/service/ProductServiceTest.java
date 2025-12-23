@@ -43,9 +43,9 @@ public class ProductServiceTest {
 	void setUp() {
 		testUser = userRepository.findById(1L).get();
 	}
+
 	@Nested
-	class addProduct
-	{
+	class AddProduct {
 		@Test
 		@DisplayName("상품 생성 실패 - 상품 저장 성공, 이미지 저장 실패")
 		void t1() {
@@ -61,8 +61,7 @@ public class ProductServiceTest {
 	}
 
 	@Nested
-	class updateProduct
-	{
+	class UpdateProduct {
 		@Test
 		@DisplayName("상품 수정 실패 - 상품 저장 성공, 이미지 저장 실패")
 		@Transactional
@@ -81,8 +80,7 @@ public class ProductServiceTest {
 	}
 
 	@Nested
-	class deleteProduct
-	{
+	class DeleteProduct {
 		@Test
 		@DisplayName("상품 삭제 성공")
 		@Transactional

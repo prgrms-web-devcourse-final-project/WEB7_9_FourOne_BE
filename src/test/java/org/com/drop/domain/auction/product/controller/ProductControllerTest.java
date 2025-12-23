@@ -322,6 +322,7 @@ public class ProductControllerTest {
 					.andExpect(jsonPath("$.httpStatus").value("400"))
 					.andExpect(jsonPath("$.message").value("상품 하위 카테고리는 필수 항목 입니다."));
 			}
+
 			@Test
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 출품 - 실패 - 필수값(이미지) 누락")
@@ -510,6 +511,7 @@ public class ProductControllerTest {
 					.andExpect(jsonPath("$.httpStatus").value("400"))
 					.andExpect(jsonPath("$.message").value("상품 하위 카테고리는 필수 항목 입니다."));
 			}
+
 			@Test
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("상품 수정 - 실패 - 필수값(이미지) 누락")
@@ -859,15 +861,15 @@ public class ProductControllerTest {
 			void t6() throws Exception {
 				String jsonContent = String.format(
 					"""
-						{
-						  "requests": [
-						    {
-						      "contentType": "image/png",
-						      "contentLength": 1024
-						    }
-						  ]
-						}
-							"""
+					{
+						"requests": [
+							{
+								"contentType": "image/png",
+								"contentLength": 1024
+							}
+						]
+					}
+					"""
 				);
 
 				ResultActions resultActions = mvc
@@ -906,7 +908,6 @@ public class ProductControllerTest {
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("Url 발급 - 실패 (파일 타입 오류)")
 			void t6_2() throws Exception {
-				// 예시: 탭 문자를 사용하여 들여쓰기 수정
 				String jsonContent = String.format(
 					"""
 					{
@@ -972,6 +973,7 @@ public class ProductControllerTest {
 					.andExpect(jsonPath("$.httpStatus").value("400"))
 					.andExpect(jsonPath("$.message").value("파일 크기는 10MB를 초과할 수 없습니다."));
 			}
+
 			@Test
 			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			@DisplayName("Url 발급 - 실패 (파일 타입 없음)")
