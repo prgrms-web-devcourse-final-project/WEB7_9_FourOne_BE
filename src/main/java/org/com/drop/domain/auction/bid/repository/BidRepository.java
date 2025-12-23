@@ -3,14 +3,12 @@ package org.com.drop.domain.auction.bid.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.bid.entity.Bid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
-import org.com.drop.domain.user.entity.User;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
