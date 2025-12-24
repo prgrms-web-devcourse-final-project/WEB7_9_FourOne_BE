@@ -103,14 +103,18 @@ public class UserService implements UserDetailsService {
 				.serviceException("이미 사용 중인 닉네임입니다: nickname=%s", dto.nickname());
 		}
 
-		String oldImageUrl = user.getUserProfile();
-		String newImageUrl = dto.profileImageUrl();
+		String oldImageKey = user.getUserProfile();
+		String newImageKey = dto.profileImageUrl();
 
-		if (oldImageUrl != null && !oldImageUrl.equals(newImageUrl)) {
-			amazonS3Client.updateS3Tag(oldImageUrl, "deleted");
+		if (newImageKey != null && !newImageKey.isBlank()) {
+			amazonS3Client.verifyImage(List.of(newImageKey));
 		}
 
-		user.updateProfile(dto.nickname(), newImageUrl);
+		if (oldImageKey != null && !oldImageKey.equals(newImageKey)) {
+			amazonS3Client.updateS3Tag(oldImageKey, "deleted");
+		}
+
+		user.updateProfile(dto.nickname(), newImageKey);
 		userRepository.save(user);
 
 		return UpdateProfileResponse.of(user);
