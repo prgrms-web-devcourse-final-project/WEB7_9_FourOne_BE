@@ -1,5 +1,6 @@
 package org.com.drop.domain.auction.auction.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,4 +15,8 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
 	List<Auction> findByProductInAndDeletedAtIsNullOrderByIdDesc(List<Product> products);
 
 	boolean existsByProductSellerAndStatus(User seller, Auction.AuctionStatus status);
+
+	List<Auction> findAllByStatusAndStartAtBefore(Auction.AuctionStatus status, LocalDateTime now);
+
+	List<Auction> findAllByStatusAndEndAtBefore(Auction.AuctionStatus status, LocalDateTime now);
 }
