@@ -8,5 +8,5 @@ public record UpdateProfileRequest(
 	@Size(min = 3, max = 10)
 	String nickname,
 
-	String profileImageUrl
+	String profileImageKey
 ) { }

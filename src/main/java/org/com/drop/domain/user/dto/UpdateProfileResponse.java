@@ -10,11 +10,14 @@ public record UpdateProfileResponse(
 	String profileImageUrl,
 	LocalDateTime updatedAt
 ) {
-	public static UpdateProfileResponse of(User user) {
+	public static UpdateProfileResponse of(
+		User user,
+		String profileImageUrl
+	) {
 		return new UpdateProfileResponse(
 			user.getId(),
 			user.getNickname(),
-			user.getUserProfile(),
+			profileImageUrl,
 			LocalDateTime.now()
 		);
 	}

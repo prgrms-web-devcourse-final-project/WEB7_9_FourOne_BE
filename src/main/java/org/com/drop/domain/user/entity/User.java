@@ -78,6 +78,9 @@ public class User {
 	}
 
 	public void updateProfile(String nickname, String userProfile) {
+		if (nickname != null) {
+			this.nickname = nickname;
+		}
 		if (userProfile != null) {
 			this.userProfile = userProfile;
 		}

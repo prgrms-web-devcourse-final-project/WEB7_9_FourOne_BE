@@ -73,6 +73,7 @@ public class ProductService {
 			request.subCategory());
 		productRepository.save(product);
 		addProductImages(product, request.imagesFiles());
+
 		return product;
 	}
 

@@ -20,6 +20,7 @@ public enum ErrorCode {
 	INVALID_IMAGE_TYPE("909", HttpStatus.BAD_REQUEST, "이미지 파일만 업로드 가능합니다."),
 	INVALID_IMAGE_UPLOAD("910", HttpStatus.BAD_REQUEST, "올바르지 않은 이미지가 업로드 되어 삭제 되었습니다."),
 	INVALID_IMAGE_DETELE("911", HttpStatus.BAD_REQUEST, "잘못된 이미지 삭제에 실패했습니다."),
+	INVALID_IMAGE("912", HttpStatus.BAD_REQUEST, "올바르지 않은 이미지 입니다."),
 
 	//auth
 	AUTH_MISSING_EMAIL("1000", HttpStatus.BAD_REQUEST, "이메일은 필수 입력 항목입니다."),
@@ -75,6 +76,7 @@ public enum ErrorCode {
 	PRODUCT_ALREADY_ON_AUCTION("1212", HttpStatus.CONFLICT, "이미 경매가 시작된 상품입니다."),
 	PRODUCT_INVALID_STATUS("1213", HttpStatus.BAD_REQUEST, "유효하지 않은 상품 상태입니다"),
 
+
 	//payments
 	PAY_ALREADY_PAID("1300", HttpStatus.CONFLICT, "이미 결제한 상품입니다."),
 	PAY_INVALID_CARD_EXPIRATION("1301", HttpStatus.BAD_REQUEST, "카드 정보를 다시 확인해주세요."),
@@ -86,7 +88,7 @@ public enum ErrorCode {
 	PAY_ALREADY_PROCESSED("1307", HttpStatus.CONFLICT, "이미 처리된 결제 입니다."),
 	PAY_ALREADY_CANCELED_PAYMENT("1308", HttpStatus.CONFLICT, "이미 취소된 결제입니다."),
 	PAY_NOT_FOUND_METHOD("1309", HttpStatus.NOT_FOUND, "지원되지 않는 결제 수단입니다."),
-
+	USER_PAYMENT_METHOD_ALREADY_EXISTS("1114", HttpStatus.CONFLICT, "이미 등록된 카드입니다."),
 	//purchases
 	PURCHASE_INVALID_STATUS("1400", HttpStatus.CONFLICT, "구매 확정이 불가능한 상태입니다.(현재 상태: READY)"),
 
