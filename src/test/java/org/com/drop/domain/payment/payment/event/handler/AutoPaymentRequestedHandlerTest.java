@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+
 @ExtendWith(MockitoExtension.class)
 class AutoPaymentRequestedHandlerTest {
 
@@ -44,6 +45,3 @@ class AutoPaymentRequestedHandlerTest {
 			.attemptAutoPayment(1L, "billing-key");
 	}
 }
-
-
-

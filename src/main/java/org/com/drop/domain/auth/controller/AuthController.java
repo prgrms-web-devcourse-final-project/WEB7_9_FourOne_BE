@@ -19,9 +19,7 @@ import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
@@ -32,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -44,38 +43,31 @@ public class AuthController {
 	private final AuthService authService;
 	private final RefreshTokenStore refreshTokenStore;
 
-	private <T> RsData<T> createSuccessRsData(int status, T data) {
-		return new RsData<>(status, data);
-	}
-
 	@PostMapping("/local/signup")
-	public ResponseEntity<RsData<LocalSignUpResponse>> signup(
+	public RsData<LocalSignUpResponse> signup(
 		@Valid @RequestBody LocalSignUpRequest dto) {
 
 		LocalSignUpResponse response = authService.signup(dto);
-		RsData<LocalSignUpResponse> rsData = createSuccessRsData(201, response);
 
-		return ResponseEntity.created(null).body(rsData);
+		return new RsData<>(201, response);
 	}
 
 	@PostMapping("/email/send-code")
-	public ResponseEntity<RsData<EmailSendResponse>> sendVerificationCode(
+	public RsData<EmailSendResponse> sendVerificationCode(
 		@Valid @RequestBody EmailSendRequest dto) {
 
 		EmailSendResponse response = authService.sendVerificationCode(dto.email());
-		RsData<EmailSendResponse> rsData = createSuccessRsData(202, response);
 
-		return ResponseEntity.status(HttpStatus.ACCEPTED).body(rsData);
+		return new RsData<>(202, response);
 	}
 
 	@PostMapping("/email/verify-code")
-	public ResponseEntity<RsData<EmailVerifyResponse>> verifyCode(
+	public RsData<EmailVerifyResponse> verifyCode(
 		@Valid @RequestBody EmailVerifyRequest dto) {
 
 		EmailVerifyResponse response = authService.verifyCode(dto.email(), dto.code());
-		RsData<EmailVerifyResponse> rsData = createSuccessRsData(200, response);
 
-		return ResponseEntity.ok(rsData);
+		return new RsData<>(200, response);
 	}
 
 	@PostMapping("/delete")
@@ -85,17 +77,17 @@ public class AuthController {
 
 		UserDeleteResponse response = authService.deleteAccount(user, request);
 
-		return createSuccessRsData(200, response);
+		return new RsData<>(200, response);
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<RsData<LocalLoginResponse>> login(
-		@Validated @RequestBody LocalLoginRequest dto) {
+	public RsData<LocalLoginResponse> login(
+		@Validated @RequestBody LocalLoginRequest dto, HttpServletResponse response) {
 
-		LocalLoginResponse response = authService.login(dto);
+		LocalLoginResponse loginResponse = authService.login(dto);
 
-		String refreshToken = authService.createRefreshToken(response.email());
-		refreshTokenStore.save(response.email(), refreshToken, CACHE_TTL_SECONDS);
+		String refreshToken = authService.createRefreshToken(loginResponse.email());
+		refreshTokenStore.save(loginResponse.email(), refreshToken, CACHE_TTL_SECONDS);
 
 		ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
 			.httpOnly(true)
@@ -105,16 +97,14 @@ public class AuthController {
 			.maxAge(CACHE_TTL_SECONDS)
 			.build();
 
-		RsData<LocalLoginResponse> body = createSuccessRsData(200, response);
+		response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-		return ResponseEntity.ok()
-			.header(HttpHeaders.SET_COOKIE, cookie.toString())
-			.body(body);
+		return new RsData<>(200, loginResponse);
 	}
 
 	@PostMapping("/logout")
-	public ResponseEntity<RsData<Void>> logout(
-		@AuthenticationPrincipal UserDetails userDetails) {
+	public RsData<Void> logout(
+		@AuthenticationPrincipal UserDetails userDetails, HttpServletResponse response) {
 
 		authService.logout();
 
@@ -126,11 +116,9 @@ public class AuthController {
 			.maxAge(0)
 			.build();
 
-		RsData<Void> body = createSuccessRsData(200, null);
+		response.addHeader(HttpHeaders.SET_COOKIE, expiredCookie.toString());
 
-		return ResponseEntity.ok()
-			.header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
-			.body(body);
+		return new RsData<>(200, null);
 	}
 
 	@PostMapping("/refresh")
@@ -142,7 +130,7 @@ public class AuthController {
 		}
 
 		TokenRefreshResponse response = authService.refresh(refreshToken);
-		return createSuccessRsData(200, response);
+		return new RsData<>(200, response);
 	}
 
 	@GetMapping("/me")
@@ -151,6 +139,6 @@ public class AuthController {
 
 		GetCurrentUserInfoResponse response = authService.getMe(user);
 
-		return createSuccessRsData(200, response);
+		return new RsData<>(200, response);
 	}
 }

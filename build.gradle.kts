@@ -70,6 +70,7 @@ dependencies {
 
     //aws
     implementation("io.awspring.cloud:spring-cloud-aws-starter-s3:3.1.1")
+    implementation("org.apache.tika:tika-core:2.9.1")
 }
 
 /** ===========================

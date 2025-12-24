@@ -119,7 +119,10 @@ public class QnaControllerTest {
 					resultActions
 						.andExpect(handler().handlerType(QnAController.class))
 						.andExpect(handler().methodName("addQna"))
-						.andExpect(status().is(400));
+						.andExpect(status().is(400))
+						.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_QUESTION"))
+						.andExpect(jsonPath("$.httpStatus").value("400"))
+						.andExpect(jsonPath("$.message").value("질문이 입력되지 않았습니다."));
 				}
 
 				@Test
@@ -219,7 +222,10 @@ public class QnaControllerTest {
 					resultActions
 						.andExpect(handler().handlerType(QnAController.class))
 						.andExpect(handler().methodName("addAnswer"))
-						.andExpect(status().is(400));
+						.andExpect(status().is(400))
+						.andExpect(jsonPath("$.code").value("PRODUCT_INVALID_ANSWER"))
+						.andExpect(jsonPath("$.httpStatus").value("400"))
+						.andExpect(jsonPath("$.message").value("답변이 입력되지 않았습니다."));
 				}
 
 				@Test
@@ -297,7 +303,7 @@ public class QnaControllerTest {
 				void t3() throws Exception {
 					ResultActions resultActions = mvc
 						.perform(
-							delete("/api/v1/products/%d/qna/%d".formatted(productId, answerId))
+							delete("/api/v1/products/%d/qna/%d/%d".formatted(productId, questionId, answerId))
 								.with(csrf())
 						)
 						.andDo(print());
@@ -319,7 +325,7 @@ public class QnaControllerTest {
 				void t3_1() throws Exception {
 					ResultActions resultActions = mvc
 						.perform(
-							delete("/api/v1/products/%d/qna/%d".formatted(productId, wrongAnswerId))
+							delete("/api/v1/products/%d/qna/%d/%d".formatted(productId, questionId, wrongAnswerId))
 								.with(csrf())
 						)
 						.andDo(print());
@@ -337,7 +343,7 @@ public class QnaControllerTest {
 				void t1_3() throws Exception {
 					ResultActions resultActions = mvc
 						.perform(
-							delete("/api/v1/products/%d/qna/%d".formatted(productId, wrongAnswerId))
+							delete("/api/v1/products/%d/qna/%d/%d".formatted(productId, questionId, answerId))
 								.with(csrf())
 						)
 						.andDo(print());

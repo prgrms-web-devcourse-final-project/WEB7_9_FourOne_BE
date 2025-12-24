@@ -73,11 +73,13 @@ public class ProductService {
 			request.subCategory());
 		productRepository.save(product);
 		addProductImages(product, request.imagesFiles());
+
 		return product;
 	}
 
 	@Transactional
 	public void addProductImages(Product product, List<String> imageUrls) {
+		amazonS3Client.verifyImage(imageUrls);
 
 		List<ProductImage> images = imageUrls.stream()
 			.map(url -> new ProductImage(product, url))
@@ -106,8 +108,9 @@ public class ProductService {
 			);
 	}
 
-	public ProductSearchResponse findProductWithImgById(Long id) {
+	public ProductSearchResponse findProductWithImgById(Long id, User actor) {
 		Product product = findProductById(id);
+		validUser(product, actor);
 		List<String> images = getSortedImageUrls(productImageRepository.findAllByProductId(product.getId()));
 
 		return new ProductSearchResponse(product, images);
@@ -118,7 +121,6 @@ public class ProductService {
 			.filter(img -> img.getPreImg() == null).findFirst();
 
 		if (start.isEmpty()) {
-			System.out.println("이미지 없다.");
 			return Collections.emptyList();
 		}
 
@@ -126,7 +128,6 @@ public class ProductService {
 		ProductImage current = start.get();
 
 		while (current != null) {
-			System.out.println(current);
 			sortedUrls.add(amazonS3Client.getPresignedUrl(current.getImageUrl()));
 			current = current.getTrailImg();
 
@@ -159,7 +160,10 @@ public class ProductService {
 	@Transactional
 	public void deleteProductImage(Product product, User actor) {
 		if (product.getSeller().getId().equals(actor.getId())) {
-			productImageRepository.deleteByProduct(product);
+			List<ProductImage> keys = productImageRepository.deleteByProduct(product);
+			for (ProductImage key : keys) {
+				amazonS3Client.updateS3Tag(key.getImageUrl(), "deleted");
+			}
 		}
 	}
 

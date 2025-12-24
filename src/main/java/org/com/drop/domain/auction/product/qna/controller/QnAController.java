@@ -57,12 +57,14 @@ public class QnAController {
 		);
 	}
 
-	@DeleteMapping("/{qnaId}")
+	@DeleteMapping("/{qnaId}/{answerId}")
 	public RsData<Void> deleteAnswer(
 		@LoginUser User actor,
-		@PathVariable Long qnaId
+		@PathVariable Long productId,
+		@PathVariable Long qnaId,
+		@PathVariable Long answerId
 	) {
-		qnAService.deleteAnswer(qnaId, actor);
+		qnAService.deleteAnswer(answerId, actor);
 		return new RsData<>(null);
 	}
 

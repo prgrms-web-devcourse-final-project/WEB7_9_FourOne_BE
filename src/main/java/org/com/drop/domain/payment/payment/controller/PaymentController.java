@@ -25,10 +25,11 @@ public class PaymentController {
 	@PostMapping("/create")
 	public RsData<?> create(
 		@LoginUser User user,
+		@RequestParam Long winnerId,
 		@RequestParam Long amount
 	) {
 		return new RsData<>(
-			paymentService.createPayment(user.getId(), amount)
+			paymentService.createPayment(winnerId, amount)
 		);
 	}
 

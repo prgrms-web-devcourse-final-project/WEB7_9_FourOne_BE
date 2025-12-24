@@ -33,7 +33,7 @@ public class EmailService {
 
 			javaMailSender.send(mimeMessage);
 
-			log.info("인증 코드 이메일 발송 성공: To={}, Code={}", toEmail, code);
+			log.debug("인증 코드 이메일 발송 성공: To={}, Code={}", toEmail, code);
 
 		} catch (MessagingException e) {
 			log.error("인증 코드 이메일 발송 실패: To={}, Error={}", toEmail, e.getMessage(), e);

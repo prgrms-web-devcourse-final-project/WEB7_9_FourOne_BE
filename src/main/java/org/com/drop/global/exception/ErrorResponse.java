@@ -7,11 +7,11 @@ public record ErrorResponse(
 	int httpStatus,
 	String message
 ) {
-	public static ErrorResponse errorResponse(ErrorCode errorCode) {
-		return ErrorResponse.builder()
-			.code(errorCode.name())
-			.httpStatus(errorCode.getStatus().value())
-			.message(errorCode.getMessage())
-			.build();
+	public ErrorResponse(ErrorCode errorCode) {
+		this(
+			errorCode.name(),
+			errorCode.getStatus().value(),
+			errorCode.getMessage()
+		);
 	}
 }

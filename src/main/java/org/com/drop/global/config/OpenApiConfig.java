@@ -2,11 +2,14 @@ package org.com.drop.global.config;
 
 import java.util.List;
 
+import org.com.drop.global.security.auth.LoginUser;
+import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
@@ -14,6 +17,9 @@ import io.swagger.v3.oas.models.servers.Server;
 @Configuration
 public class OpenApiConfig {
 
+	static {
+		SpringDocUtils.getConfig().addAnnotationsToIgnore(LoginUser.class);
+	}
 	@Bean
 	public OpenAPI customOpenApi() {
 		Server prodServer = new Server();
@@ -34,6 +40,10 @@ public class OpenApiConfig {
 				.bearerFormat("JWT"));
 
 		return new OpenAPI()
+			.info(new Info()
+				.title("Drop Project API")
+				.description("상품 등록 및 인증 API 문서")
+				.version("v1.0.0"))
 			.servers(List.of(prodServer, localServer))
 			.addSecurityItem(securityRequirement)
 			.components(components);

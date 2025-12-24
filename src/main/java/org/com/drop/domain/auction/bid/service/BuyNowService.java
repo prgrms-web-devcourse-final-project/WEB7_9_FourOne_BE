@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
+import org.com.drop.domain.auction.bid.dto.request.BuyNowRequestDto;
 import org.com.drop.domain.auction.bid.dto.response.BuyNowResponseDto;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
@@ -25,7 +26,7 @@ public class BuyNowService {
 	private final WinnerRepository winnerRepository;
 
 	@Transactional
-	public BuyNowResponseDto buyNow(Long auctionId, Long userId) {
+	public BuyNowResponseDto buyNow(Long auctionId, Long userId, BuyNowRequestDto requestDto) {
 
 		User buyer = userRepository.findById(userId)
 			.orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND, "해당 사용자를 찾을 수 없습니다." ));
@@ -34,6 +35,8 @@ public class BuyNowService {
 			.orElseThrow(() -> new ServiceException(ErrorCode.AUCTION_NOT_FOUND, "요청하신 상품 ID를 찾을 수 없습니다."));
 
 		LocalDateTime now = LocalDateTime.now();
+
+		Long buyNowPrice = requestDto.bidAmount();
 
 		if (auction.getStatus() != Auction.AuctionStatus.LIVE) {
 			throw new ServiceException(ErrorCode.AUCTION_NOT_LIVE, "진행 중인 경매가 아닙니다." );
@@ -56,12 +59,11 @@ public class BuyNowService {
 		}
 
 
-
 		Winner winner = Winner.builder()
 			.auction(auction)
 			.sellerId(auction.getProduct().getSeller().getId())
 			.userId(buyer.getId())
-			.finalPrice(Long.valueOf(auction.getBuyNowPrice()))
+			.finalPrice(buyNowPrice)
 			.winTime(now)
 			.build();
 

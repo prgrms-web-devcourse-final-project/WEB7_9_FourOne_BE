@@ -16,6 +16,11 @@ public enum ErrorCode {
 	INVALID_AUTHENTICATION("905", HttpStatus.BAD_REQUEST, "잘못된 인증입니다."),
 	INTERNAL_SERVER_ERROR("906", HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요."),
 	VALIDATION_ERROR("907", HttpStatus.BAD_REQUEST, "요청 값이 올바르지 않습니다."),
+	INVALID_IMAGE_SIZE("908", HttpStatus.BAD_REQUEST, "파일 크기는 10MB를 초과할 수 없습니다."),
+	INVALID_IMAGE_TYPE("909", HttpStatus.BAD_REQUEST, "이미지 파일만 업로드 가능합니다."),
+	INVALID_IMAGE_UPLOAD("910", HttpStatus.BAD_REQUEST, "올바르지 않은 이미지가 업로드 되어 삭제 되었습니다."),
+	INVALID_IMAGE_DETELE("911", HttpStatus.BAD_REQUEST, "잘못된 이미지 삭제에 실패했습니다."),
+	INVALID_IMAGE("912", HttpStatus.BAD_REQUEST, "올바르지 않은 이미지 입니다."),
 
 	//auth
 	AUTH_MISSING_EMAIL("1000", HttpStatus.BAD_REQUEST, "이메일은 필수 입력 항목입니다."),
@@ -37,6 +42,7 @@ public enum ErrorCode {
 	AUTH_ACCESS_DENIED("1016", HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
 	AUTH_PASSWORD_MISMATCH("1017", HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다."),
 	AUTH_NOT_VERIFIED("1018", HttpStatus.FORBIDDEN, "이메일 인증이 완료되지 않았습니다. 인증을 먼저 진행해주세요."),
+	AUTH_USER_DELETED("1019", HttpStatus.FORBIDDEN, "이미 탈퇴된 회원입니다."),
 
 	//users
 	USER_NOT_FOUND("1100", HttpStatus.NOT_FOUND, "해당 사용자를 찾을 수 없습니다."),
@@ -68,6 +74,8 @@ public enum ErrorCode {
 	PRODUCT_QUESTION_NOT_FOUND("1210", HttpStatus.NOT_FOUND, "질문을 찾을 수 없습니다."),
 	PRODUCT_ANSWER_NOT_FOUND("1211", HttpStatus.NOT_FOUND, "답변을 찾을 수 없습니다."),
 	PRODUCT_ALREADY_ON_AUCTION("1212", HttpStatus.CONFLICT, "이미 경매가 시작된 상품입니다."),
+	PRODUCT_INVALID_STATUS("1213", HttpStatus.BAD_REQUEST, "유효하지 않은 상품 상태입니다"),
+
 
 	//payments
 	PAY_ALREADY_PAID("1300", HttpStatus.CONFLICT, "이미 결제한 상품입니다."),
@@ -80,7 +88,7 @@ public enum ErrorCode {
 	PAY_ALREADY_PROCESSED("1307", HttpStatus.CONFLICT, "이미 처리된 결제 입니다."),
 	PAY_ALREADY_CANCELED_PAYMENT("1308", HttpStatus.CONFLICT, "이미 취소된 결제입니다."),
 	PAY_NOT_FOUND_METHOD("1309", HttpStatus.NOT_FOUND, "지원되지 않는 결제 수단입니다."),
-
+	USER_PAYMENT_METHOD_ALREADY_EXISTS("1114", HttpStatus.CONFLICT, "이미 등록된 카드입니다."),
 	//purchases
 	PURCHASE_INVALID_STATUS("1400", HttpStatus.CONFLICT, "구매 확정이 불가능한 상태입니다.(현재 상태: READY)"),
 
@@ -95,7 +103,11 @@ public enum ErrorCode {
 	AUCTION_INVALID_CATEGORY("1604", HttpStatus.BAD_REQUEST, "유효하지 않은 카테고리입니다."),
 	AUCTION_NOT_LIVE("1606", HttpStatus.BAD_REQUEST, "진행 중인 경매가 아닙니다."),
 	AUCTION_BIDDER_CANNOT_BE_OWNER("1607", HttpStatus.BAD_REQUEST, "경매 상품의 판매자는 입찰할 수 없습니다."),
-	AUCTION_BUY_NOW_NOT_AVAILABLE("1608", HttpStatus.BAD_REQUEST, "즉시 구매가 불가능한 상품입니다.");
+	AUCTION_BUY_NOW_NOT_AVAILABLE("1608", HttpStatus.BAD_REQUEST, "즉시 구매가 불가능한 상품입니다."),
+
+	//notification
+	NOTIFICATION_NOT_FOUND("1708", HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다.");
+
 
 
 	private final String code;

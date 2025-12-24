@@ -36,6 +36,18 @@ public class PaymentMethod {
 	@Column(name = "card_company", nullable = false)
 	private CardCompany cardCompany;
 
+	@Column(name = "customer_key", nullable = false, unique = true)
+	private String customerKey;
+
+	@Column(name = "billing_key", nullable = false, unique = true)
+	private String billingKey;
+
+	@Column(name = "card_number_masked")
+	private String cardNumberMasked;
+
+	@Column(name = "card_name")
+	private String cardName;
+
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private LocalDateTime createdAt;
 
@@ -43,13 +55,20 @@ public class PaymentMethod {
 	private LocalDateTime updatedAt;
 
 	@Builder
-	private PaymentMethod(Long userId, CardCompany cardCompany) {
+	private PaymentMethod(
+		Long userId,
+		CardCompany cardCompany,
+		String customerKey,
+		String billingKey,
+		String cardNumberMasked,
+		String cardName
+	) {
 		this.userId = userId;
 		this.cardCompany = cardCompany;
-	}
-
-	public void changeCardCompany(CardCompany cardCompany) {
-		this.cardCompany = cardCompany;
+		this.customerKey = customerKey;
+		this.billingKey = billingKey;
+		this.cardNumberMasked = cardNumberMasked;
+		this.cardName = cardName;
 	}
 
 	@PrePersist

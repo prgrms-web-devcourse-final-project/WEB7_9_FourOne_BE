@@ -24,7 +24,7 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
 			expirationSeconds,
 			TimeUnit.SECONDS
 		);
-		log.info("Redis에 Refresh Token 저장 완료. Key: {}, TTL: {}s", REFRESH_TOKEN_PREFIX + email, expirationSeconds);
+		log.debug("Redis에 Refresh Token 저장 완료. Key: {}, TTL: {}s", REFRESH_TOKEN_PREFIX + email, expirationSeconds);
 	}
 
 	@Override
@@ -32,7 +32,7 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
 		Boolean deleted = redisTemplate.delete(REFRESH_TOKEN_PREFIX + email);
 
 		if (Boolean.TRUE.equals(deleted)) {
-			log.info("Redis에서 Refresh Token 삭제 완료. Key: {}", REFRESH_TOKEN_PREFIX + email);
+			log.debug("Redis에서 Refresh Token 삭제 완료. Key: {}", REFRESH_TOKEN_PREFIX + email);
 		} else {
 			log.warn("Redis에서 Refresh Token을 찾을 수 없거나 삭제 실패. Key: {}", REFRESH_TOKEN_PREFIX + email);
 		}

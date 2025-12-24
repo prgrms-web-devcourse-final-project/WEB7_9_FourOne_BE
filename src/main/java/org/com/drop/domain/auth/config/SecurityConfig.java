@@ -35,15 +35,23 @@ public class SecurityConfig {
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 				.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-				.requestMatchers("/error", "/api/v1/auth/**").permitAll()
+				.requestMatchers("/error").permitAll()
+				.requestMatchers(
+					"/api/v1/auth/login",
+					"/api/v1/auth/local/signup",
+					"/api/v1/auth/email/verify-code",
+					"/api/v1/auth/email/send-code",
+					"/api/v1/auth/refresh",
+					"/api/v1/admin/help"
+				).permitAll()
+				.requestMatchers("/api/v1/auth/logout").authenticated()
 				.requestMatchers(HttpMethod.GET, "/api/v1/auctions/**").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
 				.anyRequest().authenticated()
 			);
 
-		http.addFilterBefore(refreshTokenFilter, UsernamePasswordAuthenticationFilter.class);
-
 		http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+		http.addFilterBefore(refreshTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}
