@@ -46,6 +46,7 @@ public class SecurityConfig {
 				).permitAll()
 				.requestMatchers("/api/v1/auth/logout").authenticated()
 				.requestMatchers(HttpMethod.GET, "/api/v1/auctions/**").permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/v1/auction-list/**").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
 				.anyRequest().authenticated()
 			);
