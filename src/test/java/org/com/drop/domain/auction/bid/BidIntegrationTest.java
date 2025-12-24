@@ -214,21 +214,19 @@ public class BidIntegrationTest {
 	@Test
 	@DisplayName("시작 시간이 지난 경매는 상태가 SCHEDULED -> LIVE로 자동 변경되어야 한다")
 	void auctionStartTest() {
-
+		//given
 		User seller = createUser("seller@test.com", "판매자");
 		Product product = createProduct(seller);
 		Auction auction = createscheduledAuction(product, 1000, 100);
 
 		auctionRepository.save(auction);
 
-		// 2. [When] 스케줄러 메서드 강제 실행
-		// (cron 시간을 기다리지 않고 메서드를 직접 호출해서 테스트합니다)
+		//when
 		auctionScheduler.runAuctionScheduler();
 
-		// 3. [Then] 결과 검증
+		//then
 		Auction updatedAuction = auctionRepository.findById(auction.getId()).orElseThrow();
 
-		// 상태가 LIVE로 바뀌었는지 확인
 		assertThat(updatedAuction.getStatus()).isEqualTo(Auction.AuctionStatus.LIVE);
 
 		System.out.println("변경 확인 완료. 현재 상태: " + updatedAuction.getStatus());
