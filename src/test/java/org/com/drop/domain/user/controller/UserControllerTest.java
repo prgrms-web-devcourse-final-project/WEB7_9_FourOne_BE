@@ -15,6 +15,7 @@ import org.com.drop.domain.user.dto.UpdateProfileResponse;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.service.UserService;
 import org.com.drop.global.aws.AmazonS3Client;
+import org.com.drop.global.aws.PreSignedUrlListRequest;
 import org.com.drop.global.aws.PreSignedUrlRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -33,14 +34,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@SpringBootTest(properties = {
-	"spring.cloud.aws.s3.region=ap-northeast-2",
-	"spring.cloud.aws.credentials.access-key=dummy",
-	"spring.cloud.aws.credentials.secret-key=dummy",
-	"spring.cloud.aws.stack.auto=false",
-	"spring.cloud.aws.s3.bucket=test-bucket",
-	"AWS_S3_BUCKET=test-bucket"
-})
+@SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @DisplayName("UserController 통합 테스트")
@@ -79,22 +73,29 @@ class UserControllerTest {
 	}
 
 	@Test
-	@WithMockUser
+	@WithMockUser(username = "test@drop.com")
 	@DisplayName("POST /api/v1/user/me/profile/img - 프로필 이미지 Presigned URL 생성")
 	void getProfileImageUrl_success() throws Exception {
+
 		// Given
 		List<String> expectedUrls = List.of("https://s3.url/1");
-		given(amazonS3Client.createPresignedUrls(anyList(), any())).willReturn(expectedUrls);
 
-		// 직접 문자열을 쓰지 말고 객체를 생성해서 변환 (Validation 에러 방지)
-		List<PreSignedUrlRequest> requests = List.of(
-			new PreSignedUrlRequest("test.jpg", 20L)
+		given(userService.findUserByEmail("test@drop.com"))
+			.willReturn(mockActor);
+
+		given(amazonS3Client.createPresignedUrls(
+			any(PreSignedUrlListRequest.class),
+			eq(mockActor)
+		)).willReturn(expectedUrls);
+
+		PreSignedUrlListRequest request = new PreSignedUrlListRequest(
+			List.of(new PreSignedUrlRequest("image/jpeg", 20L))
 		);
 
 		// When & Then
 		mockMvc.perform(post("/api/v1/user/me/profile/img")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(requests))) // 객체를 JSON으로 자동 변환
+				.content(objectMapper.writeValueAsString(request)))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data[0]").value("https://s3.url/1"))
 			.andDo(print());
