@@ -10,7 +10,7 @@ import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.service.ProductService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.aws.AmazonS3Client;
-import org.com.drop.global.aws.PreSignedUrlRequest;
+import org.com.drop.global.aws.PreSignedUrlListRequest;
 import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -88,7 +88,7 @@ public class ProductController {
 	@PostMapping("/img")
 	public RsData<List<String>> getImageUrl(
 		@LoginUser User actor,
-		@Valid @RequestBody List<PreSignedUrlRequest> preSignedUrlRequest
+		@RequestBody @Valid PreSignedUrlListRequest preSignedUrlRequest
 	) {
 		List<String> url = amazonS3Client.createPresignedUrls(preSignedUrlRequest, actor);
 		return new RsData<>(url);
