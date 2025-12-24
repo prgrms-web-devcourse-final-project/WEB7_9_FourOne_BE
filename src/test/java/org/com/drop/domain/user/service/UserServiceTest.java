@@ -126,16 +126,28 @@ class UserServiceTest {
 		@DisplayName("성공: 닉네임과 프로필 이미지 수정")
 		void updateProfile_success() {
 			// Given
-			UpdateProfileRequest request = new UpdateProfileRequest("newNick", "new_image_url");
-			when(userRepository.existsByNickname("newNick")).thenReturn(false);
+			UpdateProfileRequest request =
+				new UpdateProfileRequest("newNick", "new_image_key");
+
+			when(userRepository.existsByNickname("newNick"))
+				.thenReturn(false);
+
+			doNothing().when(amazonS3Client)
+				.verifyImage(List.of("new_image_key"));
+
+			when(amazonS3Client.getPresignedUrl("new_image_key"))
+				.thenReturn("new_image_url");
 
 			// When
-			UpdateProfileResponse response = userService.updateProfile(mockUser, request);
+			UpdateProfileResponse response =
+				userService.updateProfile(mockUser, request);
 
 			// Then
 			assertEquals("newNick", response.nickname());
 			assertEquals("new_image_url", response.profileImageUrl());
-			verify(amazonS3Client, times(1)).updateS3Tag("old_image_url", "deleted");
+
+			verify(amazonS3Client, times(1))
+				.updateS3Tag("old_image_url", "deleted");
 		}
 
 		@Test

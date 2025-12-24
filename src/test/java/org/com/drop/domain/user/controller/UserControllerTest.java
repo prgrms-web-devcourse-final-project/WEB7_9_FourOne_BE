@@ -129,7 +129,8 @@ class UserControllerTest {
 			UpdateProfileRequest request = new UpdateProfileRequest("새닉네임", "new_image.jpg");
 
 			mockActor.updateProfile("새닉네임", "new_image.jpg");
-			UpdateProfileResponse response = UpdateProfileResponse.of(mockActor);
+			UpdateProfileResponse response =
+				UpdateProfileResponse.of(mockActor, null);
 
 			given(userService.updateProfile(any(), any())).willReturn(response);
 

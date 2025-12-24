@@ -104,7 +104,7 @@ public class UserService implements UserDetailsService {
 		}
 
 		String oldImageKey = user.getUserProfile();
-		String newImageKey = dto.profileImageUrl();
+		String newImageKey = dto.profileImageKey();
 
 		if (newImageKey != null && !newImageKey.isBlank()) {
 			amazonS3Client.verifyImage(List.of(newImageKey));
@@ -117,7 +117,12 @@ public class UserService implements UserDetailsService {
 		user.updateProfile(dto.nickname(), newImageKey);
 		userRepository.save(user);
 
-		return UpdateProfileResponse.of(user);
+		String imageUrl = null;
+		if (newImageKey != null && !newImageKey.isBlank()) {
+			imageUrl = amazonS3Client.getPresignedUrl(newImageKey);
+		}
+
+		return UpdateProfileResponse.of(user, imageUrl);
 	}
 
 	private Map<Long, String> getProductMainImageMap(List<BookMark> bookmarks) {
