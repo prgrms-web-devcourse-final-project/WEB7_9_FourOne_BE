@@ -20,6 +20,7 @@ public enum ErrorCode {
 	INVALID_IMAGE_TYPE("909", HttpStatus.BAD_REQUEST, "이미지 파일만 업로드 가능합니다."),
 	INVALID_IMAGE_UPLOAD("910", HttpStatus.BAD_REQUEST, "올바르지 않은 이미지가 업로드 되어 삭제 되었습니다."),
 	INVALID_IMAGE_DETELE("911", HttpStatus.BAD_REQUEST, "잘못된 이미지 삭제에 실패했습니다."),
+	INVALID_IMAGE("912", HttpStatus.BAD_REQUEST, "올바르지 않은 이미지 입니다."),
 
 	//auth
 	AUTH_MISSING_EMAIL("1000", HttpStatus.BAD_REQUEST, "이메일은 필수 입력 항목입니다."),
@@ -74,6 +75,7 @@ public enum ErrorCode {
 	PRODUCT_ANSWER_NOT_FOUND("1211", HttpStatus.NOT_FOUND, "답변을 찾을 수 없습니다."),
 	PRODUCT_ALREADY_ON_AUCTION("1212", HttpStatus.CONFLICT, "이미 경매가 시작된 상품입니다."),
 	PRODUCT_INVALID_STATUS("1213", HttpStatus.BAD_REQUEST, "유효하지 않은 상품 상태입니다"),
+
 
 	//payments
 	PAY_ALREADY_PAID("1300", HttpStatus.CONFLICT, "이미 결제한 상품입니다."),

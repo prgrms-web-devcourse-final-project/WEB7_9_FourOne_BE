@@ -1,11 +1,9 @@
 package org.com.drop.domain.auction.product.qna.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 
 public record ProductQnACreateRequest(
-	@NotBlank
-	@Size(max = 500)
+	@NotBlank(message = "PRODUCT_INVALID_QUESTION")
 	String question
 ) {
 }
