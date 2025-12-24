@@ -25,14 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@SpringBootTest(properties = {
-	"spring.cloud.aws.s3.region=ap-northeast-2",
-	"spring.cloud.aws.credentials.access-key=dummy",
-	"spring.cloud.aws.credentials.secret-key=dummy",
-	"spring.cloud.aws.stack.auto=false",
-	"spring.cloud.aws.s3.bucket=test-bucket",
-	"AWS_S3_BUCKET=test-bucket"
-})
+@SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @DisplayName("AuthController 슬라이스 테스트")

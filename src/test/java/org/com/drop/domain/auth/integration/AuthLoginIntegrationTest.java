@@ -22,14 +22,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest(properties = {
-	"spring.cloud.aws.s3.region=ap-northeast-2",
-	"spring.cloud.aws.credentials.access-key=dummy",
-	"spring.cloud.aws.credentials.secret-key=dummy",
-	"spring.cloud.aws.stack.auto=false",
-	"spring.cloud.aws.s3.bucket=test-bucket",
-	"AWS_S3_BUCKET=test-bucket"
-})
+@SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
 @ActiveProfiles("test")
