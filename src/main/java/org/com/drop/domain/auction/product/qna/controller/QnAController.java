@@ -60,6 +60,7 @@ public class QnAController {
 	@DeleteMapping("/{qnaId}/{answerId}")
 	public RsData<Void> deleteAnswer(
 		@LoginUser User actor,
+		@PathVariable Long productId,
 		@PathVariable Long qnaId,
 		@PathVariable Long answerId
 	) {
