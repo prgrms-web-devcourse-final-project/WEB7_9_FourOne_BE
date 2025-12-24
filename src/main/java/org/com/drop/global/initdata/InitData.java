@@ -12,9 +12,6 @@ import org.com.drop.domain.auction.product.qna.dto.ProductQnAAnswerRequest;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnACreateRequest;
 import org.com.drop.domain.auction.product.qna.service.QnAService;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
-import org.com.drop.domain.auth.dto.LocalSignUpRequest;
-import org.com.drop.domain.auth.service.AuthService;
-import org.com.drop.domain.auth.store.VerificationCodeStore;
 import org.com.drop.domain.notification.service.NotificationService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
@@ -23,16 +20,16 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Profile;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Configuration
 @RequiredArgsConstructor
+@Profile("test")
 public class InitData {
 
-	private final AuthService authService;
-	private final VerificationCodeStore verificationCodeStore;
 	private final UserRepository userRepository;
 	private final ProductRepository productRepository;
 	private final AuctionService auctionService;
@@ -125,15 +122,5 @@ public class InitData {
 		guideRepository.save(new Guide("안내사항2"));
 		notificationService.addNotification(user1, "테스트 알림1");
 		notificationService.addNotification(user1, "테스트 알림2");
-
-		verificationCodeStore.markAsVerified("test@test.com");
-		LocalSignUpRequest localSignUpRequest = new LocalSignUpRequest(
-			"test@test.com", "Asdf1234!", "Test"
-		);
-		authService.signup(localSignUpRequest);
-
-		User testUser = userRepository.findById(3L).get();
-		notificationService.addNotification(testUser, "테스트 알림1");
-		notificationService.addNotification(testUser, "테스트 알림2");
 	}
 }
