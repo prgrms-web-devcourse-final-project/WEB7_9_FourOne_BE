@@ -19,6 +19,7 @@ import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.domain.user.service.UserService;
+import org.com.drop.scheduler.AuctionScheduler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -60,6 +61,9 @@ public class BidIntegrationTest {
 	@Autowired
 	BidService bidService;
 
+	@Autowired
+	private AuctionScheduler auctionScheduler;
+
 	private User createUser(String email, String nickname) {
 		return userRepository.save(User.builder()
 			.email(email)
@@ -90,6 +94,17 @@ public class BidIntegrationTest {
 			.startAt(LocalDateTime.now())
 			.endAt(LocalDateTime.now().plusDays(1))
 			.status(Auction.AuctionStatus.LIVE)
+			.build());
+	}
+
+	private Auction createscheduledAuction(Product product, int startPrice, int step) {
+		return auctionRepository.save(Auction.builder()
+			.product(product)
+			.startPrice(startPrice)
+			.minBidStep(step)
+			.startAt(LocalDateTime.now().minusMinutes(10))
+			.endAt(LocalDateTime.now().plusHours(1))
+			.status(Auction.AuctionStatus.SCHEDULED)
 			.build());
 	}
 
@@ -194,6 +209,27 @@ public class BidIntegrationTest {
 		assertThat(winningBid.getBidAmount()).isEqualTo(2000L);
 		Auction endedAuction = auctionRepository.findById(auction.getId()).get();
 		assertThat(endedAuction.getEndAt()).isBefore(LocalDateTime.now());
+	}
+
+	@Test
+	@DisplayName("시작 시간이 지난 경매는 상태가 SCHEDULED -> LIVE로 자동 변경되어야 한다")
+	void auctionStartTest() {
+		//given
+		User seller = createUser("seller@test.com", "판매자");
+		Product product = createProduct(seller);
+		Auction auction = createscheduledAuction(product, 1000, 100);
+
+		auctionRepository.save(auction);
+
+		//when
+		auctionScheduler.runAuctionScheduler();
+
+		//then
+		Auction updatedAuction = auctionRepository.findById(auction.getId()).orElseThrow();
+
+		assertThat(updatedAuction.getStatus()).isEqualTo(Auction.AuctionStatus.LIVE);
+
+		System.out.println("변경 확인 완료. 현재 상태: " + updatedAuction.getStatus());
 	}
 
 }

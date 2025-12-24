@@ -89,4 +89,10 @@ public class Auction {
 		this.status = AuctionStatus.ENDED;
 		this.endAt = now;
 	}
+
+	public void start(LocalDateTime now) {
+		if (this.status == AuctionStatus.SCHEDULED) {
+			this.status = AuctionStatus.LIVE;
+		}
+	}
 }
