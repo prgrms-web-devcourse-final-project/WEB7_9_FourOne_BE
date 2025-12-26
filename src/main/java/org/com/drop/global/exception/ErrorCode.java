@@ -21,6 +21,7 @@ public enum ErrorCode {
 	INVALID_IMAGE_UPLOAD("910", HttpStatus.BAD_REQUEST, "올바르지 않은 이미지가 업로드 되어 삭제 되었습니다."),
 	INVALID_IMAGE_DETELE("911", HttpStatus.BAD_REQUEST, "잘못된 이미지 삭제에 실패했습니다."),
 	INVALID_IMAGE("912", HttpStatus.BAD_REQUEST, "올바르지 않은 이미지 입니다."),
+	INVALID_IMAGE_PATH("913", HttpStatus.BAD_REQUEST, "올바르지 않은 이미지 경로 입니다."),
 
 	//auth
 	AUTH_MISSING_EMAIL("1000", HttpStatus.BAD_REQUEST, "이메일은 필수 입력 항목입니다."),

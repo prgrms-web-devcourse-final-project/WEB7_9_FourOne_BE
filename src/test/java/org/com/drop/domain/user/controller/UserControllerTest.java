@@ -15,6 +15,7 @@ import org.com.drop.domain.user.dto.UpdateProfileResponse;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.service.UserService;
 import org.com.drop.global.aws.AmazonS3Client;
+import org.com.drop.global.aws.ImageType;
 import org.com.drop.global.aws.PreSignedUrlListRequest;
 import org.com.drop.global.aws.PreSignedUrlRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,8 +86,10 @@ class UserControllerTest {
 
 		given(amazonS3Client.createPresignedUrls(
 			any(PreSignedUrlListRequest.class),
-			eq(mockActor)
+			eq(mockActor),
+			eq(ImageType.PROFILE)
 		)).willReturn(expectedUrls);
+
 
 		PreSignedUrlListRequest request = new PreSignedUrlListRequest(
 			List.of(new PreSignedUrlRequest("image/jpeg", 20L))
