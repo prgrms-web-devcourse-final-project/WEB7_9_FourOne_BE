@@ -890,7 +890,7 @@ public class ProductControllerTest {
 					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."))
 					.andExpect(jsonPath("$.data").isArray())
 					.andExpect(jsonPath("$.data.length()").value(1))
-					.andExpect(jsonPath("$.data[0]").value(containsString(".png")));
+					.andExpect(jsonPath("$.data[0]").value(containsString("image/product")));
 			}
 
 			@Test
