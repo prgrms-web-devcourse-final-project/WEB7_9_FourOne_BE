@@ -11,12 +11,12 @@ public record MyPageResponse(
 	String profileImageUrl,
 	LocalDateTime createdAt
 ) {
-	public static MyPageResponse of(User user) {
+	public static MyPageResponse of(User user, String imageUrl) {
 		return new MyPageResponse(
 			user.getId(),
 			user.getEmail(),
 			user.getNickname(),
-			user.getUserProfile(),
+			imageUrl,
 			user.getCreatedAt()
 		);
 	}
