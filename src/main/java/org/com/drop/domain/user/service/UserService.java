@@ -11,6 +11,7 @@ import org.com.drop.domain.auction.bid.entity.Bid;
 import org.com.drop.domain.auction.bid.repository.BidRepository;
 import org.com.drop.domain.auction.product.entity.BookMark;
 import org.com.drop.domain.auction.product.entity.Product;
+import org.com.drop.domain.auction.product.entity.ProductImage;
 import org.com.drop.domain.auction.product.repository.BookmarkRepository;
 import org.com.drop.domain.auction.product.repository.ProductImageRepository;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
@@ -76,13 +77,7 @@ public class UserService implements UserDetailsService {
 
 	@Transactional(readOnly = true)
 	public MyPageResponse getMe(User user) {
-		String profileImageUrl = null;
-
-		if (user.getUserProfile() != null && !user.getUserProfile().isBlank()) {
-			profileImageUrl = amazonS3Client.getPresignedUrl(user.getUserProfile());
-		}
-
-		return MyPageResponse.of(user, profileImageUrl);
+		return MyPageResponse.of(user);
 	}
 
 	@Transactional(readOnly = true)
@@ -136,7 +131,7 @@ public class UserService implements UserDetailsService {
 		return productImageRepository.findAllByProductIdIn(productIds).stream()
 			.collect(Collectors.toMap(
 				img -> img.getProduct().getId(),
-				img -> amazonS3Client.getPresignedUrl(img.getImageUrl()),
+				ProductImage::getImageUrl,
 				(existing, replacement) -> existing
 			));
 	}
@@ -261,7 +256,7 @@ public class UserService implements UserDetailsService {
 		return productImageRepository.findAllByProductIdIn(productIds).stream()
 			.collect(Collectors.toMap(
 				img -> img.getProduct().getId(),
-				img -> amazonS3Client.getPresignedUrl(img.getImageUrl()),
+				ProductImage::getImageUrl,
 				(existing, replacement) -> existing
 			));
 	}
