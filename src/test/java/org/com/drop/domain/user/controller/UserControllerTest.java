@@ -109,8 +109,7 @@ class UserControllerTest {
 		@WithMockUser
 		@DisplayName("GET /api/v1/user/me - 내 프로필 정보 조회")
 		void getMe_success() throws Exception {
-			// Given
-			MyPageResponse response = MyPageResponse.of(mockActor);
+			MyPageResponse response = MyPageResponse.of(mockActor, "https://example.com/profile.jpg");
 			given(userService.getMe(any())).willReturn(response);
 
 			// When & Then
