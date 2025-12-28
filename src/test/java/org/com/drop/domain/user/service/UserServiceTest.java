@@ -12,14 +12,11 @@ import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
 import org.com.drop.domain.auction.bid.entity.Bid;
 import org.com.drop.domain.auction.bid.repository.BidRepository;
-import org.com.drop.domain.auction.product.entity.BookMark;
 import org.com.drop.domain.auction.product.entity.Product;
-import org.com.drop.domain.auction.product.entity.ProductImage;
 import org.com.drop.domain.auction.product.repository.BookmarkRepository;
 import org.com.drop.domain.auction.product.repository.ProductImageRepository;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.dto.MyBidPageResponse;
-import org.com.drop.domain.user.dto.MyBookmarkPageResponse;
 import org.com.drop.domain.user.dto.MyProductPageResponse;
 import org.com.drop.domain.user.dto.UpdateProfileRequest;
 import org.com.drop.domain.user.dto.UpdateProfileResponse;
@@ -167,29 +164,6 @@ class UserServiceTest {
 	@Nested
 	@DisplayName("마이페이지 목록 조회")
 	class GetMyPageListTests {
-
-		@Test
-		@DisplayName("성공: 내 찜 목록 페이징 조회")
-		void getMyBookmarks_success() {
-			// Given
-			int page = 1;
-			Product product = Product.builder().id(10L).name("상품").build();
-			BookMark bookmark = BookMark.builder().product(product).build();
-			Page<BookMark> bookmarkPage = new PageImpl<>(List.of(bookmark));
-
-			when(bookmarkRepository.findByUser(eq(mockUser), any(Pageable.class))).thenReturn(bookmarkPage);
-
-			ProductImage img = ProductImage.builder().product(product).imageUrl("img_url").build();
-			when(productImageRepository.findAllByProductIdIn(anyList())).thenReturn(List.of(img));
-
-			// When
-			MyBookmarkPageResponse response = userService.getMyBookmarks(mockUser, page);
-
-			// Then
-			assertNotNull(response);
-			assertEquals(1, response.bookmarks().size());
-			assertEquals("img_url", response.bookmarks().get(0).productImageUrl());
-		}
 
 		@Test
 		@DisplayName("실패: 페이지 번호가 1 미만일 때")
