@@ -68,6 +68,10 @@ spring:
                         required: true
                     connectiontimeout: 5000
                     timeout: 5000
+
+    cache:
+      redis:
+        time-to-live: 5m
 # --- Jwt ---
 
 jwt:
