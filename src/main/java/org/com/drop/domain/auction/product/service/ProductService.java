@@ -82,11 +82,6 @@ public class ProductService {
 		return product;
 	}
 
-	@Transactional
-	@CacheEvict(
-		value = "product:detail",
-		allEntries = true
-	)
 	public void addProductImages(Product product, List<String> imageUrls) {
 		amazonS3Client.verifyImage(imageUrls);
 
@@ -126,10 +121,6 @@ public class ProductService {
 		return new ProductSearchResponse(product, images);
 	}
 
-	@CacheEvict(
-		value = "product:detail",
-		allEntries = true
-	)
 	public List<String> getSortedImageUrls(List<ProductImage> images) {
 		Optional<ProductImage> start = images.stream()
 			.filter(img -> img.getPreImg() == null).findFirst();
@@ -179,11 +170,6 @@ public class ProductService {
 		productRepository.save(product);
 	}
 
-	@Transactional
-	@CacheEvict(
-		value = "product:detail",
-		allEntries = true
-	)
 	public void deleteProductImage(Product product, User actor) {
 		if (product.getSeller().getId().equals(actor.getId())) {
 			List<ProductImage> keys = productImageRepository.deleteByProduct(product);
