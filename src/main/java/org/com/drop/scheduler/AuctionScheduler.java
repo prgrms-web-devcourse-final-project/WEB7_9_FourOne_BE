@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
+import org.com.drop.domain.auction.auction.service.AuctionService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,9 +19,9 @@ import lombok.extern.slf4j.Slf4j;
 public class AuctionScheduler {
 
 	private final AuctionRepository auctionRepository;
+	private final AuctionService auctionService;
 
 	@Scheduled(cron = "0 0/1 * * * *")
-	@Transactional
 	public void runAuctionScheduler() {
 		LocalDateTime now = LocalDateTime.now();
 
@@ -29,7 +30,7 @@ public class AuctionScheduler {
 		);
 
 		for (Auction auction : scheduledAuctions) {
-			auction.start(now);
+			auctionService.startAuction(auction.getId());
 		}
 
 		List<Auction> liveAuctions = auctionRepository.findAllByStatusAndEndAtBefore(
@@ -37,7 +38,7 @@ public class AuctionScheduler {
 		);
 
 		for (Auction auction : liveAuctions) {
-			auction.end(now);
+			auctionService.endAuction(auction.getId());
 		}
 	}
 
