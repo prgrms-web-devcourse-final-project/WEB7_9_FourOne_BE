@@ -19,6 +19,8 @@ import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.aws.AmazonS3Client;
 import org.com.drop.global.exception.ErrorCode;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,6 +66,10 @@ public class ProductService {
 	}
 
 	@Transactional
+	@CacheEvict(
+		value = "product:detail",
+		allEntries = true
+	)
 	public Product addProduct(ProductCreateRequest request, User actor) {
 		Product product = new Product(
 			actor,
@@ -78,6 +84,10 @@ public class ProductService {
 	}
 
 	@Transactional
+	@CacheEvict(
+		value = "product:detail",
+		allEntries = true
+	)
 	public void addProductImages(Product product, List<String> imageUrls) {
 		amazonS3Client.verifyImage(imageUrls);
 
@@ -98,8 +108,6 @@ public class ProductService {
 		productImageRepository.saveAll(images);
 	}
 
-
-
 	public Product findProductById(Long id) {
 		return productRepository.findByIdAndDeletedAtIsNull(id)
 			.orElseThrow(() ->
@@ -108,6 +116,10 @@ public class ProductService {
 			);
 	}
 
+	@Cacheable(
+		value = "product:detail",
+		key = "#id"
+	)
 	public ProductSearchResponse findProductWithImgById(Long id, User actor) {
 		Product product = findProductById(id);
 		validUser(product, actor);
@@ -116,6 +128,10 @@ public class ProductService {
 		return new ProductSearchResponse(product, images);
 	}
 
+	@CacheEvict(
+		value = "product:detail",
+		allEntries = true
+	)
 	public List<String> getSortedImageUrls(List<ProductImage> images) {
 		Optional<ProductImage> start = images.stream()
 			.filter(img -> img.getPreImg() == null).findFirst();
@@ -137,6 +153,10 @@ public class ProductService {
 	}
 
 	@Transactional
+	@CacheEvict(
+		value = "product:detail",
+		allEntries = true
+	)
 	public Product updateProduct(Long productId, ProductCreateRequest request, User actor) {
 		Product product = findProductById(productId);
 		validUser(product, actor);
@@ -148,6 +168,10 @@ public class ProductService {
 	}
 
 	@Transactional
+	@CacheEvict(
+		value = "product:detail",
+		allEntries = true
+	)
 	public void deleteProduct(Long productId, User actor) {
 		Product product = findProductById(productId);
 		validUser(product, actor);
@@ -158,6 +182,10 @@ public class ProductService {
 	}
 
 	@Transactional
+	@CacheEvict(
+		value = "product:detail",
+		allEntries = true
+	)
 	public void deleteProductImage(Product product, User actor) {
 		if (product.getSeller().getId().equals(actor.getId())) {
 			List<ProductImage> keys = productImageRepository.deleteByProduct(product);
