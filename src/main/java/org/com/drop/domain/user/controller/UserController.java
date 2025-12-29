@@ -43,7 +43,8 @@ public class UserController {
 		@LoginUser User actor,
 		@PathVariable Long productId
 	) {
-		ProductSearchResponse response = productService.findProductWithImgById(productId, actor);
+		ProductSearchResponse response = productService.findProductWithImgById(productId);
+		productService.validUser(response.sellerId(), actor);
 		return new RsData<>(response);
 	}
 

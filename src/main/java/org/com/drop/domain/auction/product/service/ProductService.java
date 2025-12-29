@@ -36,13 +36,12 @@ public class ProductService {
 	private final AuctionRepository auctionRepository;
 	private final BookmarkRepository bookmarkRepository;
 	private final AmazonS3Client amazonS3Client;
-	public void validUser(Product product, User actor) {
-		if (!product.getSeller().getId().equals(actor.getId())) {
+	public void validUser(Long sellerId, User actor) {
+		if (!sellerId.equals(actor.getId())) {
 			throw ErrorCode.USER_INACTIVE_USER
 				.serviceException(
-					"productId=%d, sellerId=%d, actorId=%d",
-					product.getId(),
-					product.getSeller().getId(),
+					"sellerId=%d, actorId=%d",
+					sellerId,
 					actor.getId()
 				);
 		}
@@ -120,9 +119,8 @@ public class ProductService {
 		value = "product:detail",
 		key = "#id"
 	)
-	public ProductSearchResponse findProductWithImgById(Long id, User actor) {
+	public ProductSearchResponse findProductWithImgById(Long id) {
 		Product product = findProductById(id);
-		validUser(product, actor);
 		List<String> images = getSortedImageUrls(productImageRepository.findAllByProductId(product.getId()));
 
 		return new ProductSearchResponse(product, images);
@@ -159,7 +157,7 @@ public class ProductService {
 	)
 	public Product updateProduct(Long productId, ProductCreateRequest request, User actor) {
 		Product product = findProductById(productId);
-		validUser(product, actor);
+		validUser(product.getSeller().getId(), actor);
 		validAuction(product);
 		deleteProductImage(product, actor);
 		addProductImages(product, request.imagesFiles());
@@ -174,7 +172,7 @@ public class ProductService {
 	)
 	public void deleteProduct(Long productId, User actor) {
 		Product product = findProductById(productId);
-		validUser(product, actor);
+		validUser(product.getSeller().getId(), actor);
 		validAuction(product);
 		deleteProductImage(product, actor);
 		product.setDeleted();

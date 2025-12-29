@@ -22,7 +22,7 @@ public class AuctionService {
 	private final AuctionRepository auctionRepository;
 	public Auction addAuction(AuctionCreateRequest request, User actor) {
 		Product product = productService.findProductById(request.product_id());
-		productService.validUser(product, actor);
+		productService.validUser(product.getSeller().getId(), actor);
 		Auction auction = new Auction(
 			product,
 			request.startPrice(),

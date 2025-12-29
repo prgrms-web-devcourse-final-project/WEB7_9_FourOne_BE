@@ -6,8 +6,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
+import org.com.drop.domain.auction.product.dto.ProductSearchResponse;
+import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.service.ProductService;
 import org.com.drop.domain.user.dto.MyPageResponse;
 import org.com.drop.domain.user.dto.UpdateProfileRequest;
@@ -174,12 +177,30 @@ class UserControllerTest {
 			// Given
 			Long productId = 10L;
 
+			ProductSearchResponse response =
+				new ProductSearchResponse(
+					productId,
+					1L,
+					"상품명",
+					"설명",
+					List.of("img1.jpg"),
+					Product.Category.STARGOODS,
+					Product.SubCategory.DAILY,
+					LocalDateTime.now(),
+					LocalDateTime.now(),
+					0
+				);
+
+			when(productService.findProductWithImgById(eq(productId)))
+				.thenReturn(response);
+
 			// When & Then
 			mockMvc.perform(get("/api/v1/products/{productId}", productId))
 				.andExpect(status().isOk())
 				.andDo(print());
 
-			verify(productService).findProductWithImgById(eq(productId), any());
+			verify(productService).findProductWithImgById(eq(productId));
 		}
+
 	}
 }
