@@ -150,6 +150,40 @@ class UserControllerTest {
 
 		@Test
 		@WithMockUser
+		@DisplayName("GET /api/v1/me/bids - 내 입찰 목록 조회")
+		void getMyBids_success() throws Exception {
+			// Given
+			int page = 1;
+			String status = "ALL";
+
+			// When & Then
+			mockMvc.perform(get("/api/v1/me/bids")
+					.param("page", String.valueOf(page))
+					.param("status", status))
+				.andExpect(status().isOk())
+				.andDo(print());
+
+			verify(userService).getMyBids(any(), eq(page), eq(status));
+		}
+
+		@Test
+		@WithMockUser
+		@DisplayName("GET /api/v1/user/me/bookmarks - 내 북마크 목록 조회")
+		void getMyBookmarks_success() throws Exception {
+			// Given
+			int page = 1;
+
+			// When & Then
+			mockMvc.perform(get("/api/v1/user/me/bookmarks")
+					.param("page", String.valueOf(page)))
+				.andExpect(status().isOk())
+				.andDo(print());
+
+			verify(userService).getMyBookmarks(any(), eq(page));
+		}
+
+		@Test
+		@WithMockUser
 		@DisplayName("GET /api/v1/me/products - 내 등록 상품 목록 조회")
 		void getMyProducts_success() throws Exception {
 			// Given
