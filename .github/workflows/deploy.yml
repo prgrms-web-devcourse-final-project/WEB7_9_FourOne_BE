@@ -105,6 +105,10 @@ jobs:
             set -euxo pipefail
             # 1. 네트워크 및 변수 설정
             docker network create drop-net 2> /dev/null || true
+            
+            if ! docker network inspect drop-net | grep -q "npm_1"; then
+            docker network connect drop-net npm_1 || true
+            fi
   
             # 현재 실행 중인 컨테이너 확인 (8081이 있으면 8082를 타겟으로, 없으면 8081을 타겟으로)
             if [ "$(docker ps -q -f name=dropapp_8081)" ]; then
@@ -128,6 +132,8 @@ jobs:
 
             # 2. 이미지 가져오기
             docker pull ghcr.io/prgrms-web-devcourse-final-project/drop:latest
+            
+            docker rm -f $TARGET_NAME 2> /dev/null || true
   
             # 3. 새 컨테이너 실행 (시크릿 값들은 그대로 유지)
             docker run -d \
