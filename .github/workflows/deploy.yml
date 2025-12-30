@@ -162,7 +162,7 @@ jobs:
             
             # 5. HAProxy가 새 컨테이너를 인식하고 트래픽을 전환할 시간을 줍니다.
             echo "Waiting for HAProxy to switch traffic..."
-            sleep 10
+            sleep 30
   
             # 5. 구버전 삭제 (기존 dropapp 및 이전 버전 컨테이너)
             echo "Removing old containers..."
