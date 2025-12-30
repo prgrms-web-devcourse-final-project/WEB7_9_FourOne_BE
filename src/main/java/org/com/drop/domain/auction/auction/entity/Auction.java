@@ -17,6 +17,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -49,6 +50,9 @@ public class Auction {
 	private Integer buyNowPrice;
 
 	@Column(nullable = false)
+	private Integer currentPrice;
+
+	@Column(nullable = false)
 	private Integer minBidStep;
 
 	@Column(nullable = false)
@@ -76,6 +80,7 @@ public class Auction {
 		this.product = product;
 		this.startPrice = startPrice;
 		this.buyNowPrice = buyNowPrice;
+		this.currentPrice = startPrice;
 		this.minBidStep = minBidStep;
 		this.startAt = startAt;
 		this.endAt = endAt;
@@ -88,5 +93,23 @@ public class Auction {
 		}
 		this.status = AuctionStatus.ENDED;
 		this.endAt = now;
+	}
+
+	public void start(LocalDateTime now) {
+		if (this.status == AuctionStatus.SCHEDULED) {
+			this.status = AuctionStatus.LIVE;
+		}
+	}
+
+	public void updateCurrentPrice(Long bidAmount) {
+		this.currentPrice = bidAmount.intValue();
+	}
+
+	@PrePersist
+	public void ensureCurrentPrice() {
+		// currentPrice가 비어있다면, startPrice로 강제 세팅
+		if (this.currentPrice == null) {
+			this.currentPrice = this.startPrice;
+		}
 	}
 }

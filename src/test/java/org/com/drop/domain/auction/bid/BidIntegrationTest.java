@@ -1,12 +1,19 @@
 package org.com.drop.domain.auction.bid;
 
-import static org.assertj.core.api.AssertionsForClassTypes.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
@@ -19,6 +26,10 @@ import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.domain.user.service.UserService;
+import org.com.drop.global.exception.ErrorCode;
+import org.com.drop.global.exception.ServiceException;
+import org.com.drop.scheduler.AuctionScheduler;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -60,6 +71,9 @@ public class BidIntegrationTest {
 	@Autowired
 	BidService bidService;
 
+	@Autowired
+	private AuctionScheduler auctionScheduler;
+
 	private User createUser(String email, String nickname) {
 		return userRepository.save(User.builder()
 			.email(email)
@@ -90,6 +104,17 @@ public class BidIntegrationTest {
 			.startAt(LocalDateTime.now())
 			.endAt(LocalDateTime.now().plusDays(1))
 			.status(Auction.AuctionStatus.LIVE)
+			.build());
+	}
+
+	private Auction createscheduledAuction(Product product, int startPrice, int step) {
+		return auctionRepository.save(Auction.builder()
+			.product(product)
+			.startPrice(startPrice)
+			.minBidStep(step)
+			.startAt(LocalDateTime.now().minusMinutes(10))
+			.endAt(LocalDateTime.now().plusHours(1))
+			.status(Auction.AuctionStatus.SCHEDULED)
 			.build());
 	}
 
@@ -194,6 +219,147 @@ public class BidIntegrationTest {
 		assertThat(winningBid.getBidAmount()).isEqualTo(2000L);
 		Auction endedAuction = auctionRepository.findById(auction.getId()).get();
 		assertThat(endedAuction.getEndAt()).isBefore(LocalDateTime.now());
+	}
+
+	@Test
+	@DisplayName("시작 시간이 지난 경매는 상태가 SCHEDULED -> LIVE로 자동 변경되어야 한다")
+	void auctionStartTest() {
+		//given
+		User seller = createUser("seller@test.com", "판매자");
+		Product product = createProduct(seller);
+		Auction auction = createscheduledAuction(product, 1000, 100);
+
+		auctionRepository.save(auction);
+
+		//when
+		auctionScheduler.runAuctionScheduler();
+
+		//then
+		Auction updatedAuction = auctionRepository.findById(auction.getId()).orElseThrow();
+
+		assertThat(updatedAuction.getStatus()).isEqualTo(Auction.AuctionStatus.LIVE);
+
+		System.out.println("변경 확인 완료. 현재 상태: " + updatedAuction.getStatus());
+	}
+
+	@Test
+	@Disabled
+	@DisplayName("동시에 입찰이 들어와도 최고가 검증이 뚫리면 안 된다")
+	void auctionLockTest2() throws Exception {
+		//given
+		User seller = createUser("seller@test.com", "판매자");
+		Product product = createProduct(seller);
+		Auction auction = createAuction(product, 1000, 100);
+		User bidder1 = createUser("bidder1@test.com", "입찰자1");
+		User bidder2 = createUser("bidder2@test.com", "입찰자2");
+
+		auctionRepository.save(auction);
+
+		int threads = 2;
+		ExecutorService es = Executors.newFixedThreadPool(threads);
+
+		CountDownLatch ready = new CountDownLatch(threads);
+		CountDownLatch start = new CountDownLatch(1);
+		CountDownLatch done  = new CountDownLatch(threads);
+
+		List<Throwable> errors = Collections.synchronizedList(new ArrayList<>());
+
+		// when
+		es.submit(() -> {
+			ready.countDown();
+			await(start);
+			try {
+				bidService.placeBid(auction.getId(), bidder1.getId(), new BidRequestDto(1100L));
+			} catch (Throwable t) {
+				errors.add(t);
+			} finally {
+				done.countDown();
+			}
+		});
+
+		es.submit(() -> {
+			ready.countDown();
+			await(start);
+			try {
+				bidService.placeBid(auction.getId(), bidder2.getId(), new BidRequestDto(1150L));
+			} catch (Throwable t) {
+				errors.add(t);
+			} finally {
+				done.countDown();
+			}
+		});
+
+		ready.await();
+		start.countDown();
+		done.await();
+		es.shutdown();
+
+		// then
+		List<Bid> bids = bidRepository.findTopByAuction_IdOrderByBidAmountDesc(auction.getId())
+			.map(List::of)
+			.orElseGet(List::of);
+
+		assertThat(bids).hasSize(1);
+		assertThat(bids.get(0).getBidAmount()).isEqualTo(1100L);
+
+		assertThat(errors).hasSize(1);
+		assertThat(errors.get(0)).isInstanceOf(ServiceException.class);
+		ServiceException se = (ServiceException) errors.get(0);
+		assertThat(se.getErrorCode()).isEqualTo(ErrorCode.AUCTION_BID_AMOUNT_TOO_LOW);
+	}
+
+	private void await(CountDownLatch latch) {
+		try {
+			latch.await();
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+
+	@Test
+	@Disabled
+	@DisplayName("동시에 30명이 같은 가격으로 입찰하면 1명만 성공하고 나머지는 실패해야 한다")
+	void auctionLockTest() throws InterruptedException {
+		// given
+		User seller = createUser("seller@test.com", "판매자");
+		Product product = createProduct(seller);
+		Auction auction = createAuction(product, 1000, 100);
+		auctionRepository.save(auction);
+
+		int threadCount = 30;
+		ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+		CountDownLatch latch = new CountDownLatch(threadCount);
+
+		AtomicInteger successCount = new AtomicInteger();
+		AtomicInteger failCount = new AtomicInteger();
+
+		Long bidPrice = 1100L;
+		BidRequestDto requestDto = new BidRequestDto(bidPrice);
+
+		// when
+		for (int i = 0; i < threadCount; i++) {
+			User bidder = createUser("bidder" + i + "@test.com", "입찰자" + i);
+
+			executorService.submit(() -> {
+				try {
+					bidService.placeBid(auction.getId(), bidder.getId(), requestDto);
+					successCount.incrementAndGet();
+				} catch (Exception e) {
+					failCount.incrementAndGet();
+				} finally {
+					latch.countDown();
+				}
+			});
+		}
+
+		latch.await();
+
+		// then
+		Auction findAuction = auctionRepository.findById(auction.getId()).orElseThrow();
+		assertThat(successCount.get()).isEqualTo(1);
+		assertThat(failCount.get()).isEqualTo(threadCount - 1);
+		assertThat(findAuction.getCurrentPrice()).isEqualTo(1100L);
 	}
 
 }
