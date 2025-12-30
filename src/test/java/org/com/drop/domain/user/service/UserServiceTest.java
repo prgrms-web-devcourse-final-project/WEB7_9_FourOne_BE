@@ -181,7 +181,7 @@ class UserServiceTest {
 
 			ProductImage img = ProductImage.builder().product(product).imageUrl("img_url").build();
 			when(productImageRepository.findAllByProductIdIn(anyList())).thenReturn(List.of(img));
-
+			when(amazonS3Client.getPresignedUrl("img_url")).thenReturn("img_url");
 			// When
 			MyBookmarkPageResponse response = userService.getMyBookmarks(mockUser, page);
 
