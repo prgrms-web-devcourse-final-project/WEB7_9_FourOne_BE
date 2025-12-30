@@ -140,7 +140,7 @@ jobs:
             --name $TARGET_NAME \
             --network drop-net \
             ${{ secrets.DOCKER_RUN }}
-            -p $TARGET_PORT:8080 \
+            -p "$TARGET_PORT":8080 \
             ghcr.io/prgrms-web-devcourse-final-project/drop:latest
   
             # 4. 새 서버 헬스 체크 (최대 2분 대기)
