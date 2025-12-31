@@ -208,7 +208,7 @@ public class BidIntegrationTest {
 		).andExpect(status().isOk());
 
 
-		auction.end(LocalDateTime.now().minusMinutes(1));
+		auction.expire();
 		// auction.setStatus(Auction.AuctionStatus.ENDED);
 		auctionRepository.saveAndFlush(auction);
 

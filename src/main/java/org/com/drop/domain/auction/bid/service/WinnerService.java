@@ -43,7 +43,7 @@ public class WinnerService {
 		Optional<Bid> topBidOpt = bidRepository.findTopByAuction_IdOrderByBidAmountDesc(auctionId);
 
 		if (topBidOpt.isEmpty()) {
-			auction.end(now);
+			auction.expire();
 			return;
 		}
 
@@ -63,7 +63,7 @@ public class WinnerService {
 
 		winnerRepository.save(winner);
 
-		auction.end(now);
+		auction.expire();
 
 	}
 }

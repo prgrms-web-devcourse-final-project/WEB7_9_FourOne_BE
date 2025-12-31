@@ -95,6 +95,14 @@ public class Auction {
 		this.endAt = now;
 	}
 
+	public void expire() {
+		if (this.status != AuctionStatus.LIVE) {
+			return;
+		}
+		this.status = AuctionStatus.ENDED;
+	}
+
+
 	public void start(LocalDateTime now) {
 		if (this.status == AuctionStatus.SCHEDULED) {
 			this.status = AuctionStatus.LIVE;
