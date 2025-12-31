@@ -9,8 +9,13 @@ import org.com.drop.domain.auth.dto.LocalLoginRequest;
 import org.com.drop.domain.auth.dto.LocalLoginResponse;
 import org.com.drop.domain.auth.dto.LocalSignUpRequest;
 import org.com.drop.domain.auth.dto.LocalSignUpResponse;
+import org.com.drop.domain.auth.dto.TokenRefreshResponse;
+import org.com.drop.domain.auth.dto.UserDeleteRequest;
+import org.com.drop.domain.auth.dto.UserDeleteResponse;
 import org.com.drop.domain.auth.service.AuthService;
 import org.com.drop.domain.auth.store.RefreshTokenStore;
+import org.com.drop.domain.user.entity.User;
+import org.com.drop.domain.user.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +44,9 @@ class AuthControllerTest {
 
 	@MockitoBean
 	AuthService authService;
+
+	@MockitoBean
+	UserService userService;
 
 	@MockitoBean
 	StringRedisTemplate stringRedisTemplate;
@@ -86,5 +94,52 @@ class AuthControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value(200))
 			.andExpect(cookie().maxAge("refreshToken", 0));
+	}
+
+	@Test
+	@DisplayName("토큰 재발급 성공")
+	void refresh_success() throws Exception {
+		given(authService.refresh("RT"))
+			.willReturn(new TokenRefreshResponse("NEW_AT", 3600L));
+
+		mockMvc.perform(post("/api/v1/auth/refresh")
+				.cookie(new jakarta.servlet.http.Cookie("refreshToken", "RT")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value(200))
+			.andExpect(jsonPath("$.data.accessToken").value("NEW_AT"));
+	}
+
+	@Test
+	@DisplayName("토큰 재발급 실패 - refreshToken 쿠키 없음")
+	void refresh_fail_no_cookie() throws Exception {
+		mockMvc.perform(post("/api/v1/auth/refresh"))
+			.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	@WithMockUser(username = "test@test.com")
+	@DisplayName("회원 탈퇴 성공")
+	void deleteAccount_success() throws Exception {
+
+		UserDeleteRequest request = new UserDeleteRequest("Password123!");
+
+		User mockUser = User.builder()
+			.id(1L)
+			.email("test@test.com")
+			.build();
+
+		given(userService.findUserByEmail("test@test.com"))
+			.willReturn(mockUser);
+
+		given(authService.deleteAccount(any(), any()))
+			.willReturn(new UserDeleteResponse("2025-01-01T12:00:00"));
+
+		mockMvc.perform(post("/api/v1/auth/delete")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value(200));
+
+		verify(authService).deleteAccount(any(), any());
 	}
 }

@@ -6,8 +6,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
+import org.com.drop.domain.auction.product.dto.ProductSearchResponse;
+import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.service.ProductService;
 import org.com.drop.domain.user.dto.MyPageResponse;
 import org.com.drop.domain.user.dto.UpdateProfileRequest;
@@ -15,6 +18,7 @@ import org.com.drop.domain.user.dto.UpdateProfileResponse;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.service.UserService;
 import org.com.drop.global.aws.AmazonS3Client;
+import org.com.drop.global.aws.ImageType;
 import org.com.drop.global.aws.PreSignedUrlListRequest;
 import org.com.drop.global.aws.PreSignedUrlRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,8 +89,10 @@ class UserControllerTest {
 
 		given(amazonS3Client.createPresignedUrls(
 			any(PreSignedUrlListRequest.class),
-			eq(mockActor)
+			eq(mockActor),
+			eq(ImageType.PROFILE)
 		)).willReturn(expectedUrls);
+
 
 		PreSignedUrlListRequest request = new PreSignedUrlListRequest(
 			List.of(new PreSignedUrlRequest("image/jpeg", 20L))
@@ -150,6 +156,40 @@ class UserControllerTest {
 
 		@Test
 		@WithMockUser
+		@DisplayName("GET /api/v1/me/bids - 내 입찰 목록 조회")
+		void getMyBids_success() throws Exception {
+			// Given
+			int page = 1;
+			String status = "ALL";
+
+			// When & Then
+			mockMvc.perform(get("/api/v1/me/bids")
+					.param("page", String.valueOf(page))
+					.param("status", status))
+				.andExpect(status().isOk())
+				.andDo(print());
+
+			verify(userService).getMyBids(any(), eq(page), eq(status));
+		}
+
+		@Test
+		@WithMockUser
+		@DisplayName("GET /api/v1/user/me/bookmarks - 내 북마크 목록 조회")
+		void getMyBookmarks_success() throws Exception {
+			// Given
+			int page = 1;
+
+			// When & Then
+			mockMvc.perform(get("/api/v1/user/me/bookmarks")
+					.param("page", String.valueOf(page)))
+				.andExpect(status().isOk())
+				.andDo(print());
+
+			verify(userService).getMyBookmarks(any(), eq(page));
+		}
+
+		@Test
+		@WithMockUser
 		@DisplayName("GET /api/v1/me/products - 내 등록 상품 목록 조회")
 		void getMyProducts_success() throws Exception {
 			// Given
@@ -171,12 +211,30 @@ class UserControllerTest {
 			// Given
 			Long productId = 10L;
 
+			ProductSearchResponse response =
+				new ProductSearchResponse(
+					productId,
+					1L,
+					"상품명",
+					"설명",
+					List.of("img1.jpg"),
+					Product.Category.STARGOODS,
+					Product.SubCategory.DAILY,
+					LocalDateTime.now(),
+					LocalDateTime.now(),
+					0
+				);
+
+			when(productService.findProductWithImgById(eq(productId)))
+				.thenReturn(response);
+
 			// When & Then
 			mockMvc.perform(get("/api/v1/products/{productId}", productId))
 				.andExpect(status().isOk())
 				.andDo(print());
 
-			verify(productService).findProductWithImgById(eq(productId), any());
+			verify(productService).findProductWithImgById(eq(productId));
 		}
+
 	}
 }

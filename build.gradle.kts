@@ -95,12 +95,34 @@ jacoco {
 
 /** 커버리지 제외 */
 val coverageExcludes = listOf(
+	// application / config
 	"**/*Application*",
-	"**/config/**",
-	"**/dto/**",
-	"**/exception/**",
-	"**/vo/**",
+	"**/*Config*",
+
+	// init / runner
+	"**/initdata/**",
+	"**/*InitData*",
+	"**/*Runner*",
+
+	// infra / external
+	"**/infra/**",
 	"**/global/**",
+	"**/global/aws/**",
+
+	// scheduler / batch
+	"**/*Scheduler*",
+
+	// dto / request / response / vo
+	"**/*Request*",
+	"**/*Response*",
+	"**/*Dto*",
+	"**/dto/**",
+	"**/vo/**",
+
+	// exception
+	"**/exception/**",
+
+	// querydsl / kotlin companion
 	"**/Q*.*",
 	"**/*\$*Companion*.*"
 )

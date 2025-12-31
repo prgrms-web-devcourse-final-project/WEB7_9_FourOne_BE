@@ -10,6 +10,7 @@ import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.service.ProductService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.aws.AmazonS3Client;
+import org.com.drop.global.aws.ImageType;
 import org.com.drop.global.aws.PreSignedUrlListRequest;
 import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
@@ -90,7 +91,7 @@ public class ProductController {
 		@LoginUser User actor,
 		@RequestBody @Valid PreSignedUrlListRequest preSignedUrlRequest
 	) {
-		List<String> url = amazonS3Client.createPresignedUrls(preSignedUrlRequest, actor);
+		List<String> url = amazonS3Client.createPresignedUrls(preSignedUrlRequest, actor, ImageType.PRODUCT);
 		return new RsData<>(url);
 	}
 }

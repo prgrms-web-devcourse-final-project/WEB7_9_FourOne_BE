@@ -20,7 +20,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.jayway.jsonpath.JsonPath;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -46,6 +49,43 @@ class AuthLoginIntegrationTest {
 	@BeforeEach
 	void setUp() {
 		given(stringRedisTemplate.opsForValue()).willReturn(valueOperations);
+	}
+
+	@Test
+	@DisplayName("AccessToken으로 인증된 요청 성공 (JwtFilter 통과)")
+	void accessToken_auth_success() throws Exception {
+		String rawPassword = "Password123!";
+
+		User user = User.builder()
+			.email("test@test.com")
+			.password(passwordEncoder.encode(rawPassword))
+			.nickname("tester")
+			.loginType(User.LoginType.LOCAL)
+			.role(User.UserRole.USER)
+			.build();
+
+		userRepository.saveAndFlush(user);
+
+		MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+				{
+					"email": "test@test.com",
+					"password": "Password123!"
+				}
+			""")
+				.with(csrf()))
+			.andExpect(status().isOk())
+			.andReturn();
+
+		String accessToken = JsonPath.read(
+			loginResult.getResponse().getContentAsString(),
+			"$.data.accessToken"
+		);
+
+		mockMvc.perform(get("/api/v1/auth/me")
+				.header("Authorization", "Bearer " + accessToken))
+			.andExpect(status().isOk());
 	}
 
 	@Test
