@@ -36,14 +36,14 @@ public class AmazonS3Client {
 	private final S3Client s3Client;
 	private final Tika tika = new Tika();
 
-	public List<String> createPresignedUrls(PreSignedUrlListRequest requests, User actor) {
+	public List<String> createPresignedUrls(PreSignedUrlListRequest requests, User actor, ImageType imageType) {
 		return requests.requests().stream()
-			.map(req -> generateSinglePresignedUrl(req, actor))
+			.map(req -> generateSinglePresignedUrl(req, actor, imageType))
 			.toList();
 	}
 
-	private String generateSinglePresignedUrl(PreSignedUrlRequest req, User actor) {
-		String path = generateFileName(req.contentType(), actor);
+	private String generateSinglePresignedUrl(PreSignedUrlRequest req, User actor, ImageType imageType) {
+		String path = generateFileName(req.contentType(), actor, imageType);
 
 		PutObjectRequest putObjectRequest = PutObjectRequest.builder()
 			.bucket(bucket)
@@ -58,21 +58,24 @@ public class AmazonS3Client {
 			.putObjectRequest(putObjectRequest)
 			.build();
 
-		String url = s3Presigner.presignPutObject(preSignRequest).url().toString();
-
-		return url;
+		return s3Presigner.presignPutObject(preSignRequest).url().toString();
 	}
 
-	private String generateFileName(String contentType, User actor) {
+	private String generateFileName(String contentType, User actor, ImageType imageType) {
 		String uuid = UUID.randomUUID().toString();
 		String extension = switch (contentType) {
-			case "image/jpeg" -> ".jpg";
+			case "image/jpeg", "image/jpg" -> ".jpg";
 			case "image/png"  -> ".png";
 			case "image/webp" -> ".webp";
 			case "image/gif"  -> ".gif";
 			default -> throw new ServiceException(ErrorCode.INVALID_IMAGE_TYPE, "지원하지 않는 형식입니다: " + contentType);
 		};
-		return actor.getId() + uuid + extension;
+		String file = switch (imageType) {
+			case PRODUCT -> "image/product/";
+			case PROFILE  -> "image/user/profile/";
+			default -> throw new ServiceException(ErrorCode.INVALID_IMAGE_PATH, "지원하지 않는 저장 경로입니다: " + imageType);
+		};
+		return file + actor.getId() + uuid + extension;
 	}
 
 	public void verifyImage(List<String> keys) {
