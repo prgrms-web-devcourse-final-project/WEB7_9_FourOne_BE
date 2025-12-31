@@ -87,3 +87,9 @@ logging:
         org.springframework.security: DEBUG
         org.springframework.security.oauth2: TRACE
         org.springframework.web: INFO
+
+# ---health check에서 메일 제외 ---
+management:
+  health:
+    mail:
+      enabled: false
