@@ -63,6 +63,9 @@ dependencies {
 
 	// Redis
 	implementation ("org.springframework.boot:spring-boot-starter-data-redis")
+	implementation("org.redisson:redisson-spring-boot-starter:3.24.3")
+
+	implementation("io.github.resilience4j:resilience4j-spring-boot3:2.1.0")
 
 	testImplementation("org.testcontainers:testcontainers:1.20.1")
 	testImplementation("org.testcontainers:mysql:1.20.1")
@@ -263,6 +266,3 @@ tasks.register<JacocoReport>("jacocoFullTestReport") {
 		)
 	)
 }
-
-
-
