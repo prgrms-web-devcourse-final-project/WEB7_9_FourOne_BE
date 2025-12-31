@@ -139,6 +139,7 @@ jobs:
             docker run -d \
             --name $TARGET_NAME \
             --network drop-net \
+            --restart unless-stopped \
             ${{ secrets.DOCKER_RUN }}
             -p "$TARGET_PORT":8080 \
             ghcr.io/prgrms-web-devcourse-final-project/drop:latest
