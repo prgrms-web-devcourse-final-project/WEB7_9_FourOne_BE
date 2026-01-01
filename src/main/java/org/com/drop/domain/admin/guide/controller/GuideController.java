@@ -10,6 +10,7 @@ import org.com.drop.domain.admin.guide.service.GuideService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -56,6 +57,17 @@ public class GuideController {
 		Guide guide = guideService.updateGuide(request, guideId, actor);
 		return new RsData<>(
 			new GuideDto(guide)
+		);
+	}
+
+	@DeleteMapping("/{guideId}")
+	public RsData<Void> deleteGuide(
+		@PathVariable Long guideId,
+		@LoginUser User actor
+	) {
+		guideService.deleteGuide(guideId, actor);
+		return new RsData<>(
+			null
 		);
 	}
 }

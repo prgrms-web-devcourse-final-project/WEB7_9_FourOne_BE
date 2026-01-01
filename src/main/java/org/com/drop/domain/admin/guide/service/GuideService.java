@@ -47,10 +47,18 @@ public class GuideService {
 		return guideRepository.save(guide);
 	}
 
+	@Transactional
 	public Guide updateGuide(GuideCreateRequest request, Long guideId, User actor) {
 		validUser(actor);
 		Guide guide = getGuideById(guideId);
 		guide.setContent(request.content());
 		return guideRepository.save(guide);
+	}
+
+	@Transactional
+	public void deleteGuide(Long guideId, User actor) {
+		validUser(actor);
+		Guide guide = getGuideById(guideId);
+		guideRepository.delete(guide);
 	}
 }
