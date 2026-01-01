@@ -11,7 +11,9 @@ import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -40,6 +42,18 @@ public class GuideController {
 		@LoginUser User actor
 	) {
 		Guide guide = guideService.addGuide(request, actor);
+		return new RsData<>(
+			new GuideDto(guide)
+		);
+	}
+
+	@PutMapping("/{guideId}")
+	public RsData<GuideDto> updateGuide(
+		@PathVariable Long guideId,
+		@LoginUser User actor,
+		@Valid @RequestBody GuideCreateRequest request
+	) {
+		Guide guide = guideService.updateGuide(request, guideId, actor);
 		return new RsData<>(
 			new GuideDto(guide)
 		);

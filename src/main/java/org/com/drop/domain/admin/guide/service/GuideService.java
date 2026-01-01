@@ -33,10 +33,24 @@ public class GuideService {
 		return guideDtos;
 	}
 
+	public Guide getGuideById(Long id) {
+		return guideRepository.findById(id).orElseThrow(() ->
+			ErrorCode.GUIDE_NOT_FOUND
+				.serviceException("guideId=%d", id)
+		);
+	}
+
 	@Transactional
 	public Guide addGuide(GuideCreateRequest request, User actor) {
 		validUser(actor);
 		Guide guide = new Guide(request.content());
+		return guideRepository.save(guide);
+	}
+
+	public Guide updateGuide(GuideCreateRequest request, Long guideId, User actor) {
+		validUser(actor);
+		Guide guide = getGuideById(guideId);
+		guide.setContent(request.content());
 		return guideRepository.save(guide);
 	}
 }
