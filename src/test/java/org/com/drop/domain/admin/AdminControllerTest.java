@@ -215,7 +215,7 @@ public class AdminControllerTest {
 			@Test
 			@DisplayName("가이드 수정 - 성공")
 			@WithMockUser(username = "testAdmin@example.com", roles = {"ADMIN"})
-			void t2() throws Exception {
+			void t3() throws Exception {
 
 				setUp(newGuideContent);
 
@@ -312,6 +312,70 @@ public class AdminControllerTest {
 					.andExpect(jsonPath("$.code").value("GUIDE_INVALID_CONTENT"))
 					.andExpect(jsonPath("$.httpStatus").value(400))
 					.andExpect(jsonPath("$.message").value("가이드 내용이 입력되지 않았습니다."));
+			}
+		}
+
+		@Nested
+		class Delete {
+			@Test
+			@DisplayName("가이드 삭제 - 성공")
+			@WithMockUser(username = "testAdmin@example.com", roles = {"ADMIN"})
+			void t4() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						delete("/api/v1/admin/help/1")
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(GuideController.class))
+					.andExpect(handler().methodName("deleteGuide"))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.code").value("SUCCESS"))
+					.andExpect(jsonPath("$.status").value(200))
+					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
+			}
+
+			@Test
+			@DisplayName("가이드 삭제 - 실패 (권한 없음)")
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			void t4_1() throws Exception {
+
+				setUp(newGuideContent);
+
+				ResultActions resultActions = mvc
+					.perform(
+						delete("/api/v1/admin/help/1")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(GuideController.class))
+					.andExpect(handler().methodName("deleteGuide"))
+					.andExpect(status().is(401))
+					.andExpect(jsonPath("$.code").value("GUIDE_UNAUTHORIZED"))
+					.andExpect(jsonPath("$.httpStatus").value(401))
+					.andExpect(jsonPath("$.message").value("가이드 수정 권한이 없습니다."));
+			}
+
+			@Test
+			@DisplayName("가이드 삭제 - 실패 (로그인 없음)")
+			void t4_2() throws Exception {
+				ResultActions resultActions = mvc
+					.perform(
+						delete("/api/v1/admin/help/1")
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(GuideController.class))
+					.andExpect(handler().methodName("deleteGuide"))
+					.andExpect(status().is(401))
+					.andExpect(jsonPath("$.code").value("USER_UNAUTHORIZED"))
+					.andExpect(jsonPath("$.httpStatus").value(401))
+					.andExpect(jsonPath("$.message").value("로그인이 필요합니다."));
 			}
 		}
 	}
