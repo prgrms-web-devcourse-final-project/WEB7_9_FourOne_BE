@@ -27,5 +27,9 @@ public class Guide {
 	public Guide(String content) {
 		this.content = content;
 	}
+
+	public void setContent(String content) {
+		this.content = content;
+	}
 }
 

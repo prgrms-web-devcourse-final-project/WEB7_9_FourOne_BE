@@ -42,7 +42,7 @@ public class SecurityConfig {
 					"/api/v1/auth/email/verify-code",
 					"/api/v1/auth/email/send-code",
 					"/api/v1/auth/refresh",
-					"/api/v1/admin/help"
+					"/api/v1/admin/help/**"
 				).permitAll()
 				.requestMatchers("/api/v1/auth/logout").authenticated()
 				.requestMatchers(HttpMethod.GET, "/api/v1/auctions/**").permitAll()

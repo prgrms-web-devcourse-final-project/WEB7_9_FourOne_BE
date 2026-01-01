@@ -1,5 +1,6 @@
 package org.com.drop.domain.admin;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -186,6 +187,7 @@ public class AdminControllerTest {
 
 			@Test
 			@DisplayName("가이드 생성 - 실패 (내용 없음)")
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
 			void t2_3() throws Exception {
 
 				setUp("");
@@ -201,6 +203,111 @@ public class AdminControllerTest {
 				resultActions
 					.andExpect(handler().handlerType(GuideController.class))
 					.andExpect(handler().methodName("createGuide"))
+					.andExpect(status().is(400))
+					.andExpect(jsonPath("$.code").value("GUIDE_INVALID_CONTENT"))
+					.andExpect(jsonPath("$.httpStatus").value(400))
+					.andExpect(jsonPath("$.message").value("가이드 내용이 입력되지 않았습니다."));
+			}
+		}
+
+		@Nested
+		class Update {
+			@Test
+			@DisplayName("가이드 수정 - 성공")
+			@WithMockUser(username = "testAdmin@example.com", roles = {"ADMIN"})
+			void t2() throws Exception {
+
+				setUp(newGuideContent);
+
+				ResultActions resultActions = mvc
+					.perform(
+						put("/api/v1/admin/help/1")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(GuideController.class))
+					.andExpect(handler().methodName("updateGuide"))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.code").value("SUCCESS"))
+					.andExpect(jsonPath("$.status").value(200))
+					.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
+
+				resultActions
+					.andExpect(jsonPath("$.data.id").value(1))
+					.andExpect(jsonPath("$.data.content").value(newGuideContent));
+
+				Guide guide = guideRepository.findById(1L).get();
+				assertThat(guide.getContent()).isEqualTo(newGuideContent);
+			}
+
+			@Test
+			@DisplayName("가이드 수정 - 실패 (권한 없음)")
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			void t3_1() throws Exception {
+
+				setUp(newGuideContent);
+
+				ResultActions resultActions = mvc
+					.perform(
+						put("/api/v1/admin/help/1")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(GuideController.class))
+					.andExpect(handler().methodName("updateGuide"))
+					.andExpect(status().is(401))
+					.andExpect(jsonPath("$.code").value("GUIDE_UNAUTHORIZED"))
+					.andExpect(jsonPath("$.httpStatus").value(401))
+					.andExpect(jsonPath("$.message").value("가이드 수정 권한이 없습니다."));
+			}
+
+			@Test
+			@DisplayName("가이드 수정 - 실패 (로그인 없음)")
+			void t3_2() throws Exception {
+
+				setUp(newGuideContent);
+
+				ResultActions resultActions = mvc
+					.perform(
+						put("/api/v1/admin/help/1")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(GuideController.class))
+					.andExpect(handler().methodName("updateGuide"))
+					.andExpect(status().is(401))
+					.andExpect(jsonPath("$.code").value("USER_UNAUTHORIZED"))
+					.andExpect(jsonPath("$.httpStatus").value(401))
+					.andExpect(jsonPath("$.message").value("로그인이 필요합니다."));
+			}
+
+			@Test
+			@DisplayName("가이드 수정 - 실패 (내용 없음)")
+			@WithMockUser(username = "user1@example.com", roles = {"USER"})
+			void t3_3() throws Exception {
+
+				setUp("");
+
+				ResultActions resultActions = mvc
+					.perform(
+						put("/api/v1/admin/help/1")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content(jsonContent)
+					)
+					.andDo(print());
+
+				resultActions
+					.andExpect(handler().handlerType(GuideController.class))
+					.andExpect(handler().methodName("updateGuide"))
 					.andExpect(status().is(400))
 					.andExpect(jsonPath("$.code").value("GUIDE_INVALID_CONTENT"))
 					.andExpect(jsonPath("$.httpStatus").value(400))
