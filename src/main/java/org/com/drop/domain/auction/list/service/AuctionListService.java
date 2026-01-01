@@ -47,6 +47,9 @@ public class AuctionListService {
 		final AuctionSearchRequest request,
 		final User user
 	) {
+		log.debug("경매 목록 조회 - 정렬: {}, 카테고리: {}, 키워드: {}, 커서: {}",
+			request.getSortType(), request.getCategory(), request.getKeyword(), request.getCursor());
+
 		List<AuctionListRepositoryCustom.AuctionItemDto> dtos =
 			auctionListRepository.searchAuctions(request);
 
@@ -55,7 +58,8 @@ public class AuctionListService {
 			? dtos.subList(0, request.getSize())
 			: dtos;
 
-		String nextCursor = auctionListRepository.getNextCursor(dtos, request.getSize());
+		// SortType을 전달하여 다음 커서 생성
+		String nextCursor = auctionListRepository.getNextCursor(dtos, request.getSize(), request.getSortType());
 
 		List<AuctionItemResponse> items = resultDtos.stream()
 			.map(dto -> AuctionItemResponse.from(dto, getIsBookmarked(dto.getProductId(), user)))

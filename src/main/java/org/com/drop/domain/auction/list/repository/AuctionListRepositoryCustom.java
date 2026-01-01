@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.com.drop.domain.auction.auction.entity.Auction;
+import org.com.drop.domain.auction.list.dto.SortType;
 import org.com.drop.domain.auction.list.dto.request.AuctionSearchRequest;
 import org.com.drop.domain.auction.product.entity.Product;
 
@@ -18,7 +19,7 @@ public interface AuctionListRepositoryCustom {
 
 	List<AuctionItemDto> searchAuctions(AuctionSearchRequest request);
 
-	String getNextCursor(List<AuctionItemDto> results, int size);
+	String getNextCursor(List<AuctionItemDto> results, int size, SortType sortType);
 
 	Optional<AuctionDetailDto> findAuctionDetailById(Long auctionId);
 

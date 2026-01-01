@@ -92,7 +92,7 @@ public class AuctionListRepositoryImpl implements AuctionListRepositoryCustom {
 		);
 
 		// 4. 인기 점수: 북마크 수 + 입찰 수
-		NumberExpression<Integer> score = product.bookmarkCount.add(bidCount);
+		NumberExpression<Integer> popularityScore = product.bookmarkCount.add(bidCount);
 
 		JPAQuery<AuctionItemDto> query = queryFactory
 			.select(Projections.constructor(
@@ -110,7 +110,7 @@ public class AuctionListRepositoryImpl implements AuctionListRepositoryCustom {
 				product.bookmarkCount,
 				bidCount,
 				product.createdAt,
-				score
+				popularityScore
 			))
 			.from(auction)
 			.join(auction.product, product)
@@ -121,21 +121,33 @@ public class AuctionListRepositoryImpl implements AuctionListRepositoryCustom {
 				categoryEq(request.getCategory()),
 				subCategoryEq(request.getSubCategory()),
 				keywordContains(request.getKeyword()),
-				cursorCondition(cursor, request.getSortType())
+				cursorCondition(cursor, request.getSortType(), popularityScore)
 			)
-			.orderBy(getOrderSpecifier(request.getSortType()))
+			.orderBy(getOrderSpecifier(request.getSortType(), popularityScore))
 			.limit(request.getSize() + 1L); // hasNext 확인을 위해 +1
 
 		return query.fetch();
 	}
 
 	@Override
-	public String getNextCursor(List<AuctionItemDto> results, int size) {
+	public String getNextCursor(List<AuctionItemDto> results, int size, SortType sortType) {
 		if (results.size() <= size) {
 			return null;
 		}
 		AuctionItemDto lastItem = results.get(size - 1);
-		return CursorPaginationUtil.encodeCursor(lastItem.getCreatedAt(), lastItem.getAuctionId());
+
+		switch (sortType) {
+			case POPULAR:
+				// 인기순은 점수와 ID를 커서로 사용
+				return CursorPaginationUtil.encodePopularCursor(lastItem.getScore(), lastItem.getAuctionId());
+			case CLOSING:
+				// 마감임박순은 종료 시간과 ID를 커서로 사용
+				return CursorPaginationUtil.encodeCursor(lastItem.getEndAt(), lastItem.getAuctionId());
+			case NEWEST:
+			default:
+				// 최신순은 생성 시간과 ID를 커서로 사용
+				return CursorPaginationUtil.encodeCursor(lastItem.getCreatedAt(), lastItem.getAuctionId());
+		}
 	}
 
 	@Override
@@ -478,64 +490,62 @@ public class AuctionListRepositoryImpl implements AuctionListRepositoryCustom {
 	/**
 	 * 커서 페이징 조건
 	 */
-	private BooleanExpression cursorCondition(Cursor cursor, SortType sortType) {
+	private BooleanExpression cursorCondition(
+		Cursor cursor,
+		SortType sortType,
+		NumberExpression<Integer> popularityScore
+	) {
 		if (cursor == null) {
 			return null;
 		}
 
-		LocalDateTime timestamp = cursor.timestamp();
-		Long id = cursor.id();
-
-		if (sortType == SortType.NEWEST) {
-			return product.createdAt.lt(timestamp)
-				.or(product.createdAt.eq(timestamp).and(auction.id.lt(id)));
-		} else if (sortType == SortType.CLOSING) {
-			return auction.endAt.gt(timestamp)
-				.or(auction.endAt.eq(timestamp).and(auction.id.gt(id)));
-		} else if (sortType == SortType.POPULAR) {
-			// 현재는 createdAt 기준으로 처리
-			return product.createdAt.lt(timestamp)
-				.or(product.createdAt.eq(timestamp).and(auction.id.lt(id)));
-		} else {
-			return product.createdAt.lt(timestamp)
-				.or(product.createdAt.eq(timestamp).and(auction.id.lt(id)));
+		if (sortType == SortType.POPULAR && cursor.isPopularCursor()) {
+			// 인기순: 점수 + ID 기준
+			// 내림차순 정렬이므로, 커서보다 작은 점수이거나 점수가 같으면 ID가 작은 것
+			return popularityScore.lt(cursor.score())
+				.or(popularityScore.eq(cursor.score()).and(auction.id.lt(cursor.id())));
+		} else if (sortType == SortType.CLOSING && cursor.isTimestampCursor()) {
+			// 마감임박순: endAt + ID 기준 (오름차순)
+			// 커서보다 큰 endAt이거나 같으면 ID가 큰 것
+			return auction.endAt.gt(cursor.timestamp())
+				.or(auction.endAt.eq(cursor.timestamp()).and(auction.id.gt(cursor.id())));
+		} else if (sortType == SortType.NEWEST && cursor.isTimestampCursor()) {
+			// 최신순: createdAt + ID 기준 (내림차순)
+			// 커서보다 작은 createdAt이거나 같으면 ID가 작은 것
+			return product.createdAt.lt(cursor.timestamp())
+				.or(product.createdAt.eq(cursor.timestamp()).and(auction.id.lt(cursor.id())));
 		}
+		return null;
 	}
 
 	/**
 	 * 정렬 조건
 	 */
-	private OrderSpecifier<?>[] getOrderSpecifier(SortType sortType) {
-		if (sortType == SortType.NEWEST) {
-			return new OrderSpecifier[] {
-				product.createdAt.desc(),
-				auction.id.desc()
-			};
-		} else if (sortType == SortType.CLOSING) {
-			return new OrderSpecifier[] {
-				auction.endAt.asc(),
-				auction.id.asc()
-			};
-		} else if (sortType == SortType.POPULAR) {
-			// 인기 점수 계산
-			NumberExpression<Integer> bidCount = Expressions.numberTemplate(
-				Integer.class,
-				"COALESCE(({0}), 0)",
-				JPAExpressions
-					.select(bid.count().intValue())
-					.from(bid)
-					.where(bid.auction.eq(auction))
-			);
-			NumberExpression<Integer> popularityScore = product.bookmarkCount.add(bidCount);
-			return new OrderSpecifier[] {
-				popularityScore.desc(),
-				auction.id.desc()
-			};
-		} else {
-			return new OrderSpecifier[] {
-				product.createdAt.desc(),
-				auction.id.desc()
-			};
+	private OrderSpecifier<?>[] getOrderSpecifier(
+		SortType sortType,
+		NumberExpression<Integer> popularityScore
+	) {
+		switch (sortType) {
+			case NEWEST:
+				return new OrderSpecifier[] {
+					product.createdAt.desc(),
+					auction.id.desc()
+				};
+			case CLOSING:
+				return new OrderSpecifier[] {
+					auction.endAt.asc(),
+					auction.id.asc()
+				};
+			case POPULAR:
+				return new OrderSpecifier[] {
+					popularityScore.desc(),
+					auction.id.desc()
+				};
+			default:
+				return new OrderSpecifier[] {
+					product.createdAt.desc(),
+					auction.id.desc()
+				};
 		}
 	}
 }
