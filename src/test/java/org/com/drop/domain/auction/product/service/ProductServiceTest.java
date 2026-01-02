@@ -176,7 +176,7 @@ public class ProductServiceTest {
 
 	@Nested
 	@Transactional
-	class validAuctionTest {
+	class ValidAuctionTest {
 		@Test
 		@DisplayName("상품 검증 - 경매 시작 상품")
 		void t6() throws InterruptedException {
