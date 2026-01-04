@@ -32,12 +32,39 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
 		MethodParameter parameter,
 		ModelAndViewContainer mavContainer,
 		NativeWebRequest webRequest,
-		WebDataBinderFactory binderFactory) throws Exception {
+		WebDataBinderFactory binderFactory
+	) throws Exception {
+
+		LoginUser loginUser = parameter.getParameterAnnotation(LoginUser.class);
+		boolean required = loginUser != null ? loginUser.required() : true;
 
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-		if (authentication == null || !(authentication.getPrincipal() instanceof UserDetails)) {
+		// 1. 인증 객체가 없는 경우
+		if (authentication == null) {
+			if (!required) {
+				return null;
+			}
 			throw ErrorCode.USER_UNAUTHORIZED.serviceException("인증 정보가 없습니다.");
+		}
+
+		Object principal = authentication.getPrincipal();
+
+		// 2. 익명 사용자(anonymousUser)인 경우
+		if ("anonymousUser".equals(principal)) {
+
+			if (!required) {
+				return null;
+			}
+			throw ErrorCode.USER_UNAUTHORIZED.serviceException("인증 정보가 없습니다.");
+		}
+
+		// 3. principal이 UserDetails가 아닌 경우
+		if (!(principal instanceof UserDetails)) {
+			if (!required) {
+				return null;
+			}
+			throw ErrorCode.USER_UNAUTHORIZED.serviceException("인증 정보가 유효하지 않습니다.");
 		}
 
 		UserDetails userDetails = (UserDetails) authentication.getPrincipal();
