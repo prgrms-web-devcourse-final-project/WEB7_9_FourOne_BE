@@ -46,8 +46,18 @@ public class SecurityConfig {
 					"/actuator/**"
 				).permitAll()
 				.requestMatchers("/api/v1/auth/logout").authenticated()
-				.requestMatchers(HttpMethod.GET, "/api/v1/auctions/**").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
+				// ============ 경매 API 인가 설정 ============
+				.requestMatchers(HttpMethod.GET, "/api/v1/auctions").permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/v1/auctions/*").permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/v1/auctions/*/highest-bid").permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/v1/auctions/home").permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/v1/auctions/*/bids").permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/v1/auctions/*/bid-list").permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/v1/auctions/*/bid-stream").permitAll()
+				.requestMatchers(HttpMethod.POST, "/api/v1/auctions").authenticated()
+				.requestMatchers(HttpMethod.POST, "/api/v1/auctions/*/buy-now").authenticated()
+				.requestMatchers(HttpMethod.POST, "/api/v1/auctions/*/bids").authenticated()
 				.requestMatchers(HttpMethod.GET, "/sse/**").permitAll()
 				.anyRequest().authenticated()
 			);

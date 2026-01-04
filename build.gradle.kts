@@ -36,13 +36,23 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 
-    // DB
+	// Openfeign QueryDSL
+	implementation("io.github.openfeign.querydsl:querydsl-core:7.1")
+	implementation("io.github.openfeign.querydsl:querydsl-jpa:7.1")
+	annotationProcessor("io.github.openfeign.querydsl:querydsl-apt:7.1:jpa")
+	annotationProcessor("jakarta.annotation:jakarta.annotation-api")
+	annotationProcessor("jakarta.persistence:jakarta.persistence-api")
+
+	// DB
 	runtimeOnly("com.h2database:h2")
 	runtimeOnly("com.mysql:mysql-connector-j")
 
 	// Lombok
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
+
+	testCompileOnly("org.projectlombok:lombok")
+	testAnnotationProcessor("org.projectlombok:lombok")
 
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 
@@ -115,6 +125,7 @@ val coverageExcludes = listOf(
 	"**/*Response*",
 	"**/*Dto*",
 	"**/dto/**",
+	"**/exception/**",
 	"**/vo/**",
 
 	// exception

@@ -90,6 +90,21 @@ public class Product {
 		this.updatedAt = LocalDateTime.now();
 	}
 
+	public void increaseBookmarkCount() {
+		if (this.bookmarkCount == null) {
+			this.bookmarkCount = 0;
+		}
+		this.bookmarkCount++;
+	}
+
+	public void decreaseBookmarkCount() {
+		if (this.bookmarkCount == null || this.bookmarkCount <= 0) {
+			this.bookmarkCount = 0;
+			return;
+		}
+		this.bookmarkCount--;
+	}
+
 	public void setDeleted() {
 		this.deletedAt = LocalDateTime.now();
 	}
