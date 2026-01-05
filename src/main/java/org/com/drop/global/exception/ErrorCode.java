@@ -90,6 +90,14 @@ public enum ErrorCode {
 	PAY_ALREADY_CANCELED_PAYMENT("1308", HttpStatus.CONFLICT, "이미 취소된 결제입니다."),
 	PAY_NOT_FOUND_METHOD("1309", HttpStatus.NOT_FOUND, "지원되지 않는 결제 수단입니다."),
 	USER_PAYMENT_METHOD_ALREADY_EXISTS("1114", HttpStatus.CONFLICT, "이미 등록된 카드입니다."),
+	PAY_ALREADY_IN_PROGRESS("1310", HttpStatus.CONFLICT, "이미 결제가 진행 중입니다. 잠시 후 다시 시도해주세요."),
+	PAY_PROCESSING_INTERRUPTED("1311", HttpStatus.INTERNAL_SERVER_ERROR, "결제 처리 중 시스템에 의해 중단되었습니다."),
+	PAY_PROCESSING_ERROR("1312", HttpStatus.INTERNAL_SERVER_ERROR, "결제 처리 중 오류가 발생했습니다."),
+	PAY_CIRCUIT_OPEN("1313", HttpStatus.SERVICE_UNAVAILABLE, "결제 서비스가 일시적으로 중단되었습니다."),
+	PAY_WINNER_NOT_FOUND("1314", HttpStatus.NOT_FOUND, "결제 대상 정보를 찾을 수 없습니다."),
+	PAY_AMOUNT_MISMATCH("1315", HttpStatus.BAD_REQUEST, "결제 금액이 일치하지 않습니다."),
+	PAY_WEBHOOK_LOCK_FAILED("1316", HttpStatus.CONFLICT, "결제 처리 중입니다. 잠시 후 다시 시도해주세요."),
+
 	//purchases
 	PURCHASE_INVALID_STATUS("1400", HttpStatus.CONFLICT, "구매 확정이 불가능한 상태입니다.(현재 상태: READY)"),
 

@@ -13,6 +13,7 @@ import org.com.drop.domain.payment.settlement.domain.Settlement;
 import org.com.drop.domain.payment.settlement.repository.SettlementRepository;
 import org.com.drop.domain.winner.domain.Winner;
 import org.com.drop.domain.winner.repository.WinnerRepository;
+import org.com.drop.global.exception.ErrorCode;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
@@ -39,7 +40,10 @@ public class PaymentServiceImpl implements PaymentService {
 	@Transactional
 	public Payment createPayment(Long winnersId, Long amount) {
 		Winner winner = winnerRepository.findById(winnersId)
-			.orElseThrow(() -> new RuntimeException("Winner not found"));
+			.orElseThrow(() ->
+				ErrorCode.PAY_WINNER_NOT_FOUND
+					.serviceException("winnersId=%d", winnersId)
+			);
 
 		Payment payment = Payment.builder()
 			.winnersId(winnersId)
@@ -58,15 +62,18 @@ public class PaymentServiceImpl implements PaymentService {
 
 		try {
 			if (!lock.tryLock(5, 20, TimeUnit.SECONDS)) {
-				log.warn("[LOCK-FAILED] 이미 결제가 진행 중입니다. paymentId={}", paymentId);
-				throw new RuntimeException("결제가 진행 중입니다. 잠시만 기다려주세요.");
+				log.warn("락 실패: 이미 결제가 진행 중입니다. paymentId={}", paymentId);
+				throw ErrorCode.PAY_ALREADY_IN_PROGRESS.serviceException("paymentId=%d", paymentId);
 			}
 
 			return proceedPaymentWithCircuitBreaker(paymentId, billingKey);
 
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
-			throw new RuntimeException("결제 처리 중 오류가 발생했습니다.");
+			throw ErrorCode.PAY_PROCESSING_INTERRUPTED.serviceException("paymentId=%d", paymentId);
+		} catch (Exception e) {
+			throw ErrorCode.PAY_PROCESSING_ERROR.serviceException("paymentId=%d", paymentId);
+
 		} finally {
 			if (lock.isHeldByCurrentThread()) {
 				lock.unlock();
@@ -78,7 +85,10 @@ public class PaymentServiceImpl implements PaymentService {
 	@Transactional
 	public Payment proceedPaymentWithCircuitBreaker(Long paymentId, String billingKey) {
 		Payment payment = paymentRepository.findById(paymentId)
-			.orElseThrow(() -> new RuntimeException("Payment not found"));
+			.orElseThrow(() ->
+				ErrorCode.PAY_NOT_FOUND_PAYMENT
+					.serviceException("paymentId=%d", paymentId)
+			);
 
 		if (payment.getStatus() == PaymentStatus.PAID || payment.getStatus() == PaymentStatus.PROCESSING) {
 			log.info("[ALREADY-PROCESSED] paymentId={} status={}", paymentId, payment.getStatus());
@@ -124,7 +134,8 @@ public class PaymentServiceImpl implements PaymentService {
 
 	public Payment handleTossFailure(Long paymentId, String billingKey, Throwable t) {
 		log.error("[CIRCUIT-BREAKER] 토스 API 호출 차단됨. 원인: {}", t.getMessage());
-		throw new RuntimeException("현재 결제 서비스 점검 중입니다. 잠시 후 다시 시도해주세요.");
+		throw ErrorCode.PAY_CIRCUIT_OPEN
+			.serviceException("paymentId=%d", paymentId);
 	}
 
 	@Override
@@ -138,14 +149,16 @@ public class PaymentServiceImpl implements PaymentService {
 		try {
 			if (!lock.tryLock(5, 15, TimeUnit.SECONDS)) {
 				log.warn("[WEBHOOK-LOCK-FAILED] winnersId={}", winnersId);
-				throw new RuntimeException("Lock acquisition failed");
+				throw ErrorCode.PAY_WEBHOOK_LOCK_FAILED
+					.serviceException("winnersId=%d", winnersId);
 			}
 
 			return processWebhookLogic(paymentKey, winnersId, amount);
 
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
-			throw new RuntimeException("Webhook processing interrupted", e);
+			throw ErrorCode.PAY_PROCESSING_INTERRUPTED
+				.serviceException("winnersId=%d", winnersId);
 		} finally {
 			if (lock.isHeldByCurrentThread()) {
 				lock.unlock();
@@ -156,14 +169,21 @@ public class PaymentServiceImpl implements PaymentService {
 	@Transactional
 	public Payment processWebhookLogic(String paymentKey, Long winnersId, Long amount) {
 		Payment payment = paymentRepository.findByWinnersId(winnersId)
-			.orElseThrow(() -> new RuntimeException("Payment not found"));
+			.orElseThrow(() ->
+				ErrorCode.PAY_NOT_FOUND_PAYMENT
+					.serviceException("winnersId=%d", winnersId)
+			);
 
 		if (payment.getStatus() == PaymentStatus.PAID) {
 			return payment;
 		}
 
 		if (!payment.getNet().equals(amount)) {
-			throw new IllegalArgumentException("Payment amount mismatch");
+			throw ErrorCode.PAY_AMOUNT_MISMATCH
+				.serviceException(
+					"paymentId=%d, expected=%d, actual=%d",
+					payment.getId(), payment.getNet(), amount
+				);
 		}
 
 		payment.assignTossPaymentKey(paymentKey);
@@ -178,7 +198,10 @@ public class PaymentServiceImpl implements PaymentService {
 	public Payment failPayment(Long paymentId, String reason) {
 
 		Payment payment = paymentRepository.findById(paymentId)
-			.orElseThrow(() -> new RuntimeException("Payment not found"));
+			.orElseThrow(() ->
+				ErrorCode.PAY_NOT_FOUND_PAYMENT
+					.serviceException("paymentId=%d", paymentId)
+			);
 
 		payment.markFailed();
 
