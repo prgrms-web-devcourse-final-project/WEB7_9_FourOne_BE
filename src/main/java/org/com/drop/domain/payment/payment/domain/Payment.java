@@ -119,5 +119,8 @@ public class Payment {
 	public void markExpired() {
 		this.status = PaymentStatus.EXPIRED;
 	}
-}
 
+	public void markProcessing() {
+		this.status = PaymentStatus.PROCESSING;
+	}
+}

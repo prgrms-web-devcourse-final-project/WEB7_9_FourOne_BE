@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 
+import org.com.drop.BaseIntegrationTest;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnAAnswerRequest;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnACreateRequest;
@@ -36,7 +37,7 @@ import jakarta.transaction.Transactional;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
-public class QnaControllerTest {
+public class QnaControllerTest extends BaseIntegrationTest {
 
 	private final Long productId = 1L;
 	private final Long questionId = 1L;
