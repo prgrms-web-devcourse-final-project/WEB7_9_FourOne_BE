@@ -59,7 +59,7 @@ class PaymentMethodControllerTest {
 		@WithMockUser(username = "user1@example.com", roles = {"USER"})
 		void t1() throws Exception {
 			RegisterCardRequest request = new RegisterCardRequest(
-				billingKey,cardCompany,cardNumberMasked,cardName
+				billingKey, cardCompany, cardNumberMasked, cardName
 			);
 
 			jsonContent = objectMapper.writeValueAsString(request);
@@ -96,7 +96,7 @@ class PaymentMethodControllerTest {
 		@DisplayName("카드 등록 - 실패 - 로그인 없음")
 		void t1_1() throws Exception {
 			RegisterCardRequest request = new RegisterCardRequest(
-				billingKey,cardCompany,cardNumberMasked,cardName
+				billingKey, cardCompany, cardNumberMasked, cardName
 			);
 
 			jsonContent = objectMapper.writeValueAsString(request);
@@ -122,7 +122,7 @@ class PaymentMethodControllerTest {
 		@WithMockUser(username = "user1@example.com", roles = {"USER"})
 		void t1_2() throws Exception {
 			RegisterCardRequest request = new RegisterCardRequest(
-				"",cardCompany,cardNumberMasked,cardName
+				"", cardCompany, cardNumberMasked, cardName
 			);
 
 			jsonContent = objectMapper.writeValueAsString(request);
@@ -148,7 +148,7 @@ class PaymentMethodControllerTest {
 		@WithMockUser(username = "user1@example.com", roles = {"USER"})
 		void t1_3() throws Exception {
 			RegisterCardRequest request = new RegisterCardRequest(
-				billingKey,null,cardNumberMasked,cardName
+				billingKey, null, cardNumberMasked, cardName
 			);
 
 			jsonContent = objectMapper.writeValueAsString(request);
@@ -174,7 +174,7 @@ class PaymentMethodControllerTest {
 		@WithMockUser(username = "user1@example.com", roles = {"USER"})
 		void t1_4() throws Exception {
 			RegisterCardRequest request = new RegisterCardRequest(
-				billingKey,cardCompany,"",cardName
+				billingKey, cardCompany, "", cardName
 			);
 
 			jsonContent = objectMapper.writeValueAsString(request);
@@ -200,7 +200,7 @@ class PaymentMethodControllerTest {
 		@WithMockUser(username = "user1@example.com", roles = {"USER"})
 		void t1_5() throws Exception {
 			RegisterCardRequest request = new RegisterCardRequest(
-				billingKey,cardCompany,cardNumberMasked,""
+				billingKey, cardCompany, cardNumberMasked, ""
 			);
 
 			jsonContent = objectMapper.writeValueAsString(request);
@@ -226,7 +226,7 @@ class PaymentMethodControllerTest {
 		@WithMockUser(username = "user1@example.com", roles = {"USER"})
 		void t1_6() throws Exception {
 			RegisterCardRequest request = new RegisterCardRequest(
-				billingKey,cardCompany,cardNumberMasked,cardName
+				billingKey, cardCompany, cardNumberMasked, cardName
 			);
 
 			jsonContent = objectMapper.writeValueAsString(request);
@@ -311,7 +311,7 @@ class PaymentMethodControllerTest {
 
 	@Nested
 	class CardDelete {
-		Long cardId =1L;
+		Long cardId = 1L;
 		@Test
 		@DisplayName("카드 삭제 - 성공")
 		@WithMockUser(username = "user1@example.com", roles = {"USER"})
