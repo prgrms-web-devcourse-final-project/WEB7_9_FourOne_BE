@@ -192,6 +192,7 @@ public class AuctionController {
 	@GetMapping("/{auctionId}/bids")
 	public RsData<Page<BidHistoryResponse>> getBidHistory(
 		@PathVariable Long auctionId,
+		@ParameterObject
 		@PageableDefault(
 			size = 10,
 			sort = "createdAt",
