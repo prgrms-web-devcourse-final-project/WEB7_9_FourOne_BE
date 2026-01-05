@@ -39,7 +39,7 @@ class SseServiceTest {
 	}
 
 	@Nested
-	class SubscribeTest{
+	class SubscribeTest {
 		@Test
 		@DisplayName("알림 구독-성공")
 		void t1() throws Exception {
@@ -59,7 +59,7 @@ class SseServiceTest {
 	}
 
 	@Nested
-	class NotifyHighestPriceTest{
+	class NotifyHighestPriceTest {
 		@Test
 		@DisplayName("최고가 알림-성공")
 		void t2() throws Exception {
