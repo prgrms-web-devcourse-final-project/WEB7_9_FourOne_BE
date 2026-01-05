@@ -12,9 +12,17 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import jakarta.transaction.Transactional;
+
+@SpringBootTest
+@ActiveProfiles("test")
+@AutoConfigureMockMvc
+@Transactional
 class SseServiceTest {
 
 	private SseService sseService;
@@ -27,7 +35,7 @@ class SseServiceTest {
 
 		Field field = SseService.class.getDeclaredField("sseEmitters");
 		field.setAccessible(true);
-		sseEmitters = (Map<Long, List<SseEmitter>>) field.get(sseService);
+		sseEmitters = (Map<Long, List<SseEmitter>>)field.get(sseService);
 	}
 
 	@Test
@@ -75,25 +83,12 @@ class SseServiceTest {
 
 	@Test
 	@DisplayName("onCompletion 콜백 발생 시 Emitter가 리스트에서 제거되어야 한다")
-	void onCompletion_removesEmitter() throws IOException {
+	void onCompletion_removesEmitter() {
 		Long auctionId = 1L;
+		SseEmitter emitter = sseService.subscribe(auctionId);
+		assertThat(sseEmitters.get(auctionId)).hasSize(1);
+		emitter.complete();
 
-		SseEmitter mockEmitter = mock(SseEmitter.class);
-
-		ArgumentCaptor<Runnable> callbackCaptor = ArgumentCaptor.forClass(Runnable.class);
-
-		sseService.subscribe(auctionId);
-
-		SseEmitter realEmitter = sseEmitters.get(auctionId).get(0);
-
-		sseEmitters.get(auctionId).clear();
-		SseEmitter spyEmitter = spy(realEmitter);
-		sseEmitters.get(auctionId).add(spyEmitter);
-
-		doThrow(IOException.class).when(spyEmitter).send(any(SseEmitter.SseEventBuilder.class));
-
-		sseService.notifyHighestPrice(auctionId, 1000L);
-
-		assertThat(sseEmitters.get(auctionId)).doesNotContain(spyEmitter);
+		assertThat(sseEmitters.get(auctionId)).doesNotContain(emitter);
 	}
 }
