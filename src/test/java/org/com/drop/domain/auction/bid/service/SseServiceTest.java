@@ -96,7 +96,9 @@ class SseServiceTest {
 			Runnable callback = (Runnable) org.springframework.test.util.ReflectionTestUtils
 				.getField(emitter, "completionCallback");
 
-			if (callback != null) callback.run();
+			if (callback != null) {
+				callback.run();
+			}
 
 			assertThat(sseEmitters.get(auctionId)).doesNotContain(emitter);
 		}
