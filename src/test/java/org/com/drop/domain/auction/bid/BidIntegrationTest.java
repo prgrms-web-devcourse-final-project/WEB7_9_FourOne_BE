@@ -112,6 +112,17 @@ public class BidIntegrationTest {
 			.startPrice(startPrice)
 			.minBidStep(step)
 			.startAt(LocalDateTime.now())
+			.endAt(LocalDateTime.now().plusDays(1))
+			.status(Auction.AuctionStatus.LIVE)
+			.build());
+	}
+
+	private Auction createAuctionForNoti(Product product, int startPrice, int step) {
+		return auctionRepository.save(Auction.builder()
+			.product(product)
+			.startPrice(startPrice)
+			.minBidStep(step)
+			.startAt(LocalDateTime.now())
 			.endAt(LocalDateTime.now().minusSeconds(1))
 			.status(Auction.AuctionStatus.LIVE)
 			.build());
@@ -384,7 +395,7 @@ public class BidIntegrationTest {
 
 		Product product = createProduct(seller);
 
-		Auction auction = createAuction(product, 1000, 100);
+		Auction auction = createAuctionForNoti(product, 1000, 100);
 
 		bidRepository.save(Bid.builder()
 			.auction(auction)
