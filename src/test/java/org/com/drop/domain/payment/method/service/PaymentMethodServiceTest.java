@@ -57,14 +57,14 @@ class PaymentMethodServiceTest {
 	void registerCard_savesPaymentMethod() {
 		// given
 		RegisterCardRequest request = new RegisterCardRequest(
-			"bill_123",
+			"bill_1234",
 			CardCompany.SAMSUNG,
-			"1234-****-****-5678",
+			"1234-****-****-5679",
 			"MyCard"
 		);
 
-		when(paymentMethodRepository.existsByBillingKey("bill_123")).thenReturn(false);
-		when(customerKeyGenerator.generate("user:1")).thenReturn("customer_key");
+		when(paymentMethodRepository.existsByBillingKey("bill_1234")).thenReturn(false);
+		when(customerKeyGenerator.generate("user:1bill_1234")).thenReturn("customer_key");
 
 		ArgumentCaptor<PaymentMethod> captor = ArgumentCaptor.forClass(PaymentMethod.class);
 
@@ -78,8 +78,8 @@ class PaymentMethodServiceTest {
 		assertEquals(1L, saved.getUserId());
 		assertEquals(CardCompany.SAMSUNG, saved.getCardCompany());
 		assertEquals("customer_key", saved.getCustomerKey());
-		assertEquals("bill_123", saved.getBillingKey());
-		assertEquals("1234-****-****-5678", saved.getCardNumberMasked());
+		assertEquals("bill_1234", saved.getBillingKey());
+		assertEquals("1234-****-****-5679", saved.getCardNumberMasked());
 		assertEquals("MyCard", saved.getCardName());
 	}
 
