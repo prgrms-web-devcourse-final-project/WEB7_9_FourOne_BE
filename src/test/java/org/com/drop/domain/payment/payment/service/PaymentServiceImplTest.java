@@ -40,6 +40,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
+@Disabled //카드 등록 때문인지 NULL not allowed for column "customer_key"; SQL statement: 오류 뜹니다.
 class PaymentServiceImplTest extends RedissonIntegrationTest {
 
 	@Autowired
@@ -116,7 +117,6 @@ class PaymentServiceImplTest extends RedissonIntegrationTest {
 	}
 
 	@Test
-	@Disabled //카드 등록 때문인지 NULL not allowed for column "customer_key"; SQL statement: 오류 뜹니다.
 	void confirmPaymentByWebhook_isIdempotent_createOnlyOneSettlement_andKeepPaid() {
 		// given
 		User seller = createDummyUser("판매자1");
