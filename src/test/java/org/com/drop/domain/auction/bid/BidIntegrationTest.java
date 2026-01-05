@@ -39,6 +39,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
@@ -207,6 +208,8 @@ public class BidIntegrationTest {
 			.with(csrf())
 		).andExpect(status().isOk());
 
+		LocalDateTime pastTime = LocalDateTime.now().minusSeconds(1);
+		ReflectionTestUtils.setField(auction, "endAt", pastTime);
 
 		auction.expire();
 		// auction.setStatus(Auction.AuctionStatus.ENDED);
