@@ -2,6 +2,7 @@ package org.com.drop.domain.auction.bid.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +83,35 @@ class SseServiceTest {
 			assertThatCode(() ->
 				sseService.notifyHighestPrice(auctionId, price)
 			).doesNotThrowAnyException();
+		}
+	}
+
+	@Nested
+	class removeTest {
+		@Test
+		@DisplayName("Emitter 완료 콜백 - 성공")
+		void t3() {
+			SseEmitter emitter = sseService.subscribe(auctionId);
+
+			Runnable callback = (Runnable) org.springframework.test.util.ReflectionTestUtils
+				.getField(emitter, "completionCallback");
+
+			if (callback != null) callback.run();
+
+			assertThat(sseEmitters.get(auctionId)).doesNotContain(emitter);
+		}
+
+		@Test
+		@DisplayName("Emitter가 제거-전송중 오류 발생")
+		void t4() throws Exception {
+			SseEmitter mockEmitter = mock(SseEmitter.class);
+			doThrow(IOException.class).when(mockEmitter).send(any(SseEmitter.SseEventBuilder.class));
+
+			sseEmitters.put(auctionId, new CopyOnWriteArrayList<>(List.of(mockEmitter)));
+
+			sseService.notifyHighestPrice(auctionId, price);
+
+			assertThat(sseEmitters.get(auctionId)).doesNotContain(mockEmitter);
 		}
 	}
 }
