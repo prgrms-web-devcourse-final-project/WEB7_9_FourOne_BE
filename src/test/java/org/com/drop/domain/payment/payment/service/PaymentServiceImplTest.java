@@ -3,10 +3,12 @@ package org.com.drop.domain.payment.payment.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.com.drop.domain.auction.product.entity.Product.Category.GAME;
 import static org.com.drop.domain.auction.product.entity.Product.SubCategory.*;
+import static org.mockito.Mockito.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.com.drop.RedissonIntegrationTest;
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
 import org.com.drop.domain.auction.product.entity.Product;
@@ -22,8 +24,10 @@ import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.domain.winner.domain.Winner;
 import org.com.drop.domain.winner.repository.WinnerRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.web.SecurityFilterChain;
@@ -35,7 +39,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
-class PaymentServiceImplTest {
+class PaymentServiceImplTest extends RedissonIntegrationTest {
 
 	@Autowired
 	PaymentRepository paymentRepository;
@@ -49,11 +53,17 @@ class PaymentServiceImplTest {
 	@MockitoBean
 	SecurityFilterChain securityFilterChain;
 
-	@Mock
+	@MockitoBean
 	TossPaymentsClient tossPaymentsClient;
 
-	@Mock
+	@MockitoBean
 	CustomerKeyGenerator customerKeyGenerator;
+
+	@MockitoBean
+	RedissonClient redissonClient;
+
+	@MockitoBean
+	RLock rLock;
 
 	@Autowired
 	ProductRepository productRepository;
@@ -95,6 +105,13 @@ class PaymentServiceImplTest {
 		return settlementRepository.findAll().stream()
 			.filter(s -> paymentId.equals(s.getPaymentId()))
 			.count();
+	}
+
+	@BeforeEach
+	void setUp() throws InterruptedException {
+		when(redissonClient.getLock(anyString())).thenReturn(rLock);
+		when(rLock.tryLock(anyLong(), anyLong(), any())).thenReturn(true);
+		when(rLock.isHeldByCurrentThread()).thenReturn(true);
 	}
 
 	@Test
@@ -140,7 +157,8 @@ class PaymentServiceImplTest {
 				settlementRepository,
 				tossPaymentsClient,
 				customerKeyGenerator,
-				winnerRepository
+				winnerRepository,
+				redissonClient
 			);
 
 		long beforeCount = countSettlementsByPaymentId(payment.getId());
@@ -165,4 +183,3 @@ class PaymentServiceImplTest {
 		// fee/net 계산 정책에 따라 fee도 검증 가능
 	}
 }
-

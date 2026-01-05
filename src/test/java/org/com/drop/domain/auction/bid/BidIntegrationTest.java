@@ -15,6 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.com.drop.BaseIntegrationTest;
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
 import org.com.drop.domain.auction.bid.dto.request.BidRequestDto;
@@ -54,7 +55,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Transactional
 @ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
-public class BidIntegrationTest {
+public class BidIntegrationTest extends BaseIntegrationTest {
 
 	@Autowired MockMvc mockMvc;
 
