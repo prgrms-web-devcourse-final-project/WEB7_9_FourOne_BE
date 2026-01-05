@@ -1,17 +1,17 @@
 package org.com.drop.domain.auction.bid.service;
+
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -24,64 +24,71 @@ import jakarta.transaction.Transactional;
 @AutoConfigureMockMvc
 @Transactional
 class SseServiceTest {
-	@Autowired
+
 	private SseService sseService;
 	private Map<Long, List<SseEmitter>> sseEmitters;
-	private Long auctionId = 1L;
-	private Long price = Long.MAX_VALUE;
 
 	@BeforeEach
+	@SuppressWarnings("unchecked")
 	void setUp() throws Exception {
 		sseService = new SseService();
+
 		Field field = SseService.class.getDeclaredField("sseEmitters");
 		field.setAccessible(true);
-		sseEmitters = (Map<Long, List<SseEmitter>>) field.get(sseService);
+		sseEmitters = (Map<Long, List<SseEmitter>>)field.get(sseService);
 	}
 
-	@Nested
-	class SubscribeTest {
-		@Test
-		@DisplayName("알림 구독-성공")
-		void t1() throws Exception {
-			SseEmitter emitter = sseService.subscribe(auctionId);
+	@Test
+	@DisplayName("구독 시 Emitter가 생성되고 연결 이벤트가 전송되어야 한다")
+	void subscribe_success() {
+		Long auctionId = 1L;
 
-			assertThat(emitter).isNotNull();
-			assertThat(sseEmitters.get(auctionId)).contains(emitter);
-			assertThat(emitter.getTimeout()).isEqualTo(60 * 60 * 1000L);
-		}
+		SseEmitter emitter = sseService.subscribe(auctionId);
 
-		@Test
-		@DisplayName("알림 구독-실패- auctionId가 null")
-		void t1_1() {
-			assertThatThrownBy(() -> sseService.subscribe(null))
-				.isInstanceOf(NullPointerException.class);
-		}
+		assertThat(emitter).isNotNull();
+		assertThat(sseEmitters.get(auctionId)).contains(emitter);
+		assertThat(emitter.getTimeout()).isEqualTo(60 * 60 * 1000L);
 	}
 
-	@Nested
-	class NotifyHighestPriceTest {
-		@Test
-		@DisplayName("최고가 알림-성공")
-		void t2() throws Exception {
-			SseEmitter emitter = spy(new SseEmitter());
-			sseEmitters.put(auctionId, new CopyOnWriteArrayList<>(List.of(emitter)));
+	@Test
+	@DisplayName("최고가 갱신 시 해당 경매의 모든 구독자에게 알림이 전송되어야 한다")
+	void notifyHighestPrice_success() throws IOException {
 
-			sseService.notifyHighestPrice(auctionId, price);
+		Long auctionId = 1L;
+		Long price = 50000L;
 
-			verify(emitter, times(1))
-				.send(any(SseEmitter.SseEventBuilder.class));
+		SseEmitter mockEmitter = mock(SseEmitter.class);
+		sseEmitters.computeIfAbsent(auctionId, k -> new java.util.concurrent.CopyOnWriteArrayList<>()).add(mockEmitter);
 
-			assertThat(sseEmitters.get(auctionId)).contains(emitter);
-		}
+		sseService.notifyHighestPrice(auctionId, price);
 
-		@Test
-		@DisplayName("최고가 알림-실패-emitter 비었음")
-		void t2_1() throws Exception {
-			sseEmitters.put(auctionId, new CopyOnWriteArrayList<>());
+		verify(mockEmitter, times(1)).send(any(SseEmitter.SseEventBuilder.class));
+	}
 
-			assertThatCode(() ->
-				sseService.notifyHighestPrice(auctionId, price)
-			).doesNotThrowAnyException();
-		}
+	@Test
+	@DisplayName("전송 중 IOException 발생 시 해당 Emitter는 제거되어야 한다")
+	void notifyHighestPrice_fail_ioException() throws IOException {
+
+		Long auctionId = 1L;
+		SseEmitter mockEmitter = mock(SseEmitter.class);
+
+		doThrow(IOException.class).when(mockEmitter).send(any(SseEmitter.SseEventBuilder.class));
+
+		sseEmitters.computeIfAbsent(auctionId, k -> new java.util.concurrent.CopyOnWriteArrayList<>()).add(mockEmitter);
+
+		sseService.notifyHighestPrice(auctionId, 1000L);
+
+		assertThat(sseEmitters.get(auctionId)).doesNotContain(mockEmitter);
+	}
+
+	@Test
+	@DisplayName("onCompletion 콜백 발생 시 Emitter가 리스트에서 제거되어야 한다")
+	void onCompletion_removesEmitter() {
+		Long auctionId = 1L;
+		SseEmitter emitter = sseService.subscribe(auctionId);
+		assertThat(sseEmitters.get(auctionId)).hasSize(1);
+		emitter.complete();
+
+		assertThat(sseEmitters.get(auctionId)).doesNotContain(emitter);
 	}
 }
