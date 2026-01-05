@@ -24,6 +24,7 @@ import org.com.drop.domain.winner.domain.Winner;
 import org.com.drop.domain.winner.repository.WinnerRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.web.SecurityFilterChain;
@@ -54,6 +55,9 @@ class PaymentServiceImplTest {
 
 	@Mock
 	CustomerKeyGenerator customerKeyGenerator;
+
+	@Mock
+	RedissonClient redissonClient;
 
 	@Autowired
 	ProductRepository productRepository;
@@ -140,7 +144,8 @@ class PaymentServiceImplTest {
 				settlementRepository,
 				tossPaymentsClient,
 				customerKeyGenerator,
-				winnerRepository
+				winnerRepository,
+				redissonClient
 			);
 
 		long beforeCount = countSettlementsByPaymentId(payment.getId());
@@ -165,4 +170,3 @@ class PaymentServiceImplTest {
 		// fee/net 계산 정책에 따라 fee도 검증 가능
 	}
 }
-
