@@ -38,7 +38,7 @@ public class SseService {
 		List<SseEmitter> emitters = sseEmitters.get(auctionId);
 
 		if (emitters != null) {
-			List<SseEmitter> emittersCopy = new ArrayList<>();
+			List<SseEmitter> emittersCopy = new ArrayList<>(emitters);
 			for (SseEmitter emitter : emittersCopy) {
 				try {
 					emitter.send(SseEmitter.event()
