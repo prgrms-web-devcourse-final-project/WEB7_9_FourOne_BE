@@ -87,7 +87,7 @@ class SseServiceTest {
 	}
 
 	@Nested
-	class removeTest {
+	class RemoveTest {
 		@Test
 		@DisplayName("Emitter 완료 콜백 - 성공")
 		void t3() {
