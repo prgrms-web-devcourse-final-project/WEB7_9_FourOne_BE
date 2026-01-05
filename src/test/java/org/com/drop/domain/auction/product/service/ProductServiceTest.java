@@ -12,7 +12,6 @@ import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ServiceException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,7 +27,6 @@ import jakarta.transaction.Transactional;
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-@Disabled
 public class ProductServiceTest {
 	private final String name = "테스트 상품명";
 	private final String updatedName = "수정된 테스트 상품명";
