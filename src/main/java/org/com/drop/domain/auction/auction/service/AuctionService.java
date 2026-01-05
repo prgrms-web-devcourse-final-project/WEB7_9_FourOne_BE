@@ -47,6 +47,6 @@ public class AuctionService {
 		Auction auction = auctionRepository.findById(auctionId)
 			.orElseThrow(() -> new ServiceException(ErrorCode.AUCTION_NOT_FOUND, "요청하신 상품 ID를 찾을 수 없습니다." ));
 
-		auction.end(LocalDateTime.now());
+		auction.expire();
 	}
 }
