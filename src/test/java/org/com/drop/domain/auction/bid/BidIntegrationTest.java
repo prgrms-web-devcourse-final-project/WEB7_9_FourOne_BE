@@ -21,8 +21,11 @@ import org.com.drop.domain.auction.bid.dto.request.BidRequestDto;
 import org.com.drop.domain.auction.bid.entity.Bid;
 import org.com.drop.domain.auction.bid.repository.BidRepository;
 import org.com.drop.domain.auction.bid.service.BidService;
+import org.com.drop.domain.auction.bid.service.WinnerService;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
+import org.com.drop.domain.notification.entity.Notification;
+import org.com.drop.domain.notification.repository.NotificationRepository;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.domain.user.service.UserService;
@@ -68,12 +71,18 @@ public class BidIntegrationTest {
 	AuctionRepository auctionRepository;
 	@Autowired
 	ProductRepository productRepository;
+	@Autowired
+	NotificationRepository notificationRepository;
 
 	@Autowired
 	BidService bidService;
 
 	@Autowired
 	private AuctionScheduler auctionScheduler;
+
+	@Autowired
+	WinnerService winnerService;
+
 
 	private User createUser(String email, String nickname) {
 		return userRepository.save(User.builder()
@@ -103,7 +112,7 @@ public class BidIntegrationTest {
 			.startPrice(startPrice)
 			.minBidStep(step)
 			.startAt(LocalDateTime.now())
-			.endAt(LocalDateTime.now().plusDays(1))
+			.endAt(LocalDateTime.now().minusSeconds(1))
 			.status(Auction.AuctionStatus.LIVE)
 			.build());
 	}
@@ -363,6 +372,69 @@ public class BidIntegrationTest {
 		assertThat(successCount.get()).isEqualTo(1);
 		assertThat(failCount.get()).isEqualTo(threadCount - 1);
 		assertThat(findAuction.getCurrentPrice()).isEqualTo(1100L);
+	}
+
+	@Test
+	@DisplayName("경매 낙찰 성공하면 판매자와 구매자에게 알림이 발송된다")
+	void finalizeAuction_success_test() {
+		// 1. GIVEN (데이터 준비)
+
+		// (1) 판매자와 구매자 생성
+		User seller = createUser("seller@email.com", "판매자");
+		User bidder = createUser("buyer@email.com", "구매자");
+
+		// (2) 상품 생성
+		Product product = createProduct(seller);
+
+		// (3) 경매 생성 (종료 시간이 미래인 상태로 생성됨)
+		Auction auction = createAuction(product, 1000, 100);
+
+		// (4) 입찰 생성 (구매자가 입찰함)
+		bidRepository.save(Bid.builder()
+			.auction(auction)
+			.bidder(bidder)
+			.bidAmount(50000L)
+			.createdAt(LocalDateTime.now())
+			.build());
+
+		// 2. WHEN (로직 실행)
+		winnerService.finalizeAuction(auction.getId());
+
+		// 3. THEN (검증)
+
+		// (1) 알림이 총 2건 생성되었는지 확인
+		List<Notification> notifications = notificationRepository.findAll();
+
+		System.out.println(">>> 저장된 알림 총 개수: " + notifications.size());
+
+		// (2) 내용물 전부 출력
+		for (Notification n : notifications) {
+			System.out.println(">>> 알림 ID: " + n.getId());
+			System.out.println(">>> 수신자 ID: " + n.getId());
+			System.out.println(">>> 메시지: " + n.getMessage());
+			System.out.println("------------------------------");
+		}
+
+		// (3) 내가 찾으려는 구매자 ID 출력
+		System.out.println(">>> 찾는 구매자(Bidder) ID: " + bidder.getId());
+
+		assertThat(notifications).hasSize(4);
+
+		// (2) 구매자(낙찰자) 알림 확인
+		Notification buyerNoti = notifications.stream()
+			.filter(n -> n.getId().equals(bidder.getId()))
+			.findFirst()
+			.orElseThrow(() -> new AssertionError("구매자 알림이 없습니다."));
+
+		assertThat(buyerNoti.getMessage()).contains("경매가 낙찰되었습니다.");
+
+		// (3) 판매자 알림 확인
+		Notification sellerNoti = notifications.stream()
+			.filter(n -> n.getId().equals(seller.getId()))
+			.findFirst()
+			.orElseThrow(() -> new AssertionError("판매자 알림이 없습니다."));
+
+		assertThat(sellerNoti.getMessage()).contains("경매가 낙찰되었습니다.");
 	}
 
 }
