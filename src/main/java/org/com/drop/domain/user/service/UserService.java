@@ -220,7 +220,8 @@ public class UserService implements UserDetailsService {
 					(winner != null && winner.getUserId()
 						.equals(user.getId())) ? winner.getFinalPrice().intValue() : null,
 					bidStatus,
-					auction.getEndAt()
+					auction.getEndAt(),
+					winner != null ? winner.getUserId() : null
 				);
 			})
 			.toList();

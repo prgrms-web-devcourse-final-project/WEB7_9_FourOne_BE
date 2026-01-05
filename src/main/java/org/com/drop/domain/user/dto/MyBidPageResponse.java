@@ -17,6 +17,7 @@ public record MyBidPageResponse(
 		int myBid,
 		Integer finalBid,
 		String status,
-		LocalDateTime endAt
+		LocalDateTime endAt,
+		Long winnerId
 	) { }
 }
