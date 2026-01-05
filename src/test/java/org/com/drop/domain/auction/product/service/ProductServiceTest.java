@@ -26,7 +26,6 @@ import jakarta.transaction.Transactional;
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-//@Disabled
 public class ProductServiceTest {
 
 	@Nested
