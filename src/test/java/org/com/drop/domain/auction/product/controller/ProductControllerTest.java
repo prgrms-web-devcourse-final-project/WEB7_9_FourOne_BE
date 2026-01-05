@@ -52,7 +52,7 @@ public class ProductControllerTest {
 	private final String description = "테스트 상품 상세 설명";
 	private final Product.Category category = Product.Category.STARGOODS;
 	private final Product.SubCategory subCategory = Product.SubCategory.ACC;
-	private final List<String> images = List.of("b67103865cff09c2638b8e8e8551175b18db2253.jpg");
+	private final List<String> images = List.of("image/product/4e498e0a7-c493-44de-a097-68d25c597a6b.png");
 	private final List<String> wrongImages = List.of("img1.png", "img2.png");
 	private final List<String> updatedImages = List.of("UpdatedImg1.png", "UpdatedImg2.png");
 	private String jsonContent;
