@@ -36,3 +36,7 @@ logging:
         org.hibernate.SQL: DEBUG
         org.hibernate.orm.jdbc.bind: TRACE
 
+management:
+    health:
+        mail:
+            enabled: false

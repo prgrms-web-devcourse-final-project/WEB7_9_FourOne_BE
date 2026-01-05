@@ -8,7 +8,7 @@ import static org.mockito.Mockito.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import org.com.drop.config.TestRedissonConfig;
+import org.com.drop.RedissonIntegrationTest;
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
 import org.com.drop.domain.auction.product.entity.Product;
@@ -30,7 +30,6 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -39,9 +38,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest
 @Testcontainers
-@Import(TestRedissonConfig.class)
 @ActiveProfiles("test")
-class PaymentServiceImplTest {
+class PaymentServiceImplTest extends RedissonIntegrationTest {
 
 	@Autowired
 	PaymentRepository paymentRepository;

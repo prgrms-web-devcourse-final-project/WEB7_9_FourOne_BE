@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import org.com.drop.BaseIntegrationTest;
 import org.com.drop.domain.notification.entity.Notification;
 import org.com.drop.domain.notification.repository.NotificationEmitterRepository;
 import org.com.drop.domain.notification.repository.NotificationRepository;
@@ -41,7 +42,7 @@ import jakarta.transaction.Transactional;
 @AutoConfigureMockMvc
 @Transactional
 @EnableScheduling
-public class NotificationControllerTest {
+public class NotificationControllerTest extends BaseIntegrationTest {
 	Long userId = 1L;
 	Long notificationId = 1L;
 	Long wrongUserId = 2L;

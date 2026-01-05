@@ -4,6 +4,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.*;
 
 import java.util.List;
 
+import org.com.drop.BaseIntegrationTest;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.repository.ProductImageRepository;
@@ -28,7 +29,7 @@ import jakarta.transaction.Transactional;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Disabled
-public class ProductServiceTest {
+public class ProductServiceTest extends BaseIntegrationTest {
 
 	@Nested
 	class TransactionalTests {

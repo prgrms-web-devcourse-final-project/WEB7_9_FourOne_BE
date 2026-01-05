@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.Optional;
 
+import org.com.drop.BaseIntegrationTest;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
 import org.com.drop.domain.auction.product.entity.BookMark;
 import org.com.drop.domain.auction.product.entity.Product;
@@ -43,7 +44,7 @@ import jakarta.transaction.Transactional;
 @AutoConfigureMockMvc
 @Transactional
 @Disabled //aws 계정 있어야 하기 때문에 dev로 가는 코드에서는 disable 했습니다.
-public class ProductControllerTest {
+public class ProductControllerTest extends BaseIntegrationTest {
 
 	private final Long productId = 2L;
 	private final Long wrongProductId = Long.MAX_VALUE;

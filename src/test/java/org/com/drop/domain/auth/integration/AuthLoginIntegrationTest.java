@@ -5,6 +5,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import org.com.drop.BaseIntegrationTest;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +30,7 @@ import com.jayway.jsonpath.JsonPath;
 @AutoConfigureMockMvc
 @Transactional
 @ActiveProfiles("test")
-class AuthLoginIntegrationTest {
+class AuthLoginIntegrationTest extends BaseIntegrationTest {
 
 	@Autowired
 	MockMvc mockMvc;
