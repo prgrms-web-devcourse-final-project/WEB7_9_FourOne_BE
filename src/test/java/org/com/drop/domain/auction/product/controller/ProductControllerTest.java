@@ -2,6 +2,9 @@ package org.com.drop.domain.auction.product.controller;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
@@ -22,6 +25,8 @@ import org.com.drop.domain.user.controller.UserController;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.aws.AmazonS3Client;
+import org.com.drop.global.exception.ErrorCode;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -46,9 +51,6 @@ import jakarta.transaction.Transactional;
 @Transactional
 public class ProductControllerTest extends BaseIntegrationTest {
 
-	@MockitoBean
-	AmazonS3Client amazonS3Client;
-
 	private final Long productId = 2L;
 	private final Long wrongProductId = Long.MAX_VALUE;
 	private final Long auctionId = 2L;
@@ -63,6 +65,9 @@ public class ProductControllerTest extends BaseIntegrationTest {
 	private final List<String> updatedImages = List.of("UpdatedImg1.png", "UpdatedImg2.png");
 	private String jsonContent;
 
+	@MockitoBean
+	AmazonS3Client amazonS3Client;
+
 	@Autowired
 	private MockMvc mvc;
 	@Autowired
@@ -75,6 +80,23 @@ public class ProductControllerTest extends BaseIntegrationTest {
 	private UserRepository userRepository;
 	@Autowired
 	private BookmarkRepository bookmarkRepository;
+
+	@BeforeEach
+	void mockS3() {
+		doNothing().when(amazonS3Client).verifyImage(argThat(
+			imgs -> imgs != null && imgs.stream().allMatch(img -> img.endsWith(".jpg"))
+		));
+
+		doThrow(ErrorCode.INVALID_IMAGE.serviceException("올바르지 않은 이미지 입니다."))
+			.when(amazonS3Client)
+			.verifyImage(argThat(
+				imgs -> imgs != null && imgs.contains("img1.png")
+			));
+
+		doReturn(List.of("https://test-bucket.s3.amazonaws.com/image/product/test.png"))
+			.when(amazonS3Client)
+			.createPresignedUrls(any(), any(), any());
+	}
 
 	void setUp(String name, String description, Product.Category category, Product.SubCategory subCategory,
 		List<String> images) throws JsonProcessingException {
