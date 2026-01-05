@@ -30,6 +30,7 @@ import org.com.drop.domain.notification.repository.NotificationRepository;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.domain.user.service.UserService;
+import org.com.drop.domain.winner.repository.WinnerRepository;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
 import org.com.drop.scheduler.AuctionScheduler;
@@ -74,6 +75,8 @@ public class BidIntegrationTest extends BaseIntegrationTest {
 	ProductRepository productRepository;
 	@Autowired
 	NotificationRepository notificationRepository;
+	@Autowired
+	WinnerRepository winnerRepository;
 
 	@Autowired
 	BidService bidService;
@@ -124,7 +127,7 @@ public class BidIntegrationTest extends BaseIntegrationTest {
 			.startPrice(startPrice)
 			.minBidStep(step)
 			.startAt(LocalDateTime.now())
-			.endAt(LocalDateTime.now().minusSeconds(1))
+			.endAt(LocalDateTime.now().minusHours(1))
 			.status(Auction.AuctionStatus.LIVE)
 			.build());
 	}
@@ -389,8 +392,12 @@ public class BidIntegrationTest extends BaseIntegrationTest {
 	@Test
 	@DisplayName("경매 낙찰 성공하면 판매자와 구매자에게 알림이 발송된다")
 	void finalizeAuction_success_test() {
-		//given
+		winnerRepository.deleteAllInBatch();
+		notificationRepository.deleteAllInBatch();
+		bidRepository.deleteAllInBatch();
+		auctionRepository.deleteAllInBatch();
 
+		//given
 		User seller = createUser("seller@email.com", "판매자");
 		User bidder = createUser("buyer@email.com", "구매자");
 
@@ -422,7 +429,7 @@ public class BidIntegrationTest extends BaseIntegrationTest {
 
 		System.out.println(">>> 찾는 구매자(Bidder) ID: " + bidder.getId());
 
-		assertThat(notifications).hasSize(4);
+		assertThat(notifications).hasSize(2);
 
 		Notification buyerNoti = notifications.stream()
 			.filter(n -> n.getId().equals(bidder.getId()))
