@@ -4,6 +4,11 @@ import java.util.List;
 
 import org.com.drop.domain.auction.product.dto.ProductSearchResponse;
 import org.com.drop.domain.auction.product.service.ProductService;
+import org.com.drop.domain.payment.method.dto.CardResponse;
+import org.com.drop.domain.payment.method.dto.CardResponseList;
+import org.com.drop.domain.payment.method.dto.RegisterCardRequest;
+import org.com.drop.domain.payment.method.entity.PaymentMethod;
+import org.com.drop.domain.payment.method.service.PaymentMethodService;
 import org.com.drop.domain.user.dto.MyBidPageResponse;
 import org.com.drop.domain.user.dto.MyBookmarkPageResponse;
 import org.com.drop.domain.user.dto.MyPageResponse;
@@ -17,6 +22,7 @@ import org.com.drop.global.aws.ImageType;
 import org.com.drop.global.aws.PreSignedUrlListRequest;
 import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,6 +43,7 @@ public class UserController {
 	private final ProductService productService;
 	private final UserService userService;
 	private final AmazonS3Client amazonS3Client;
+	private final PaymentMethodService paymentMethodService;
 
 	@GetMapping("products/{productId}")
 	public RsData<ProductSearchResponse> getProduct(
@@ -100,5 +107,31 @@ public class UserController {
 	) {
 		List<String> url = amazonS3Client.createPresignedUrls(preSignedUrlRequest, actor, ImageType.PROFILE);
 		return new RsData<>(url);
+	}
+
+	@PostMapping("/user/me/paymentMethods")
+	public RsData<CardResponse> register(
+		@LoginUser User user,
+		@Valid @RequestBody RegisterCardRequest request
+	) {
+		PaymentMethod paymentMethod =  paymentMethodService.registerCard(user.getId(), request);
+		return new RsData<>(
+			new CardResponse(paymentMethod)
+		);
+	}
+
+	@GetMapping("/user/me/paymentMethods")
+	public RsData<CardResponseList> cardList(@LoginUser User user) {
+		List<PaymentMethod> paymentMethods = paymentMethodService.getCards(user.getId());
+		return new RsData<>(CardResponseList.from(paymentMethods));
+	}
+
+	@DeleteMapping("/user/me/paymentMethods/{paymentMethodId}")
+	public RsData<Void> delete(
+		@LoginUser User user,
+		@PathVariable Long paymentMethodId
+	) {
+		paymentMethodService.deleteCard(user.getId(), paymentMethodId);
+		return new RsData<>(null);
 	}
 }

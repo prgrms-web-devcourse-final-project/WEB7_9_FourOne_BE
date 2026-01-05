@@ -1,20 +1,24 @@
 package org.com.drop.domain.payment.method.dto;
 
-import org.com.drop.domain.payment.method.domain.PaymentMethod;
+import java.time.LocalDateTime;
+
+import org.com.drop.domain.payment.method.entity.PaymentMethod;
 import org.com.drop.domain.payment.payment.domain.CardCompany;
 
 public record CardResponse(
 	Long id,
+	String billingKey,
 	CardCompany cardCompany,
 	String cardNumberMasked,
-	String cardName
+	LocalDateTime createdAt
 ) {
-	public static CardResponse from(PaymentMethod method) {
-		return new CardResponse(
-			method.getId(),
-			method.getCardCompany(),
-			method.getCardNumberMasked(),
-			method.getCardName()
+	public CardResponse(PaymentMethod paymentMethod) {
+		this(
+			paymentMethod.getId(),
+			paymentMethod.getBillingKey(),
+			paymentMethod.getCardCompany(),
+			paymentMethod.getCardNumberMasked(),
+			paymentMethod.getCreatedAt()
 		);
 	}
 }

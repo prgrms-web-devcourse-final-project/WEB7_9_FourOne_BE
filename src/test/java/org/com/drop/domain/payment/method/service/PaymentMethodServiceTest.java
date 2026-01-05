@@ -6,8 +6,8 @@ import static org.mockito.Mockito.*;
 
 import java.util.Optional;
 
-import org.com.drop.domain.payment.method.domain.PaymentMethod;
 import org.com.drop.domain.payment.method.dto.RegisterCardRequest;
+import org.com.drop.domain.payment.method.entity.PaymentMethod;
 import org.com.drop.domain.payment.method.repository.PaymentMethodRepository;
 import org.com.drop.domain.payment.payment.domain.CardCompany;
 import org.com.drop.domain.payment.payment.infra.toss.util.CustomerKeyGenerator;
@@ -101,14 +101,14 @@ class PaymentMethodServiceTest {
 	@DisplayName("카드 삭제 - 소유자 불일치면 예외 + delete 안 함")
 	void deleteCard_whenUserMismatch_throws() {
 		// given
-		PaymentMethod method = PaymentMethod.builder()
-			.userId(2L)
-			.cardCompany(CardCompany.SAMSUNG)
-			.customerKey("ck")
-			.billingKey("bk")
-			.cardNumberMasked("mask")
-			.cardName("name")
-			.build();
+		PaymentMethod method = new PaymentMethod(
+			2L,
+			CardCompany.SAMSUNG,
+			"ck",
+			"bk",
+			"mask",
+			"name"
+		);
 
 		when(paymentMethodRepository.findById(10L)).thenReturn(Optional.of(method));
 

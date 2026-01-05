@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import org.com.drop.domain.payment.method.domain.PaymentMethod;
+import org.com.drop.domain.payment.method.entity.PaymentMethod;
 import org.com.drop.domain.payment.method.service.PaymentMethodService;
 import org.com.drop.domain.payment.payment.domain.Payment;
 import org.com.drop.domain.payment.payment.event.AutoPaymentRequestedEvent;
