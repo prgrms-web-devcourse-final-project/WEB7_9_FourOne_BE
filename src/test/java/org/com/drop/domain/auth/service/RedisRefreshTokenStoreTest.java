@@ -37,7 +37,7 @@ public class RedisRefreshTokenStoreTest {
 	private RedisRefreshTokenStore redisRefreshTokenStore;
 
 	@Nested
-	class SaveTest {
+	class SaveTest{
 		@Test
 		@DisplayName("저장-성공")
 		void t1() throws Exception {
@@ -56,7 +56,7 @@ public class RedisRefreshTokenStoreTest {
 	}
 
 	@Nested
-	class DeleteTest {
+	class DeleteTest{
 		@Test
 		@DisplayName("삭제-성공")
 		void t2() {
@@ -79,7 +79,7 @@ public class RedisRefreshTokenStoreTest {
 	}
 
 	@Nested
-	class ExistsTest {
+	class ExistsTest{
 		private static final String STORED_TOKEN = "stored-token";
 		private static final String INPUT_TOKEN = "stored-token";
 		private static final String WRONG_TOKEN = "wrong-token";
