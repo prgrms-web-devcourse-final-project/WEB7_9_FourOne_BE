@@ -1,6 +1,7 @@
 package org.com.drop.domain.auction.bid.service;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,7 +38,8 @@ public class SseService {
 		List<SseEmitter> emitters = sseEmitters.get(auctionId);
 
 		if (emitters != null) {
-			for (SseEmitter emitter : emitters) {
+			List<SseEmitter> emittersCopy = new ArrayList<>();
+			for (SseEmitter emitter : emittersCopy) {
 				try {
 					emitter.send(SseEmitter.event()
 						.name("highestPrice")
