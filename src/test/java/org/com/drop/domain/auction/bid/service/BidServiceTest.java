@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.com.drop.BaseIntegrationTest;
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
 import org.com.drop.domain.auction.bid.dto.request.BidRequestDto;
@@ -23,7 +24,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class BidServiceTest {
+class BidServiceTest extends BaseIntegrationTest {
 
 	@Autowired
 	private BidService bidService;

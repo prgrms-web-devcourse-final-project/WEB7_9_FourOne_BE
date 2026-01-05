@@ -4,6 +4,7 @@ import static org.mockito.BDDMockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import org.com.drop.BaseIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,7 @@ import jakarta.mail.internet.MimeMessage;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-class AuthEmailIntegrationTest {
+class AuthEmailIntegrationTest extends BaseIntegrationTest {
 
 	@Autowired
 	MockMvc mockMvc;

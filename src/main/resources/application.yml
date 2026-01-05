@@ -80,6 +80,20 @@ jwt:
     refresh-token-expire: 604800
     issuer: "DROP"
 
+# --- Resilience4j ---
+resilience4j:
+    circuitbreaker:
+        configs:
+            default:
+                slidingWindowSize: 10
+                failureRateThreshold: 50
+                waitDurationInOpenState: 10000
+                permittedNumberOfCallsInHalfOpenState: 5
+                slowCallDurationThreshold: 3000
+        instances:
+            tossPayment:
+                baseConfig: default
+
 # --- Logging ---
 logging:
     level:

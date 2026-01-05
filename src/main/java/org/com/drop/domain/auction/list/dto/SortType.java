@@ -15,14 +15,6 @@ public enum SortType {
 		this.description = description;
 	}
 
-	public String getValue() {
-		return value;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
 	public static SortType fromValue(String value) {
 		if (value == null || value.isBlank()) {
 			return NEWEST;
@@ -51,5 +43,13 @@ public enum SortType {
 		} catch (IllegalArgumentException e) {
 			throw ErrorCode.AUCTION_INVALID_SORT.serviceException("지원하지 않는 정렬 방식입니다: %s", value);
 		}
+	}
+
+	public String getValue() {
+		return value;
+	}
+
+	public String getDescription() {
+		return description;
 	}
 }

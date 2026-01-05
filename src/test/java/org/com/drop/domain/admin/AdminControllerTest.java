@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.com.drop.BaseIntegrationTest;
 import org.com.drop.domain.admin.guide.controller.GuideController;
 import org.com.drop.domain.admin.guide.dto.GuideCreateRequest;
 import org.com.drop.domain.admin.guide.entity.Guide;
@@ -37,7 +38,7 @@ import jakarta.transaction.Transactional;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
-public class AdminControllerTest {
+public class AdminControllerTest extends BaseIntegrationTest {
 	@Autowired
 	private MockMvc mvc;
 	@Autowired

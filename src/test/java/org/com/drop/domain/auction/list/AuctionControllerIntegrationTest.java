@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDateTime;
 
+import org.com.drop.BaseIntegrationTest;
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.entity.Auction.AuctionStatus;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
@@ -46,7 +47,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 	"spring.cloud.aws.s3.enabled=false"         // 실제 S3 빈 생성 방지
 })
 @DisplayName("경매 컨트롤러 통합 테스트")
-class AuctionControllerIntegrationTest {
+class AuctionControllerIntegrationTest extends BaseIntegrationTest {
 
 	@Autowired MockMvc mockMvc;
 	@Autowired ObjectMapper objectMapper;
@@ -85,6 +86,54 @@ class AuctionControllerIntegrationTest {
 		createBid(endedAuction, buyer, 1200000L);
 		createBid(endedAuction, seller, 1100000L);
 		createBid(endedAuction, buyer, 1300000L);
+	}
+
+	private User createUser(String email, String nickname) {
+		return userRepository.save(User.builder()
+			.email(email)
+			.nickname(nickname)
+			.password("password")
+			.loginType(User.LoginType.LOCAL)
+			.role(User.UserRole.USER)
+			.build());
+	}
+
+	private Product createProduct(User seller, String name, Product.Category category) {
+		Product product = productRepository.save(Product.builder()
+			.seller(seller)
+			.name(name)
+			.description("설명")
+			.category(category)
+			.subcategory(Product.SubCategory.ETC)
+			.createdAt(LocalDateTime.now())
+			.bookmarkCount(0)
+			.build());
+		productImageRepository.save(new ProductImage(product, "test.jpg"));
+		return product;
+	}
+
+	private Auction createAuction(Product product, AuctionStatus status, LocalDateTime endAt) {
+		return auctionRepository.save(Auction.builder()
+			.product(product)
+			.startPrice(1000000)
+			.minBidStep(50000)
+			.startAt(LocalDateTime.now().minusHours(1))
+			.endAt(endAt)
+			.status(status)
+			.bidCount(0)
+			.build());
+	}
+
+	// ================= Helper Methods =================
+
+	private void createBid(Auction auction, User bidder, Long amount) {
+		bidRepository.save(Bid.builder()
+			.auction(auction)
+			.bidder(bidder)
+			.bidAmount(amount)
+			.createdAt(LocalDateTime.now())
+			.isAuto(false)
+			.build());
 	}
 
 	@Nested
@@ -237,53 +286,5 @@ class AuctionControllerIntegrationTest {
 				.andExpect(jsonPath("$.data.content.length()").value(3))
 				.andExpect(jsonPath("$.data.totalElements").value(3));
 		}
-	}
-
-	// ================= Helper Methods =================
-
-	private User createUser(String email, String nickname) {
-		return userRepository.save(User.builder()
-			.email(email)
-			.nickname(nickname)
-			.password("password")
-			.loginType(User.LoginType.LOCAL)
-			.role(User.UserRole.USER)
-			.build());
-	}
-
-	private Product createProduct(User seller, String name, Product.Category category) {
-		Product product = productRepository.save(Product.builder()
-			.seller(seller)
-			.name(name)
-			.description("설명")
-			.category(category)
-			.subcategory(Product.SubCategory.ETC)
-			.createdAt(LocalDateTime.now())
-			.bookmarkCount(0)
-			.build());
-		productImageRepository.save(new ProductImage(product, "test.jpg"));
-		return product;
-	}
-
-	private Auction createAuction(Product product, AuctionStatus status, LocalDateTime endAt) {
-		return auctionRepository.save(Auction.builder()
-			.product(product)
-			.startPrice(1000000)
-			.minBidStep(50000)
-			.startAt(LocalDateTime.now().minusHours(1))
-			.endAt(endAt)
-			.status(status)
-			.bidCount(0)
-			.build());
-	}
-
-	private void createBid(Auction auction, User bidder, Long amount) {
-		bidRepository.save(Bid.builder()
-			.auction(auction)
-			.bidder(bidder)
-			.bidAmount(amount)
-			.createdAt(LocalDateTime.now())
-			.isAuto(false)
-			.build());
 	}
 }
