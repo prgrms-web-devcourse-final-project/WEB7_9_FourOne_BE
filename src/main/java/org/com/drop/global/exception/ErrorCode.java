@@ -108,16 +108,23 @@ public enum ErrorCode {
 	//auctions
 	AUCTION_NOT_FOUND("1600", HttpStatus.NOT_FOUND, "요청하신 상품 ID를 찾을 수 없습니다."),
 	AUCTION_BID_AMOUNT_TOO_LOW("1601", HttpStatus.BAD_REQUEST, "입찰 금액이 현재 최고가보다 낮거나 최소 입찰 단위를 충족하지 못했습니다."),
-	AUCTION_ALREADY_ENDED("1603", HttpStatus.CONFLICT, "이미 경매가 종료되었거나, 즉시 구매가 완료되었습니다."),
-	AUCTION_INVALID_CATEGORY("1604", HttpStatus.BAD_REQUEST, "유효하지 않은 카테고리입니다."),
-	AUCTION_NOT_LIVE("1606", HttpStatus.BAD_REQUEST, "진행 중인 경매가 아닙니다."),
-	AUCTION_BIDDER_CANNOT_BE_OWNER("1607", HttpStatus.BAD_REQUEST, "경매 상품의 판매자는 입찰할 수 없습니다."),
-	AUCTION_BUY_NOW_NOT_AVAILABLE("1608", HttpStatus.BAD_REQUEST, "즉시 구매가 불가능한 상품입니다."),
+	AUCTION_ALREADY_ENDED("1602", HttpStatus.CONFLICT, "이미 경매가 종료되었거나, 즉시 구매가 완료되었습니다."),
+	AUCTION_INVALID_CATEGORY("1603", HttpStatus.BAD_REQUEST, "유효하지 않은 카테고리입니다."),
+	AUCTION_NOT_LIVE("1604", HttpStatus.BAD_REQUEST, "진행 중인 경매가 아닙니다."),
+	AUCTION_BIDDER_CANNOT_BE_OWNER("1605", HttpStatus.BAD_REQUEST, "경매 상품의 판매자는 입찰할 수 없습니다."),
+	AUCTION_BUY_NOW_NOT_AVAILABLE("1606", HttpStatus.BAD_REQUEST, "즉시 구매가 불가능한 상품입니다."),
+	AUCTION_INVALID_SORT("1607", HttpStatus.BAD_REQUEST, "지원하지 않는 정렬 방식입니다."),
+	AUCTION_INVALID_CURSOR("1608", HttpStatus.BAD_REQUEST, "커서 형식이 올바르지 않습니다."),
+	AUCTION_INVALID_SEARCH_KEYWORD("1609", HttpStatus.BAD_REQUEST, "검색어는 2자 이상 20자 이하로 입력해주세요"),
+	AUCTION_DETAIL_NOT_FOUND("1610", HttpStatus.NOT_FOUND, "해당 경매를 찾을 수 없습니다."),
 
 	//notification
-	NOTIFICATION_NOT_FOUND("1708", HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다.");
+	NOTIFICATION_NOT_FOUND("1708", HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
 
-
+	//guide
+	GUIDE_NOT_FOUND("1800", HttpStatus.NOT_FOUND, "가이드를 찾을 수 없습니다."),
+	GUIDE_INVALID_CONTENT("1801", HttpStatus.BAD_REQUEST, "가이드 내용이 입력되지 않았습니다."),
+	GUIDE_UNAUTHORIZED("1802", HttpStatus.UNAUTHORIZED, "가이드 수정 권한이 없습니다.");
 
 	private final String code;
 	private final HttpStatus status;

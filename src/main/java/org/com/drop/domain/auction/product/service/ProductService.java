@@ -188,15 +188,25 @@ public class ProductService {
 		}
 
 		BookMark bookmark = new BookMark(actor, product);
-		return bookmarkRepository.save(bookmark);
+		bookmarkRepository.save(bookmark);
+
+		product.increaseBookmarkCount();
+		productRepository.save(product);
+
+		return bookmark;
 	}
 
 	@Transactional
 	public void deleteBookmark(Long productId, User actor) {
 		Product product = findProductById(productId);
 		BookMark bookMark = findBookmarkById(product, actor);
+
 		bookmarkRepository.delete(bookMark);
+
+		product.decreaseBookmarkCount();
+		productRepository.save(product);
 	}
+
 
 	public BookMark findBookmarkById(Product product, User actor) {
 		return bookmarkRepository.findByProductAndUser(product, actor)

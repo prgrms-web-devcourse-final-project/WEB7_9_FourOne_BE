@@ -11,6 +11,7 @@ import org.com.drop.domain.auction.product.entity.ProductImage;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnAAnswerRequest;
 import org.com.drop.domain.auction.product.qna.dto.ProductQnACreateRequest;
 import org.com.drop.domain.auction.product.qna.service.QnAService;
+import org.com.drop.domain.auction.product.repository.ProductImageRepository;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.notification.service.NotificationService;
 import org.com.drop.domain.user.entity.User;
@@ -32,6 +33,7 @@ public class InitData {
 
 	private final UserRepository userRepository;
 	private final ProductRepository productRepository;
+	private final ProductImageRepository productImageRepository;
 	private final AuctionService auctionService;
 	private final QnAService qnAService;
 	private final GuideRepository  guideRepository;
@@ -84,25 +86,30 @@ public class InitData {
 			Product.SubCategory.ACC
 		);
 		productRepository.save(product1);
-		ProductImage productImage1 = new ProductImage(product1, image);
+		productImageRepository.save(
+			new ProductImage(product1, image)
+		);
 
 		Product product2 = new Product(
 			user1,
-			"상품1",
-			"상품설명1",
+			"상품2",
+			"상품설명2",
 			Product.Category.STARGOODS,
 			Product.SubCategory.ACC
 		);
 		productRepository.save(product2);
 		ProductImage productImage2 = new ProductImage(product2, image);
+		productImageRepository.save(
+			new ProductImage(product2, image)
+		);
 
 		AuctionCreateRequest auctionCreateRequest1 = new AuctionCreateRequest(
 			product1.getId(),
 			1000,
 			100000,
 			10,
-			LocalDateTime.now().plusSeconds(5),
-			LocalDateTime.now().plusSeconds(10)
+			LocalDateTime.now().minusMinutes(5),
+			LocalDateTime.now().plusMinutes(10)
 		);
 		auctionService.addAuction(auctionCreateRequest1, user1);
 

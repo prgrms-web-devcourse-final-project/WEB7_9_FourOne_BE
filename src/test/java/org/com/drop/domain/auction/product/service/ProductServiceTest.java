@@ -12,7 +12,6 @@ import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,7 +27,6 @@ import jakarta.transaction.Transactional;
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-@Disabled
 public class ProductServiceTest extends BaseIntegrationTest {
 
 	@Nested
@@ -92,9 +90,9 @@ public class ProductServiceTest extends BaseIntegrationTest {
 			@DisplayName("상품 삭제 성공")
 			@Transactional
 			void t3() {
-				productService.deleteProduct(1L, testUser);
-				assertThat(productRepository.findById(1L).get().getDeletedAt()).isNotNull();
-				assertThat(productImageRepository.findAllByProductId(1L).size()).isEqualTo(0);
+				productService.deleteProduct(2L, testUser);
+				assertThat(productRepository.findById(2L).get().getDeletedAt()).isNotNull();
+				assertThat(productImageRepository.findAllByProductId(2L).size()).isEqualTo(0);
 			}
 		}
 	}
@@ -166,7 +164,7 @@ public class ProductServiceTest extends BaseIntegrationTest {
 					images
 				);
 
-				Long productId = 1L;
+				Long productId = 2L;
 				Cache cache = cacheManager.getCache("product:detail");
 
 				productService.findProductWithImgById(productId);
@@ -181,7 +179,7 @@ public class ProductServiceTest extends BaseIntegrationTest {
 			void t5_2() {
 				User actor = userRepository.findById(1L).get();
 
-				Long productId = 1L;
+				Long productId = 2L;
 				Cache cache = cacheManager.getCache("product:detail");
 
 				productService.findProductWithImgById(productId);

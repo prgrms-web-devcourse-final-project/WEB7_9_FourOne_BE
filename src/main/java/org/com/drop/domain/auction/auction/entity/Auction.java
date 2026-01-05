@@ -65,6 +65,10 @@ public class Auction {
 	@Column(nullable = false)
 	private AuctionStatus status;
 
+	@Column(nullable = false)
+	@Builder.Default
+	private Integer bidCount = 0;
+
 	private LocalDateTime deletedAt;
 
 	public enum AuctionStatus { SCHEDULED, LIVE, ENDED, CANCELLED }
@@ -85,6 +89,11 @@ public class Auction {
 		this.startAt = startAt;
 		this.endAt = endAt;
 		this.status = status;
+		this.bidCount = 0;
+	}
+
+	public void increaseBidCount() {
+		this.bidCount++;
 	}
 
 	public void end(LocalDateTime now) {
@@ -94,6 +103,14 @@ public class Auction {
 		this.status = AuctionStatus.ENDED;
 		this.endAt = now;
 	}
+
+	public void expire() {
+		if (this.status != AuctionStatus.LIVE) {
+			return;
+		}
+		this.status = AuctionStatus.ENDED;
+	}
+
 
 	public void start(LocalDateTime now) {
 		if (this.status == AuctionStatus.SCHEDULED) {
