@@ -111,7 +111,12 @@ public enum ErrorCode {
 	AUCTION_DETAIL_NOT_FOUND("1610", HttpStatus.NOT_FOUND, "해당 경매를 찾을 수 없습니다."),
 
 	//notification
-	NOTIFICATION_NOT_FOUND("1708", HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다.");
+	NOTIFICATION_NOT_FOUND("1708", HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
+
+	//guide
+	GUIDE_NOT_FOUND("1800", HttpStatus.NOT_FOUND, "가이드를 찾을 수 없습니다."),
+	GUIDE_INVALID_CONTENT("1801", HttpStatus.BAD_REQUEST, "가이드 내용이 입력되지 않았습니다."),
+	GUIDE_UNAUTHORIZED("1802", HttpStatus.UNAUTHORIZED, "가이드 수정 권한이 없습니다.");
 
 	private final String code;
 	private final HttpStatus status;
