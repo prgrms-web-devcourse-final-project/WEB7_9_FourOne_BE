@@ -132,8 +132,8 @@ public class PaymentServiceImpl implements PaymentService {
 		return payment;
 	}
 
-	public Payment handleTossFailure(Long paymentId, String billingKey, Throwable t) {
-		log.error("[CIRCUIT-BREAKER] 토스 API 호출 차단됨. 원인: {}", t.getMessage());
+	public Payment handleTossFailure(Long paymentId, String billingKey, Throwable throwable) {
+		log.error("[CIRCUIT-BREAKER] 토스 API 호출 차단됨. 원인: {}", throwable.getMessage());
 		throw ErrorCode.PAY_CIRCUIT_OPEN
 			.serviceException("paymentId=%d", paymentId);
 	}
