@@ -18,6 +18,9 @@ spring:
         console:
             enabled: true
 
+    cache:
+        type: none
+
 # --- Toss Payments (TEST) ---
 toss:
     payments:
