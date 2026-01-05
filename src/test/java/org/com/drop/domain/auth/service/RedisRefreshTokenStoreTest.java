@@ -29,6 +29,10 @@ public class RedisRefreshTokenStoreTest {
 	private static final String TOKEN = "refresh-token";
 	private static final long TTL = 3600L;
 	private static final String KEY = "refresh:" + EMAIL;
+
+	private static final String STORED_TOKEN = "stored-token";
+	private static final String INPUT_TOKEN = "stored-token";
+	private static final String WRONG_TOKEN = "wrong-token";
 	@Mock
 	StringRedisTemplate redisTemplate;
 	@Mock
@@ -80,9 +84,6 @@ public class RedisRefreshTokenStoreTest {
 
 	@Nested
 	class ExistsTest {
-		private static final String STORED_TOKEN = "stored-token";
-		private static final String INPUT_TOKEN = "stored-token";
-		private static final String WRONG_TOKEN = "wrong-token";
 
 		@BeforeEach
 		void setUp() {
