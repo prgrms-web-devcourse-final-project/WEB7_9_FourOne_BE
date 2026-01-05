@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDateTime;
 
+import org.com.drop.BaseIntegrationTest;
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.entity.Auction.AuctionStatus;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
@@ -46,7 +47,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 	"spring.cloud.aws.s3.enabled=false"         // 실제 S3 빈 생성 방지
 })
 @DisplayName("경매 컨트롤러 통합 테스트")
-class AuctionControllerIntegrationTest {
+class AuctionControllerIntegrationTest extends BaseIntegrationTest {
 
 	@Autowired MockMvc mockMvc;
 	@Autowired ObjectMapper objectMapper;

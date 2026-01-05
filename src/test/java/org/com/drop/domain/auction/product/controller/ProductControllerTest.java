@@ -21,6 +21,7 @@ import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.controller.UserController;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
+import org.com.drop.global.aws.AmazonS3Client;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -43,6 +45,9 @@ import jakarta.transaction.Transactional;
 @AutoConfigureMockMvc
 @Transactional
 public class ProductControllerTest extends BaseIntegrationTest {
+
+	@MockitoBean
+	AmazonS3Client amazonS3Client;
 
 	private final Long productId = 2L;
 	private final Long wrongProductId = Long.MAX_VALUE;

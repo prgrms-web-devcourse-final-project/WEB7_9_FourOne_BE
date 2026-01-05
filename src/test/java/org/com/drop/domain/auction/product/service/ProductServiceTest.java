@@ -11,6 +11,7 @@ import org.com.drop.domain.auction.product.repository.ProductImageRepository;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
+import org.com.drop.global.aws.AmazonS3Client;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -21,6 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import jakarta.transaction.Transactional;
 
@@ -28,6 +30,9 @@ import jakarta.transaction.Transactional;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 public class ProductServiceTest extends BaseIntegrationTest {
+
+	@MockitoBean
+	AmazonS3Client amazonS3Client;
 
 	@Nested
 	class TransactionalTests {
