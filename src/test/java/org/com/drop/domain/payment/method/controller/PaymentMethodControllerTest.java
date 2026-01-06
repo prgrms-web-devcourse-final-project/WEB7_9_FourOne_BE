@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 
+import org.com.drop.RedissonIntegrationTest;
 import org.com.drop.domain.payment.method.dto.RegisterCardRequest;
 import org.com.drop.domain.payment.method.entity.PaymentMethod;
 import org.com.drop.domain.payment.method.repository.PaymentMethodRepository;
@@ -34,7 +35,7 @@ import jakarta.transaction.Transactional;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
-class PaymentMethodControllerTest {
+class PaymentMethodControllerTest extends RedissonIntegrationTest {
 
 	@Autowired
 	private MockMvc mockMvc;

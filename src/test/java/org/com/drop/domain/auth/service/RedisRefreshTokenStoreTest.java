@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import java.util.concurrent.TimeUnit;
 
+import org.com.drop.BaseIntegrationTest;
 import org.com.drop.domain.auth.store.RedisRefreshTokenStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,7 +25,7 @@ import jakarta.transaction.Transactional;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
-public class RedisRefreshTokenStoreTest {
+public class RedisRefreshTokenStoreTest extends BaseIntegrationTest {
 	private static final String EMAIL = "test@example.com";
 	private static final String TOKEN = "refresh-token";
 	private static final long TTL = 3600L;
