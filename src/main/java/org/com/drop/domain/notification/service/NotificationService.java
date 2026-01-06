@@ -1,5 +1,6 @@
 package org.com.drop.domain.notification.service;
 
+import org.com.drop.domain.notification.dto.NotificationResponse;
 import org.com.drop.domain.notification.entity.Notification;
 import org.com.drop.domain.notification.repository.NotificationEmitterRepository;
 import org.com.drop.domain.notification.repository.NotificationRepository;
@@ -52,9 +53,11 @@ public class NotificationService {
 	}
 
 	@Transactional
-	public Notification addNotification(User actor, String msg) {
+	public void addNotification(User actor, String msg) {
 		Notification notification = new Notification(actor, msg);
-		return notificationRepository.save(notification);
+		notificationRepository.save(notification);
+		NotificationResponse response = new NotificationResponse(notification);
+		sendTo(actor.getId(), response);
 	}
 
 	public Notification findById( User  actor, Long notificationId) {
