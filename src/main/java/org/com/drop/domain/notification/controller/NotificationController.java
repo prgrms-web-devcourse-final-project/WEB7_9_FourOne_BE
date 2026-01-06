@@ -8,6 +8,7 @@ import org.com.drop.domain.notification.service.NotificationService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.rsdata.RsData;
 import org.com.drop.global.security.auth.LoginUser;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -17,7 +18,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -38,6 +38,7 @@ public class NotificationController {
 	@GetMapping
 	public RsData<List<NotificationResponse>> getNotification(
 		@LoginUser User actor,
+		@ParameterObject
 		@PageableDefault(size = 20, sort = "sendAt", direction = Sort.Direction.DESC)
 		Pageable pageable
 	) {
