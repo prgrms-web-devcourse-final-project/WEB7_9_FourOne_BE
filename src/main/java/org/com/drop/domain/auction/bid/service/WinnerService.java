@@ -7,6 +7,7 @@ import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
 import org.com.drop.domain.auction.bid.entity.Bid;
 import org.com.drop.domain.auction.bid.repository.BidRepository;
+import org.com.drop.domain.notification.service.NotificationService;
 import org.com.drop.domain.winner.domain.Winner;
 import org.com.drop.domain.winner.repository.WinnerRepository;
 import org.com.drop.global.exception.ErrorCode;
@@ -22,6 +23,7 @@ public class WinnerService {
 	private final AuctionRepository auctionRepository;
 	private final BidRepository bidRepository;
 	private final WinnerRepository winnerRepository;
+	private final NotificationService notificationService;
 
 	@Transactional
 	public void finalizeAuction(Long auctionId) {
@@ -43,15 +45,17 @@ public class WinnerService {
 		Optional<Bid> topBidOpt = bidRepository.findTopByAuction_IdOrderByBidAmountDesc(auctionId);
 
 		if (topBidOpt.isEmpty()) {
-			auction.end(now);
+			auction.expire();
+			notificationService.addNotification(auction.getProduct().getSeller(), "경매가 유찰되었습니다.");
 			return;
 		}
 
-		Bid topBid = topBidOpt.get();
 
 		if (winnerRepository.existsByAuction_Id(auctionId)) {
 			return;
 		}
+
+		Bid topBid = topBidOpt.get();
 
 		Winner winner = Winner.builder()
 			.auction(auction)
@@ -62,8 +66,10 @@ public class WinnerService {
 			.build();
 
 		winnerRepository.save(winner);
+		auction.expire();
 
-		auction.end(now);
+		notificationService.addNotification(topBid.getBidder(), "경매가 낙찰되었습니다.");
+		notificationService.addNotification(auction.getProduct().getSeller(), "경매가 낙찰되었습니다.");
 
 	}
 }

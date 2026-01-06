@@ -17,6 +17,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -49,6 +50,9 @@ public class Auction {
 	private Integer buyNowPrice;
 
 	@Column(nullable = false)
+	private Integer currentPrice;
+
+	@Column(nullable = false)
 	private Integer minBidStep;
 
 	@Column(nullable = false)
@@ -61,19 +65,13 @@ public class Auction {
 	@Column(nullable = false)
 	private AuctionStatus status;
 
+	@Column(nullable = false)
+	@Builder.Default
+	private Integer bidCount = 0;
+
 	private LocalDateTime deletedAt;
 
 	public enum AuctionStatus { SCHEDULED, LIVE, ENDED, CANCELLED }
-
-	public void end(LocalDateTime now) {
-		if (this.status != AuctionStatus.LIVE) {
-			throw new ServiceException(ErrorCode.AUCTION_NOT_LIVE, "진행 중인 경매가 아닙니다.");
-		}
-		this.status = AuctionStatus.ENDED;
-		this.endAt = now;
-	}
-
-
 
 	public Auction(
 		Product product,
@@ -86,9 +84,49 @@ public class Auction {
 		this.product = product;
 		this.startPrice = startPrice;
 		this.buyNowPrice = buyNowPrice;
+		this.currentPrice = startPrice;
 		this.minBidStep = minBidStep;
 		this.startAt = startAt;
 		this.endAt = endAt;
 		this.status = status;
+		this.bidCount = 0;
+	}
+
+	public void increaseBidCount() {
+		this.bidCount++;
+	}
+
+	public void end(LocalDateTime now) {
+		if (this.status != AuctionStatus.LIVE) {
+			throw new ServiceException(ErrorCode.AUCTION_NOT_LIVE, "진행 중인 경매가 아닙니다.");
+		}
+		this.status = AuctionStatus.ENDED;
+		this.endAt = now;
+	}
+
+	public void expire() {
+		if (this.status != AuctionStatus.LIVE) {
+			return;
+		}
+		this.status = AuctionStatus.ENDED;
+	}
+
+
+	public void start(LocalDateTime now) {
+		if (this.status == AuctionStatus.SCHEDULED) {
+			this.status = AuctionStatus.LIVE;
+		}
+	}
+
+	public void updateCurrentPrice(Long bidAmount) {
+		this.currentPrice = bidAmount.intValue();
+	}
+
+	@PrePersist
+	public void ensureCurrentPrice() {
+		// currentPrice가 비어있다면, startPrice로 강제 세팅
+		if (this.currentPrice == null) {
+			this.currentPrice = this.startPrice;
+		}
 	}
 }

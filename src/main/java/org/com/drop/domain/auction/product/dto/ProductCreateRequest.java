@@ -10,21 +10,21 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record ProductCreateRequest(
-	@NotBlank
+	@NotBlank(message = "PRODUCT_INVALID_PRODUCT_NAME")
 	@Size(max = 100)
 	String name,
 
-	@NotBlank
+	@NotBlank(message = "PRODUCT_INVALID_PRODUCT_DESCRIPTION")
 	@Size(max = 1000)
 	String description,
 
-	@NotNull
+	@NotNull(message = "PRODUCT_INVALID_PRODUCT_CATEGORY")
 	Product.Category category,
 
-	@NotNull
+	@NotNull(message = "PRODUCT_INVALID_PRODUCT_SUB_CATEGORY")
 	Product.SubCategory subCategory,
 
-	@NotEmpty
+	@NotEmpty(message = "PRODUCT_INVALID_PRODUCT_IMAGE")
 	@Size(max = 10)
 	List<@NotBlank String> imagesFiles
 ) {

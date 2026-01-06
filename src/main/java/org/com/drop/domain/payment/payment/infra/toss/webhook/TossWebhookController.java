@@ -16,40 +16,27 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/webhooks/toss")
 @RequiredArgsConstructor
 public class TossWebhookController {
-
 	private final PaymentService paymentService;
 
 	@PostMapping
-	public RsData<Void> handle(
-		@RequestBody TossWebhookRequest request
-	) {
-
+	public RsData<Void> handle(@RequestBody TossWebhookRequest request) {
 		log.info("[TOSS WEBHOOK] received eventType={}", request.eventType());
-
 		if (!"PAYMENT_STATUS_CHANGED".equals(request.eventType())) {
 			log.info("[TOSS WEBHOOK] ignored eventType={}", request.eventType());
 			return new RsData<>(null);
 		}
-
 		var data = request.data();
 		if (!"DONE".equalsIgnoreCase(data.status())) {
 			log.info("[TOSS WEBHOOK] payment not done. status={}", data.status());
 			return new RsData<>(null);
 		}
-
 		try {
-			paymentService.confirmPaymentByWebhook(
-				data.paymentKey(),
-				extractWinnersId(data.orderId()),
-				data.totalAmount()
-			);
-
+			paymentService.confirmPaymentByWebhook(data.paymentKey(), extractWinnersId(data.orderId()),
+				data.totalAmount());
 			log.info("[TOSS WEBHOOK] payment approved. orderId={}", data.orderId());
-
 		} catch (Exception e) {
 			log.error("[TOSS WEBHOOK] error processing webhook", e);
 		}
-
 		return new RsData<>(null);
 	}
 

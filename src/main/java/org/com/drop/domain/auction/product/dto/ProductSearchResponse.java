@@ -1,5 +1,6 @@
 package org.com.drop.domain.auction.product.dto;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,7 +17,7 @@ public record ProductSearchResponse(
 	LocalDateTime createdAt,
 	LocalDateTime updatedAt,
 	int bookmarkCount
-) {
+) implements Serializable {
 	public ProductSearchResponse(Product product, List<String> imgs) {
 		this(
 			product.getId(),

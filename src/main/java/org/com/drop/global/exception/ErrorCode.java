@@ -16,6 +16,14 @@ public enum ErrorCode {
 	INVALID_AUTHENTICATION("905", HttpStatus.BAD_REQUEST, "잘못된 인증입니다."),
 	INTERNAL_SERVER_ERROR("906", HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요."),
 	VALIDATION_ERROR("907", HttpStatus.BAD_REQUEST, "요청 값이 올바르지 않습니다."),
+	INVALID_IMAGE_SIZE("908", HttpStatus.BAD_REQUEST, "파일 크기는 10MB를 초과할 수 없습니다."),
+	INVALID_IMAGE_TYPE("909", HttpStatus.BAD_REQUEST, "이미지 파일만 업로드 가능합니다."),
+	INVALID_IMAGE_UPLOAD("910", HttpStatus.BAD_REQUEST, "올바르지 않은 이미지가 업로드 되어 삭제 되었습니다."),
+	INVALID_IMAGE_DETELE("911", HttpStatus.BAD_REQUEST, "잘못된 이미지 삭제에 실패했습니다."),
+	INVALID_IMAGE("912", HttpStatus.BAD_REQUEST, "올바르지 않은 이미지 입니다."),
+	INVALID_IMAGE_PATH("913", HttpStatus.BAD_REQUEST, "올바르지 않은 이미지 경로 입니다."),
+	SYSTEM_ERROR("914", HttpStatus.INTERNAL_SERVER_ERROR, "시스템 오류로 로그인이 불가능합니다."),
+
 
 	//auth
 	AUTH_MISSING_EMAIL("1000", HttpStatus.BAD_REQUEST, "이메일은 필수 입력 항목입니다."),
@@ -37,6 +45,7 @@ public enum ErrorCode {
 	AUTH_ACCESS_DENIED("1016", HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
 	AUTH_PASSWORD_MISMATCH("1017", HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다."),
 	AUTH_NOT_VERIFIED("1018", HttpStatus.FORBIDDEN, "이메일 인증이 완료되지 않았습니다. 인증을 먼저 진행해주세요."),
+	AUTH_USER_DELETED("1019", HttpStatus.FORBIDDEN, "이미 탈퇴된 회원입니다."),
 
 	//users
 	USER_NOT_FOUND("1100", HttpStatus.NOT_FOUND, "해당 사용자를 찾을 수 없습니다."),
@@ -53,6 +62,11 @@ public enum ErrorCode {
 	USER_HAS_ACTIVE_AUCTIONS("1111", HttpStatus.BAD_REQUEST, "현재 진행 중인 경매 또는 미완료된 거래가 있어 탈퇴할 수 없습니다."),
 	USER_INVALID_STATUS_PARAMUSER_HAS_ACTIVE_AUCTIONS("1112", HttpStatus.BAD_REQUEST, "status 값이 enum에 없습니다."),
 	USER_PAGE_OUT_OF_RANGE("1113", HttpStatus.BAD_REQUEST, "요청한 page가 totalPages를 초과합니다."),
+	USER_PAYMENT_METHOD_ALREADY_EXISTS("1114", HttpStatus.CONFLICT, "이미 등록된 카드입니다."),
+	USER_PAYMENT_METHOD_INVALID_BILLING_KEY("1115", HttpStatus.BAD_REQUEST, "잘못된 billingKey 입니다."),
+	USER_PAYMENT_METHOD_INVALID_CARD_COMPANY("1116", HttpStatus.BAD_REQUEST, "잘못된 cardCompany 입니다."),
+	USER_PAYMENT_METHOD_INVALID_CARD_NUMBER_MASKED("1117", HttpStatus.BAD_REQUEST, "잘못된 cardNumberMasked 입니다."),
+	USER_PAYMENT_METHOD_INVALID_CARD_NAME("1118", HttpStatus.BAD_REQUEST, "잘못된 cardName 입니다."),
 
 	//products
 	PRODUCT_NOT_FOUND("1200", HttpStatus.NOT_FOUND, "요청하신 상품 ID를 찾을 수 없습니다."),
@@ -68,6 +82,8 @@ public enum ErrorCode {
 	PRODUCT_QUESTION_NOT_FOUND("1210", HttpStatus.NOT_FOUND, "질문을 찾을 수 없습니다."),
 	PRODUCT_ANSWER_NOT_FOUND("1211", HttpStatus.NOT_FOUND, "답변을 찾을 수 없습니다."),
 	PRODUCT_ALREADY_ON_AUCTION("1212", HttpStatus.CONFLICT, "이미 경매가 시작된 상품입니다."),
+	PRODUCT_INVALID_STATUS("1213", HttpStatus.BAD_REQUEST, "유효하지 않은 상품 상태입니다"),
+
 
 	//payments
 	PAY_ALREADY_PAID("1300", HttpStatus.CONFLICT, "이미 결제한 상품입니다."),
@@ -80,6 +96,13 @@ public enum ErrorCode {
 	PAY_ALREADY_PROCESSED("1307", HttpStatus.CONFLICT, "이미 처리된 결제 입니다."),
 	PAY_ALREADY_CANCELED_PAYMENT("1308", HttpStatus.CONFLICT, "이미 취소된 결제입니다."),
 	PAY_NOT_FOUND_METHOD("1309", HttpStatus.NOT_FOUND, "지원되지 않는 결제 수단입니다."),
+	PAY_ALREADY_IN_PROGRESS("1310", HttpStatus.CONFLICT, "이미 결제가 진행 중입니다. 잠시 후 다시 시도해주세요."),
+	PAY_PROCESSING_INTERRUPTED("1311", HttpStatus.INTERNAL_SERVER_ERROR, "결제 처리 중 시스템에 의해 중단되었습니다."),
+	PAY_PROCESSING_ERROR("1312", HttpStatus.INTERNAL_SERVER_ERROR, "결제 처리 중 오류가 발생했습니다."),
+	PAY_CIRCUIT_OPEN("1313", HttpStatus.SERVICE_UNAVAILABLE, "결제 서비스가 일시적으로 중단되었습니다."),
+	PAY_WINNER_NOT_FOUND("1314", HttpStatus.NOT_FOUND, "결제 대상 정보를 찾을 수 없습니다."),
+	PAY_AMOUNT_MISMATCH("1315", HttpStatus.BAD_REQUEST, "결제 금액이 일치하지 않습니다."),
+	PAY_WEBHOOK_LOCK_FAILED("1316", HttpStatus.CONFLICT, "결제 처리 중입니다. 잠시 후 다시 시도해주세요."),
 
 	//purchases
 	PURCHASE_INVALID_STATUS("1400", HttpStatus.CONFLICT, "구매 확정이 불가능한 상태입니다.(현재 상태: READY)"),
@@ -91,12 +114,23 @@ public enum ErrorCode {
 	//auctions
 	AUCTION_NOT_FOUND("1600", HttpStatus.NOT_FOUND, "요청하신 상품 ID를 찾을 수 없습니다."),
 	AUCTION_BID_AMOUNT_TOO_LOW("1601", HttpStatus.BAD_REQUEST, "입찰 금액이 현재 최고가보다 낮거나 최소 입찰 단위를 충족하지 못했습니다."),
-	AUCTION_ALREADY_ENDED("1603", HttpStatus.CONFLICT, "이미 경매가 종료되었거나, 즉시 구매가 완료되었습니다."),
-	AUCTION_INVALID_CATEGORY("1604", HttpStatus.BAD_REQUEST, "유효하지 않은 카테고리입니다."),
-	AUCTION_NOT_LIVE("1606", HttpStatus.BAD_REQUEST, "진행 중인 경매가 아닙니다."),
-	AUCTION_BIDDER_CANNOT_BE_OWNER("1607", HttpStatus.BAD_REQUEST, "경매 상품의 판매자는 입찰할 수 없습니다."),
-	AUCTION_BUY_NOW_NOT_AVAILABLE("1608", HttpStatus.BAD_REQUEST, "즉시 구매가 불가능한 상품입니다.");
+	AUCTION_ALREADY_ENDED("1602", HttpStatus.CONFLICT, "이미 경매가 종료되었거나, 즉시 구매가 완료되었습니다."),
+	AUCTION_INVALID_CATEGORY("1603", HttpStatus.BAD_REQUEST, "유효하지 않은 카테고리입니다."),
+	AUCTION_NOT_LIVE("1604", HttpStatus.BAD_REQUEST, "진행 중인 경매가 아닙니다."),
+	AUCTION_BIDDER_CANNOT_BE_OWNER("1605", HttpStatus.BAD_REQUEST, "경매 상품의 판매자는 입찰할 수 없습니다."),
+	AUCTION_BUY_NOW_NOT_AVAILABLE("1606", HttpStatus.BAD_REQUEST, "즉시 구매가 불가능한 상품입니다."),
+	AUCTION_INVALID_SORT("1607", HttpStatus.BAD_REQUEST, "지원하지 않는 정렬 방식입니다."),
+	AUCTION_INVALID_CURSOR("1608", HttpStatus.BAD_REQUEST, "커서 형식이 올바르지 않습니다."),
+	AUCTION_INVALID_SEARCH_KEYWORD("1609", HttpStatus.BAD_REQUEST, "검색어는 2자 이상 20자 이하로 입력해주세요"),
+	AUCTION_DETAIL_NOT_FOUND("1610", HttpStatus.NOT_FOUND, "해당 경매를 찾을 수 없습니다."),
 
+	//notification
+	NOTIFICATION_NOT_FOUND("1708", HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
+
+	//guide
+	GUIDE_NOT_FOUND("1800", HttpStatus.NOT_FOUND, "가이드를 찾을 수 없습니다."),
+	GUIDE_INVALID_CONTENT("1801", HttpStatus.BAD_REQUEST, "가이드 내용이 입력되지 않았습니다."),
+	GUIDE_UNAUTHORIZED("1802", HttpStatus.UNAUTHORIZED, "가이드 수정 권한이 없습니다.");
 
 	private final String code;
 	private final HttpStatus status;

@@ -68,6 +68,10 @@ spring:
                         required: true
                     connectiontimeout: 5000
                     timeout: 5000
+
+    cache:
+      redis:
+        time-to-live: 5m
 # --- Jwt ---
 
 jwt:
@@ -75,6 +79,30 @@ jwt:
     access-token-expire: 1200
     refresh-token-expire: 604800
     issuer: "DROP"
+
+# --- Resilience4j ---
+resilience4j:
+    circuitbreaker:
+        configs:
+            default:
+                slidingWindowSize: 10
+                failureRateThreshold: 50
+                waitDurationInOpenState: 10000
+                permittedNumberOfCallsInHalfOpenState: 5
+                slowCallDurationThreshold: 3000
+        instances:
+            tossPayment:
+                baseConfig: default
+
+            emailService:
+                baseConfig: default
+                slowCallDurationThreshold: 5000
+                waitDurationInOpenState: 20000
+
+            redisService:
+                baseConfig: default
+                slowCallDurationThreshold: 500
+                waitDurationInOpenState: 5000
 
 # --- Logging ---
 logging:
@@ -87,3 +115,9 @@ logging:
         org.springframework.security: DEBUG
         org.springframework.security.oauth2: TRACE
         org.springframework.web: INFO
+
+# ---health check에서 메일 제외 ---
+management:
+  health:
+    mail:
+      enabled: false

@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+
 @ExtendWith(MockitoExtension.class)
 class SettlementReleaseServiceImplTest {
 
@@ -48,6 +49,3 @@ class SettlementReleaseServiceImplTest {
 		// save()는 더 이상 호출되지 않음 (Dirty Checking)
 	}
 }
-
-
-

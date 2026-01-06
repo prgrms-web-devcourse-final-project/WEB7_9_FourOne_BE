@@ -4,7 +4,9 @@ import java.time.LocalDateTime;
 
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
+import org.com.drop.domain.auction.bid.bidevent.BidSuccessEvent;
 import org.com.drop.domain.auction.bid.dto.request.BidRequestDto;
+import org.com.drop.domain.auction.bid.dto.response.BidHistoryResponse;
 import org.com.drop.domain.auction.bid.dto.response.BidResponseDto;
 import org.com.drop.domain.auction.bid.entity.Bid;
 import org.com.drop.domain.auction.bid.repository.BidRepository;
@@ -12,6 +14,9 @@ import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,15 +29,16 @@ public class BidService {
 	private final BidRepository bidRepository;
 	private final UserRepository userRepository;
 	private final AuctionRepository auctionRepository;
+	private final ApplicationEventPublisher eventPublisher;
 
 	@Transactional
-	public BidResponseDto placeBid(Long auctionId, String userEmail, BidRequestDto requestDto) {
+	public BidResponseDto placeBid(Long auctionId, Long userId, BidRequestDto requestDto) {
 
-		User bidder = userRepository.findByEmail(userEmail)
-			.orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND, "해당 사용자를 찾을 수 없습니다."));
-
-		Auction auction = auctionRepository.findById(auctionId)
+		Auction auction = auctionRepository.findByIdWithPessimisticLock(auctionId)
 			.orElseThrow(() -> new ServiceException(ErrorCode.AUCTION_NOT_FOUND, "요청하신 상품 ID를 찾을 수 없습니다." ));
+
+		User bidder = userRepository.findById(userId)
+			.orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND, "해당 사용자를 찾을 수 없습니다."));
 
 		Long bidAmount = requestDto.bidAmount();
 		LocalDateTime now = LocalDateTime.now();
@@ -49,11 +55,8 @@ public class BidService {
 			throw new ServiceException(ErrorCode.AUCTION_BIDDER_CANNOT_BE_OWNER, "경매 상품의 판매자는 입찰할 수 없습니다.");
 		}
 
-		Long highest = bidRepository.findTopByAuction_IdOrderByBidAmountDesc(auctionId)
-			.map(Bid::getBidAmount)
-			.orElse(Long.valueOf(auction.getStartPrice()));
-
-		long minRequired = highest + auction.getMinBidStep();
+		long currentHighest = auction.getCurrentPrice();
+		long minRequired = currentHighest + auction.getMinBidStep();
 
 		if (bidAmount < minRequired) {
 			throw new ServiceException(ErrorCode.AUCTION_BID_AMOUNT_TOO_LOW,
@@ -70,13 +73,22 @@ public class BidService {
 		bidRepository.save(bid);
 
 		boolean isHighestBidder = true;
-		Long currentHighestBid = bidAmount;
+
+		auction.updateCurrentPrice(bidAmount);
+
+		eventPublisher.publishEvent(new BidSuccessEvent(auctionId, bidAmount));
 
 		return BidResponseDto.of(
 			auction.getId(),
 			isHighestBidder,
-			currentHighestBid,
+			bidAmount,
 			bid.getCreatedAt()
 		);
+	}
+
+	public Page<BidHistoryResponse> getBidHistory(Long auctionId, Pageable pageable) {
+		Page<Bid> bidsPage = bidRepository.findAllByAuctionId( auctionId, pageable);
+		return bidsPage.map(BidHistoryResponse::from);
+
 	}
 }

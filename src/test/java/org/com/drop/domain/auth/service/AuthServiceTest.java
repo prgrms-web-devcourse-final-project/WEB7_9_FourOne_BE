@@ -6,6 +6,9 @@ import static org.mockito.Mockito.*;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import org.com.drop.domain.auction.auction.entity.Auction;
+import org.com.drop.domain.auction.auction.repository.AuctionRepository;
+import org.com.drop.domain.auction.bid.repository.BidRepository;
 import org.com.drop.domain.auth.dto.GetCurrentUserInfoResponse;
 import org.com.drop.domain.auth.dto.LocalLoginRequest;
 import org.com.drop.domain.auth.dto.LocalLoginResponse;
@@ -65,6 +68,12 @@ class AuthServiceTest {
 
 	@Mock
 	private VerificationCodeStore verificationCodeStore;
+
+	@Mock
+	private AuctionRepository auctionRepository;
+
+	@Mock
+	private BidRepository bidRepository;
 
 	private User mockUser;
 
@@ -194,117 +203,28 @@ class AuthServiceTest {
 		}
 	}
 
-	@Nested
-	@DisplayName("로그인")
-	class LoginTests {
-		private LocalLoginRequest validRequest;
+	@Test
+	@DisplayName("로그아웃 성공: 리프레시 토큰 삭제")
+	void logout_success() {
+		// Given
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		when(authentication.getName()).thenReturn("test@drop.com");
 
-		@BeforeEach
-		void setup() {
-			validRequest = new LocalLoginRequest("test@drop.com", "valid_password");
-		}
+		// When
+		authService.logout();
 
-		@Test
-		@DisplayName("성공: 유효한 인증 정보로 로그인")
-		void login_success() {
-			// Given
-			when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(mockUser));
-			when(passwordEncoder.matches(eq(validRequest.password()), eq(mockUser.getPassword()))).thenReturn(true);
-			when(jwtProvider.createAccessToken(anyString())).thenReturn("mocked.access.token");
-			when(jwtProvider.getAccessTokenValidityInSeconds()).thenReturn(3600L);
-
-			// When
-			LocalLoginResponse response = authService.login(validRequest);
-
-			// Then
-			assertNotNull(response);
-			assertEquals(mockUser.getEmail(), response.email());
-			assertEquals("mocked.access.token", response.accessToken());
-			assertEquals(3600L, response.expiresIn());
-
-			// Verify
-			verify(jwtProvider, times(1)).createAccessToken(mockUser.getEmail());
-			verify(jwtProvider, times(1)).getAccessTokenValidityInSeconds();
-		}
-
-		@Test
-		@DisplayName("실패: 등록되지 않은 이메일")
-		void login_fail_userNotFound() {
-			// Given
-			when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
-
-			// When & Then
-			ServiceException exception = assertThrows(ServiceException.class,
-				() -> authService.login(validRequest)
-			);
-			assertEquals(ErrorCode.AUTH_UNAUTHORIZED, exception.getErrorCode());
-		}
-
-		@Test
-		@DisplayName("실패: 비밀번호 불일치")
-		void login_fail_passwordMismatch() {
-			// Given
-			when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(mockUser));
-			when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
-
-			// When & Then
-			ServiceException exception = assertThrows(ServiceException.class,
-				() -> authService.login(validRequest)
-			);
-			assertEquals(ErrorCode.AUTH_UNAUTHORIZED, exception.getErrorCode());
-
-			// Verify
-			verify(jwtProvider, never()).createAccessToken(anyString());
-		}
+		// Then
+		verify(refreshTokenStore, times(1)).delete("test@drop.com");
 	}
 
-	@Nested
-	@DisplayName("계정 삭제")
-	class DeleteAccountTests {
-		private UserDeleteRequest validRequest;
+	@Test
+	@DisplayName("비동기 토큰 삭제 로직 검증")
+	void deleteRefreshTokenAsync_success() {
+		// When
+		authService.deleteRefreshTokenAsync("test@drop.com");
 
-		@BeforeEach
-		void setup() {
-			validRequest = new UserDeleteRequest("valid_password");
-		}
-
-		@Test
-		@DisplayName("성공: 유효한 정보로 계정 삭제")
-		void deleteAccount_success() {
-			// Given
-			when(passwordEncoder.matches(eq(validRequest.password()), eq(mockUser.getPassword()))).thenReturn(true);
-			when(userRepository.save(any(User.class))).thenReturn(mockUser);
-
-			// When
-			UserDeleteResponse response = authService.deleteAccount(mockUser, validRequest);
-
-			// Then
-			assertNotNull(response);
-			assertNotNull(mockUser.getDeletedAt()); // DeletedAt 필드가 설정되었는지 확인
-
-			// Verify
-			verify(userRepository, times(1)).save(mockUser);
-			verify(refreshTokenStore, times(1)).delete(mockUser.getEmail());
-		}
-
-		@Test
-		@DisplayName("실패: 비밀번호 불일치")
-		void deleteAccount_fail_passwordMismatch() {
-			// Given
-			when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
-
-			// When & Then
-			ServiceException exception = assertThrows(ServiceException.class,
-				() -> authService.deleteAccount(mockUser, validRequest)
-			);
-			assertEquals(ErrorCode.AUTH_PASSWORD_MISMATCH, exception.getErrorCode());
-
-			// Verify
-			verify(userRepository, never()).save(any(User.class));
-			verify(refreshTokenStore, never()).delete(anyString());
-		}
-
-		// Todo: 진행 중인 경매가 있을 경우 실패 테스트
+		// Then
+		verify(refreshTokenStore, times(1)).delete("test@drop.com");
 	}
 
 	@Nested
@@ -474,6 +394,166 @@ class AuthServiceTest {
 			// Verify
 			verify(verificationCodeStore, never()).removeCode(anyString());
 			verify(verificationCodeStore, never()).markAsVerified(anyString());
+		}
+	}
+
+	@Nested
+	@DisplayName("로그인")
+	class LoginTests {
+		private LocalLoginRequest validRequest;
+
+		@BeforeEach
+		void setup() {
+			validRequest = new LocalLoginRequest("test@drop.com", "valid_password");
+		}
+
+		@Test
+		@DisplayName("성공: 유효한 인증 정보로 로그인")
+		void login_success() {
+			// Given
+			when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(mockUser));
+			when(passwordEncoder.matches(eq(validRequest.password()), eq(mockUser.getPassword()))).thenReturn(true);
+			when(jwtProvider.createAccessToken(anyString())).thenReturn("mocked.access.token");
+			when(jwtProvider.getAccessTokenValidityInSeconds()).thenReturn(3600L);
+
+			// When
+			LocalLoginResponse response = authService.login(validRequest);
+
+			// Then
+			assertNotNull(response);
+			assertEquals(mockUser.getEmail(), response.email());
+			assertEquals("mocked.access.token", response.accessToken());
+			assertEquals(3600L, response.expiresIn());
+
+			// Verify
+			verify(jwtProvider, times(1)).createAccessToken(mockUser.getEmail());
+			verify(jwtProvider, times(1)).getAccessTokenValidityInSeconds();
+		}
+
+		@Test
+		@DisplayName("실패: 등록되지 않은 이메일")
+		void login_fail_userNotFound() {
+			// Given
+			when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+
+			// When & Then
+			ServiceException exception = assertThrows(ServiceException.class,
+				() -> authService.login(validRequest)
+			);
+			assertEquals(ErrorCode.AUTH_UNAUTHORIZED, exception.getErrorCode());
+		}
+
+		@Test
+		@DisplayName("실패: 비밀번호 불일치")
+		void login_fail_passwordMismatch() {
+			// Given
+			when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(mockUser));
+			when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+
+			// When & Then
+			ServiceException exception = assertThrows(ServiceException.class,
+				() -> authService.login(validRequest)
+			);
+			assertEquals(ErrorCode.AUTH_UNAUTHORIZED, exception.getErrorCode());
+
+			// Verify
+			verify(jwtProvider, never()).createAccessToken(anyString());
+		}
+
+		@Test
+		@DisplayName("실패: 이미 탈퇴 처리된 회원")
+		void login_fail_alreadyDeleted() {
+			// Given
+			User deletedUser = User.builder()
+				.email("deleted@drop.com")
+				.deletedAt(LocalDateTime.now())
+				.build();
+			when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(deletedUser));
+
+			// When & Then
+			ServiceException exception = assertThrows(ServiceException.class,
+				() -> authService.login(new LocalLoginRequest("deleted@drop.com", "password"))
+			);
+			assertEquals(ErrorCode.AUTH_USER_DELETED, exception.getErrorCode());
+		}
+	}
+
+	@Nested
+	@DisplayName("회원 탈퇴")
+	class DeleteAccountTests {
+		private UserDeleteRequest validRequest;
+
+		@BeforeEach
+		void setup() {
+			validRequest = new UserDeleteRequest("valid_password");
+		}
+
+		@Test
+		@DisplayName("성공: 유효한 정보로 회원 탈퇴")
+		void deleteAccount_success() {
+			// Given
+			when(passwordEncoder.matches(eq(validRequest.password()), eq(mockUser.getPassword()))).thenReturn(true);
+			when(userRepository.save(any(User.class))).thenReturn(mockUser);
+
+			// When
+			UserDeleteResponse response = authService.deleteAccount(mockUser, validRequest);
+
+			// Then
+			assertNotNull(response);
+			assertNotNull(mockUser.getDeletedAt()); // DeletedAt 필드가 설정되었는지 확인
+
+			// Verify
+			verify(userRepository, times(1)).save(mockUser);
+			verify(refreshTokenStore, times(1)).delete(mockUser.getEmail());
+		}
+
+		@Test
+		@DisplayName("실패: 비밀번호 불일치")
+		void deleteAccount_fail_passwordMismatch() {
+			// Given
+			when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+
+			// When & Then
+			ServiceException exception = assertThrows(ServiceException.class,
+				() -> authService.deleteAccount(mockUser, validRequest)
+			);
+			assertEquals(ErrorCode.AUTH_PASSWORD_MISMATCH, exception.getErrorCode());
+
+			// Verify
+			verify(userRepository, never()).save(any(User.class));
+			verify(refreshTokenStore, never()).delete(anyString());
+		}
+
+		@Test
+		@DisplayName("실패: 진행 중인 경매(판매)가 있는 경우")
+		void deleteAccount_fail_hasActiveAuctions() {
+			// Given
+			when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+			when(auctionRepository.existsByProductSellerAndStatus(any(User.class), eq(Auction.AuctionStatus.LIVE)))
+				.thenReturn(true);
+
+			// When & Then
+			ServiceException exception = assertThrows(ServiceException.class,
+				() -> authService.deleteAccount(mockUser, new UserDeleteRequest("password"))
+			);
+			assertEquals(ErrorCode.USER_HAS_ACTIVE_AUCTIONS, exception.getErrorCode());
+		}
+
+		@Test
+		@DisplayName("실패: 참여 중인 입찰이 있는 경우")
+		void deleteAccount_fail_hasActiveBids() {
+			// Given
+			when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+			when(auctionRepository.existsByProductSellerAndStatus(any(User.class), eq(Auction.AuctionStatus.LIVE)))
+				.thenReturn(false);
+			when(bidRepository.existsByBidderAndAuctionStatus(any(User.class), eq(Auction.AuctionStatus.LIVE)))
+				.thenReturn(true);
+
+			// When & Then
+			ServiceException exception = assertThrows(ServiceException.class,
+				() -> authService.deleteAccount(mockUser, new UserDeleteRequest("password"))
+			);
+			assertEquals(ErrorCode.USER_HAS_ACTIVE_AUCTIONS, exception.getErrorCode());
 		}
 	}
 }

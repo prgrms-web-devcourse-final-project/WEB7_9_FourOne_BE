@@ -19,6 +19,8 @@ import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.global.aws.AmazonS3Client;
 import org.com.drop.global.exception.ErrorCode;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,13 +36,12 @@ public class ProductService {
 	private final AuctionRepository auctionRepository;
 	private final BookmarkRepository bookmarkRepository;
 	private final AmazonS3Client amazonS3Client;
-	public void validUser(Product product, User actor) {
-		if (!product.getSeller().getId().equals(actor.getId())) {
+	public void validUser(Long sellerId, User actor) {
+		if (!sellerId.equals(actor.getId())) {
 			throw ErrorCode.USER_INACTIVE_USER
 				.serviceException(
-					"productId=%d, sellerId=%d, actorId=%d",
-					product.getId(),
-					product.getSeller().getId(),
+					"sellerId=%d, actorId=%d",
+					sellerId,
 					actor.getId()
 				);
 		}
@@ -64,6 +65,10 @@ public class ProductService {
 	}
 
 	@Transactional
+	@CacheEvict(
+		value = "product:detail",
+		allEntries = true
+	)
 	public Product addProduct(ProductCreateRequest request, User actor) {
 		Product product = new Product(
 			actor,
@@ -73,11 +78,12 @@ public class ProductService {
 			request.subCategory());
 		productRepository.save(product);
 		addProductImages(product, request.imagesFiles());
+
 		return product;
 	}
 
-	@Transactional
 	public void addProductImages(Product product, List<String> imageUrls) {
+		amazonS3Client.verifyImage(imageUrls);
 
 		List<ProductImage> images = imageUrls.stream()
 			.map(url -> new ProductImage(product, url))
@@ -96,8 +102,6 @@ public class ProductService {
 		productImageRepository.saveAll(images);
 	}
 
-
-
 	public Product findProductById(Long id) {
 		return productRepository.findByIdAndDeletedAtIsNull(id)
 			.orElseThrow(() ->
@@ -106,6 +110,10 @@ public class ProductService {
 			);
 	}
 
+	@Cacheable(
+		value = "product:detail",
+		key = "#id"
+	)
 	public ProductSearchResponse findProductWithImgById(Long id) {
 		Product product = findProductById(id);
 		List<String> images = getSortedImageUrls(productImageRepository.findAllByProductId(product.getId()));
@@ -118,7 +126,6 @@ public class ProductService {
 			.filter(img -> img.getPreImg() == null).findFirst();
 
 		if (start.isEmpty()) {
-			System.out.println("이미지 없다.");
 			return Collections.emptyList();
 		}
 
@@ -126,7 +133,6 @@ public class ProductService {
 		ProductImage current = start.get();
 
 		while (current != null) {
-			System.out.println(current);
 			sortedUrls.add(amazonS3Client.getPresignedUrl(current.getImageUrl()));
 			current = current.getTrailImg();
 
@@ -136,9 +142,13 @@ public class ProductService {
 	}
 
 	@Transactional
+	@CacheEvict(
+		value = "product:detail",
+		allEntries = true
+	)
 	public Product updateProduct(Long productId, ProductCreateRequest request, User actor) {
 		Product product = findProductById(productId);
-		validUser(product, actor);
+		validUser(product.getSeller().getId(), actor);
 		validAuction(product);
 		deleteProductImage(product, actor);
 		addProductImages(product, request.imagesFiles());
@@ -147,19 +157,25 @@ public class ProductService {
 	}
 
 	@Transactional
+	@CacheEvict(
+		value = "product:detail",
+		allEntries = true
+	)
 	public void deleteProduct(Long productId, User actor) {
 		Product product = findProductById(productId);
-		validUser(product, actor);
+		validUser(product.getSeller().getId(), actor);
 		validAuction(product);
 		deleteProductImage(product, actor);
 		product.setDeleted();
 		productRepository.save(product);
 	}
 
-	@Transactional
 	public void deleteProductImage(Product product, User actor) {
 		if (product.getSeller().getId().equals(actor.getId())) {
-			productImageRepository.deleteByProduct(product);
+			List<ProductImage> keys = productImageRepository.deleteByProduct(product);
+			for (ProductImage key : keys) {
+				amazonS3Client.updateS3Tag(key.getImageUrl(), "deleted");
+			}
 		}
 	}
 
@@ -172,15 +188,25 @@ public class ProductService {
 		}
 
 		BookMark bookmark = new BookMark(actor, product);
-		return bookmarkRepository.save(bookmark);
+		bookmarkRepository.save(bookmark);
+
+		product.increaseBookmarkCount();
+		productRepository.save(product);
+
+		return bookmark;
 	}
 
 	@Transactional
 	public void deleteBookmark(Long productId, User actor) {
 		Product product = findProductById(productId);
 		BookMark bookMark = findBookmarkById(product, actor);
+
 		bookmarkRepository.delete(bookMark);
+
+		product.decreaseBookmarkCount();
+		productRepository.save(product);
 	}
+
 
 	public BookMark findBookmarkById(Product product, User actor) {
 		return bookmarkRepository.findByProductAndUser(product, actor)

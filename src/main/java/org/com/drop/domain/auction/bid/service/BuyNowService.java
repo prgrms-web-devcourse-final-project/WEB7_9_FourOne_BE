@@ -4,7 +4,9 @@ import java.time.LocalDateTime;
 
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
+import org.com.drop.domain.auction.bid.dto.request.BuyNowRequestDto;
 import org.com.drop.domain.auction.bid.dto.response.BuyNowResponseDto;
+import org.com.drop.domain.notification.service.NotificationService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.domain.winner.domain.Winner;
@@ -23,9 +25,10 @@ public class BuyNowService {
 	private final AuctionRepository auctionRepository;
 	private final UserRepository userRepository;
 	private final WinnerRepository winnerRepository;
+	private final NotificationService notificationService;
 
 	@Transactional
-	public BuyNowResponseDto buyNow(Long auctionId, Long userId) {
+	public BuyNowResponseDto buyNow(Long auctionId, Long userId, BuyNowRequestDto requestDto) {
 
 		User buyer = userRepository.findById(userId)
 			.orElseThrow(() -> new ServiceException(ErrorCode.USER_NOT_FOUND, "해당 사용자를 찾을 수 없습니다." ));
@@ -34,6 +37,8 @@ public class BuyNowService {
 			.orElseThrow(() -> new ServiceException(ErrorCode.AUCTION_NOT_FOUND, "요청하신 상품 ID를 찾을 수 없습니다."));
 
 		LocalDateTime now = LocalDateTime.now();
+
+		Long buyNowPrice = requestDto.bidAmount();
 
 		if (auction.getStatus() != Auction.AuctionStatus.LIVE) {
 			throw new ServiceException(ErrorCode.AUCTION_NOT_LIVE, "진행 중인 경매가 아닙니다." );
@@ -56,20 +61,19 @@ public class BuyNowService {
 		}
 
 
-
 		Winner winner = Winner.builder()
 			.auction(auction)
 			.sellerId(auction.getProduct().getSeller().getId())
 			.userId(buyer.getId())
-			.finalPrice(Long.valueOf(auction.getBuyNowPrice()))
+			.finalPrice(buyNowPrice)
 			.winTime(now)
 			.build();
 
 		Winner savedWinner = winnerRepository.save(winner);
 		auction.end(now);
 
-		//TODO 결제 도메인
-
+		notificationService.addNotification(buyer, "즉시구매 성공하였습니다.");
+		notificationService.addNotification(auction.getProduct().getSeller(), "경매가 낙찰되었습니다.");
 
 		return new BuyNowResponseDto(
 			auction.getId(),

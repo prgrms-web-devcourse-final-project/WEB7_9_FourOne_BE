@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.com.drop.BaseIntegrationTest;
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
 import org.com.drop.domain.auction.bid.dto.request.BidRequestDto;
@@ -29,7 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-class WinnerServiceTest {
+class WinnerServiceTest extends BaseIntegrationTest {
 
 	@Autowired
 	private BidService bidService;
@@ -291,6 +292,6 @@ class WinnerServiceTest {
 
 	private void placeBid(Auction auction, User bidder, long amount) {
 		BidRequestDto dto = new BidRequestDto(amount); // 네 실제 DTO에 맞게 수정!
-		bidService.placeBid(auction.getId(), bidder.getEmail(), dto);
+		bidService.placeBid(auction.getId(), bidder.getId(), dto);
 	}
 }

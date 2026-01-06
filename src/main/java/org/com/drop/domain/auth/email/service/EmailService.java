@@ -5,6 +5,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ public class EmailService {
 
 	private final JavaMailSender javaMailSender;
 
+	@CircuitBreaker(name = "emailService", fallbackMethod = "fallbackSendEmail")
 	public void sendVerificationEmail(String toEmail, String code) {
 
 		String subject = "[Drop] 회원가입 인증 코드입니다.";
@@ -33,7 +35,7 @@ public class EmailService {
 
 			javaMailSender.send(mimeMessage);
 
-			log.info("인증 코드 이메일 발송 성공: To={}, Code={}", toEmail, code);
+			log.debug("인증 코드 이메일 발송 성공: To={}, Code={}", toEmail, code);
 
 		} catch (MessagingException e) {
 			log.error("인증 코드 이메일 발송 실패: To={}, Error={}", toEmail, e.getMessage(), e);
@@ -42,7 +44,6 @@ public class EmailService {
 				.serviceException("이메일 발송 시스템 오류: To=%s", toEmail);
 		}
 	}
-
 
 	private String buildEmailText(String code) {
 		return "<html><body>"
@@ -53,5 +54,11 @@ public class EmailService {
 			+ "</div>"
 			+ "<p>본 코드는 5분간 유효합니다.</p>"
 			+ "</body></html>";
+	}
+
+	private void fallbackSendEmail(String toEmail, String code, Throwable throwable) {
+		log.error("Email Circuit Open! 이메일 서버 연결 실패: {}", throwable.getMessage());
+		throw ErrorCode.AUTH_EMAIL_SEND_FAILED
+			.serviceException("이메일 서버 점검 중입니다. 잠시 후 다시 시도해주세요.");
 	}
 }
