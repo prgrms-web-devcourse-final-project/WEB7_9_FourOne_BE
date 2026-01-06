@@ -15,6 +15,7 @@ import org.com.drop.domain.auction.list.dto.response.AuctionItemResponse;
 import org.com.drop.domain.auction.list.repository.AuctionListRepository;
 import org.com.drop.domain.auction.list.repository.AuctionListRepositoryCustom;
 import org.com.drop.domain.user.entity.User;
+import org.com.drop.global.aws.AmazonS3Client;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
 import org.springframework.cache.annotation.Cacheable;
@@ -36,9 +37,11 @@ public class AuctionListService {
 
 	private static final int BID_HISTORY_LIMIT = 10;
 	private static final int HOME_LIMIT = 10;
+	private static final String DEFAULT_IMAGE_URL = "https://drop-auction-bucket.s3.amazonaws.com/default/auction-default.jpg";
 
 	private final AuctionListRepository auctionListRepository;
 	private final BidRepository bidRepository;
+	private final AmazonS3Client amazonS3Client;
 
 	/**
 	 * 경매 목록 조회 (커서 기반 무한 스크롤)
@@ -62,7 +65,11 @@ public class AuctionListService {
 		String nextCursor = auctionListRepository.getNextCursor(dtos, request.getSize(), request.getSortType());
 
 		List<AuctionItemResponse> items = resultDtos.stream()
-			.map(dto -> AuctionItemResponse.from(dto, getIsBookmarked(dto.getProductId(), user)))
+			.map(dto -> AuctionItemResponse.from(
+				dto,
+				getIsBookmarked(dto.getProductId(), user),
+				getImageUrlWithPresignedUrl(dto.getImageUrl())
+			))
 			.collect(Collectors.toList());
 
 		return AuctionCursorResponse.of(items, nextCursor, hasNext);
@@ -94,7 +101,12 @@ public class AuctionListService {
 
 		Boolean isBookmarked = getIsBookmarked(dto.getProductId(), user);
 
-		return AuctionDetailResponse.from(dto, isBookmarked, bidHistory);
+		// 이미지 URL들을 Presigned URL로 변환
+		List<String> imageUrls = dto.getImageUrls().stream()
+			.map(this::getImageUrlWithPresignedUrl)
+			.collect(Collectors.toList());
+
+		return AuctionDetailResponse.from(dto, isBookmarked, bidHistory, imageUrls);
 	}
 
 	/**
@@ -149,18 +161,47 @@ public class AuctionListService {
 	public AuctionHomeResponse getHomeAuctions(final User user) {
 		List<AuctionItemResponse> endingSoon =
 			auctionListRepository.findEndingSoonAuctions(HOME_LIMIT).stream()
-				.map(dto -> AuctionItemResponse.from(dto, getIsBookmarked(dto.getProductId(), user)))
+				.map(dto -> AuctionItemResponse.from(
+					dto,
+					getIsBookmarked(dto.getProductId(), user),
+					getImageUrlWithPresignedUrl(dto.getImageUrl())
+				))
 				.collect(Collectors.toList());
 
 		List<AuctionItemResponse> popular =
 			auctionListRepository.findPopularAuctions(HOME_LIMIT).stream()
-				.map(dto -> AuctionItemResponse.from(dto, getIsBookmarked(dto.getProductId(), user)))
+				.map(dto -> AuctionItemResponse.from(
+					dto,
+					getIsBookmarked(dto.getProductId(), user),
+					getImageUrlWithPresignedUrl(dto.getImageUrl())
+				))
 				.collect(Collectors.toList());
 
 		return AuctionHomeResponse.builder()
 			.endingSoon(endingSoon)
 			.popular(popular)
 			.build();
+	}
+
+	/**
+	 * 이미지 URL을 Presigned URL로 변환
+	 */
+	private String getImageUrlWithPresignedUrl(String imageKey) {
+		if (imageKey == null || imageKey.isBlank() || imageKey.equals(DEFAULT_IMAGE_URL)) {
+			return DEFAULT_IMAGE_URL;
+		}
+
+		try {
+			// S3 객체 키인 경우 Presigned URL 생성
+			if (!imageKey.startsWith("http")) {
+				return amazonS3Client.getPresignedUrl(imageKey);
+			}
+			// 이미 URL인 경우 그대로 반환
+			return imageKey;
+		} catch (Exception e) {
+			log.warn("Presigned URL 생성 실패, 기본 이미지로 대체: {}", imageKey, e);
+			return DEFAULT_IMAGE_URL;
+		}
 	}
 
 	/**
