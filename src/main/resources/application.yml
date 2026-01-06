@@ -94,6 +94,16 @@ resilience4j:
             tossPayment:
                 baseConfig: default
 
+            emailService:
+                baseConfig: default
+                slowCallDurationThreshold: 5000
+                waitDurationInOpenState: 20000
+
+            redisService:
+                baseConfig: default
+                slowCallDurationThreshold: 500
+                waitDurationInOpenState: 5000
+
 # --- Logging ---
 logging:
     level:
