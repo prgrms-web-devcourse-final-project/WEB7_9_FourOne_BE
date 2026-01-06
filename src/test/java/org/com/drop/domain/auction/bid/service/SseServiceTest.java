@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.com.drop.BaseIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,7 +25,7 @@ import jakarta.transaction.Transactional;
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
-class SseServiceTest {
+class SseServiceTest extends BaseIntegrationTest {
 	@Autowired
 	private SseService sseService;
 	private Map<Long, List<SseEmitter>> sseEmitters;
