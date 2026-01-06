@@ -64,7 +64,7 @@ class PaymentMethodServiceTest {
 		);
 
 		when(paymentMethodRepository.existsByBillingKey("bill_1234")).thenReturn(false);
-		when(customerKeyGenerator.generate("user:1bill_1234")).thenReturn("customer_key");
+		when(customerKeyGenerator.generate("user:1")).thenReturn("customer_key");
 
 		ArgumentCaptor<PaymentMethod> captor = ArgumentCaptor.forClass(PaymentMethod.class);
 

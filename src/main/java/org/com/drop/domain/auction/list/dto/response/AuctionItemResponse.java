@@ -38,7 +38,8 @@ public class AuctionItemResponse {
 
 	public static AuctionItemResponse from(
 		AuctionItemDto dto,
-		Boolean isBookmarked
+		Boolean isBookmarked,
+		String imageUrl
 	) {
 		long remainingSeconds = ChronoUnit.SECONDS.between(
 			LocalDateTime.now(),
@@ -50,11 +51,7 @@ public class AuctionItemResponse {
 			.productId(dto.getProductId())
 
 			.name(dto.getName())
-			.imageUrl(
-				dto.getImageUrl() != null && !dto.getImageUrl().isBlank()
-					? dto.getImageUrl()
-					: getDefaultImageUrl()
-			)
+			.imageUrl(imageUrl)
 
 			.status(dto.getStatus().name())
 			.category(dto.getCategory().name())
@@ -79,9 +76,5 @@ public class AuctionItemResponse {
 
 			.isBookmarked(isBookmarked)
 			.build();
-	}
-
-	private static String getDefaultImageUrl() {
-		return "https://drop-auction-bucket.s3.amazonaws.com/default/auction-default.jpg";
 	}
 }

@@ -129,7 +129,7 @@ public class AmazonS3Client {
 			.build();
 
 		GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
-			.signatureDuration(Duration.ofMinutes(5))
+			.signatureDuration(Duration.ofMinutes(10))
 			.getObjectRequest(objectRequest)
 			.build();
 
