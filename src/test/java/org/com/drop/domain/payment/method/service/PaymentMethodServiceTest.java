@@ -6,8 +6,8 @@ import static org.mockito.Mockito.*;
 
 import java.util.Optional;
 
-import org.com.drop.domain.payment.method.domain.PaymentMethod;
 import org.com.drop.domain.payment.method.dto.RegisterCardRequest;
+import org.com.drop.domain.payment.method.entity.PaymentMethod;
 import org.com.drop.domain.payment.method.repository.PaymentMethodRepository;
 import org.com.drop.domain.payment.payment.domain.CardCompany;
 import org.com.drop.domain.payment.payment.infra.toss.util.CustomerKeyGenerator;
@@ -57,13 +57,13 @@ class PaymentMethodServiceTest {
 	void registerCard_savesPaymentMethod() {
 		// given
 		RegisterCardRequest request = new RegisterCardRequest(
-			"bill_123",
+			"bill_1234",
 			CardCompany.SAMSUNG,
-			"1234-****-****-5678",
+			"1234-****-****-5679",
 			"MyCard"
 		);
 
-		when(paymentMethodRepository.existsByBillingKey("bill_123")).thenReturn(false);
+		when(paymentMethodRepository.existsByBillingKey("bill_1234")).thenReturn(false);
 		when(customerKeyGenerator.generate("user:1")).thenReturn("customer_key");
 
 		ArgumentCaptor<PaymentMethod> captor = ArgumentCaptor.forClass(PaymentMethod.class);
@@ -78,8 +78,8 @@ class PaymentMethodServiceTest {
 		assertEquals(1L, saved.getUserId());
 		assertEquals(CardCompany.SAMSUNG, saved.getCardCompany());
 		assertEquals("customer_key", saved.getCustomerKey());
-		assertEquals("bill_123", saved.getBillingKey());
-		assertEquals("1234-****-****-5678", saved.getCardNumberMasked());
+		assertEquals("bill_1234", saved.getBillingKey());
+		assertEquals("1234-****-****-5679", saved.getCardNumberMasked());
 		assertEquals("MyCard", saved.getCardName());
 	}
 
@@ -101,14 +101,14 @@ class PaymentMethodServiceTest {
 	@DisplayName("카드 삭제 - 소유자 불일치면 예외 + delete 안 함")
 	void deleteCard_whenUserMismatch_throws() {
 		// given
-		PaymentMethod method = PaymentMethod.builder()
-			.userId(2L)
-			.cardCompany(CardCompany.SAMSUNG)
-			.customerKey("ck")
-			.billingKey("bk")
-			.cardNumberMasked("mask")
-			.cardName("name")
-			.build();
+		PaymentMethod method = new PaymentMethod(
+			2L,
+			CardCompany.SAMSUNG,
+			"ck",
+			"bk",
+			"mask",
+			"name"
+		);
 
 		when(paymentMethodRepository.findById(10L)).thenReturn(Optional.of(method));
 

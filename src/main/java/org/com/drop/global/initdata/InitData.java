@@ -14,6 +14,7 @@ import org.com.drop.domain.auction.product.qna.service.QnAService;
 import org.com.drop.domain.auction.product.repository.ProductImageRepository;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.notification.service.NotificationService;
+import org.com.drop.domain.payment.method.service.PaymentMethodService;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,7 @@ public class InitData {
 	private final QnAService qnAService;
 	private final GuideRepository  guideRepository;
 	private final NotificationService notificationService;
+	private final PaymentMethodService paymentMethodService;
 	@Autowired
 	@Lazy
 	private InitData self;

@@ -29,7 +29,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,6 +39,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -159,7 +160,8 @@ public class AuctionController {
 	 */
 	@GetMapping("/{auctionId}/highest-bid")
 	public RsData<AuctionBidUpdate> getHighestBid(
-		@PathVariable Long auctionId
+		@PathVariable Long auctionId,
+		@LoginUser(required = false) User user
 	) {
 		log.debug("현재 최고가 조회 - auctionId={}", auctionId);
 
@@ -175,7 +177,7 @@ public class AuctionController {
 	 */
 	@GetMapping("/home")
 	public RsData<AuctionHomeResponse> getHomeAuctions(
-		@AuthenticationPrincipal User user
+		@LoginUser(required = false) User user
 	) {
 		log.debug("홈 화면 조회");
 
@@ -192,6 +194,7 @@ public class AuctionController {
 	@GetMapping("/{auctionId}/bids")
 	public RsData<Page<BidHistoryResponse>> getBidHistory(
 		@PathVariable Long auctionId,
+		@ParameterObject
 		@PageableDefault(
 			size = 10,
 			sort = "createdAt",
@@ -211,7 +214,11 @@ public class AuctionController {
 	@GetMapping("/{auctionId}/bid-list")
 	public RsData<List<BidHistoryResponse>> getBidList(
 		@PathVariable Long auctionId,
-		@RequestParam(defaultValue = "10") int size
+		@LoginUser(required = false) User user,
+		@RequestParam(defaultValue = "10")
+		@Min(value = 1, message = "size는 최소 1 이상이어야 합니다.")
+		@Max(value = 200, message = "size는 최대 200 이하여야 합니다.")
+		int size
 	) {
 		log.debug(
 			"입찰 내역 목록 조회 - auctionId={}, size={}",
@@ -236,7 +243,8 @@ public class AuctionController {
 		produces = MediaType.TEXT_EVENT_STREAM_VALUE
 	)
 	public SseEmitter getBidStream(
-		@PathVariable Long auctionId
+		@PathVariable Long auctionId,
+		@LoginUser(required = false) User user
 	) {
 		log.debug("SSE 입찰 스트림 시작 - auctionId={}", auctionId);
 

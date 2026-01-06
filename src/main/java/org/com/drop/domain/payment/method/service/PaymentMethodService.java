@@ -2,9 +2,8 @@ package org.com.drop.domain.payment.method.service;
 
 import java.util.List;
 
-import org.com.drop.domain.payment.method.domain.PaymentMethod;
-import org.com.drop.domain.payment.method.dto.CardResponse;
 import org.com.drop.domain.payment.method.dto.RegisterCardRequest;
+import org.com.drop.domain.payment.method.entity.PaymentMethod;
 import org.com.drop.domain.payment.method.repository.PaymentMethodRepository;
 import org.com.drop.domain.payment.payment.infra.toss.util.CustomerKeyGenerator;
 import org.com.drop.global.exception.ErrorCode;
@@ -21,33 +20,30 @@ public class PaymentMethodService {
 	private final PaymentMethodRepository paymentMethodRepository;
 	private final CustomerKeyGenerator customerKeyGenerator;
 
-	public void registerCard(Long userId, RegisterCardRequest request) {
+	public PaymentMethod registerCard(Long userId, RegisterCardRequest request) {
 
 		if (paymentMethodRepository.existsByBillingKey(request.billingKey())) {
-			throw ErrorCode.PAY_ALREADY_PROCESSED.serviceException("이미 등록된 카드입니다.");
+			throw ErrorCode.USER_PAYMENT_METHOD_ALREADY_EXISTS.serviceException("이미 등록된 카드입니다.");
 		}
 
 		String customerKey =
 			customerKeyGenerator.generate("user:" + userId);
 
-		PaymentMethod method = PaymentMethod.builder()
-			.userId(userId)
-			.cardCompany(request.cardCompany())
-			.customerKey(customerKey)
-			.billingKey(request.billingKey())
-			.cardNumberMasked(request.cardNumberMasked())
-			.cardName(request.cardName())
-			.build();
+		PaymentMethod method = new PaymentMethod(
+			userId,
+			request.cardCompany(),
+			customerKey,
+			request.billingKey(),
+			request.cardNumberMasked(),
+			request.cardName()
+		);
 
-		paymentMethodRepository.save(method);
+		return  paymentMethodRepository.save(method);
 	}
 
 	@Transactional(readOnly = true)
-	public List<CardResponse> getCards(Long userId) {
-		return paymentMethodRepository.findByUserId(userId)
-			.stream()
-			.map(CardResponse::from)
-			.toList();
+	public List<PaymentMethod> getCards(Long userId) {
+		return paymentMethodRepository.findByUserId(userId);
 	}
 
 	@Transactional(readOnly = true)

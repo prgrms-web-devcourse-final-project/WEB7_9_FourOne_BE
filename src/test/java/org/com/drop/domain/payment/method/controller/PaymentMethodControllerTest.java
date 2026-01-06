@@ -1,270 +1,367 @@
 package org.com.drop.domain.payment.method.controller;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.AssertionsForClassTypes.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.util.List;
 
-import org.com.drop.domain.auth.jwt.JwtProvider;
-import org.com.drop.domain.payment.method.dto.CardResponse;
+import org.com.drop.domain.payment.method.dto.RegisterCardRequest;
+import org.com.drop.domain.payment.method.entity.PaymentMethod;
+import org.com.drop.domain.payment.method.repository.PaymentMethodRepository;
 import org.com.drop.domain.payment.method.service.PaymentMethodService;
 import org.com.drop.domain.payment.payment.domain.CardCompany;
-import org.com.drop.domain.user.entity.User;
+import org.com.drop.domain.user.controller.UserController;
 import org.com.drop.domain.user.service.UserService;
-import org.com.drop.global.exception.GlobalExceptionHandler;
-import org.com.drop.global.security.auth.LoginUserArgumentResolver;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+import org.springframework.test.web.servlet.ResultActions;
 
-@WebMvcTest(controllers = PaymentMethodController.class)
-@AutoConfigureMockMvc(addFilters = false)
-@Import({
-	PaymentMethodControllerTest.MockBeans.class,
-	PaymentMethodControllerTest.LoginUserResolverTestConfig.class,
-	GlobalExceptionHandler.class
-})
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.transaction.Transactional;
+
+@SpringBootTest
+@ActiveProfiles("test")
+@AutoConfigureMockMvc
+@Transactional
 class PaymentMethodControllerTest {
 
 	@Autowired
 	private MockMvc mockMvc;
-
 	@Autowired
 	private PaymentMethodService paymentMethodService;
-
+	@Autowired
+	private PaymentMethodRepository paymentMethodRepository;
 	@Autowired
 	private UserService userService;
-
 	@Autowired
-	private RequestMappingHandlerMapping handlerMapping;
+	private ObjectMapper objectMapper;
+	private String jsonContent;
+	private String billingKey = "bill_12300";
+	private CardCompany cardCompany = CardCompany.SAMSUNG;
+	private String cardNumberMasked = "0034-****-****-5678";
+	private String cardName = "MyCard123";
 
-	@AfterEach
-	void tearDown() {
-		SecurityContextHolder.clearContext();
-		Mockito.reset(paymentMethodService, userService);
-	}
+	@Nested
+	class CardRegisterTest {
+		@Test
+		@DisplayName("카드 등록 - 성공")
+		@WithMockUser(username = "user1@example.com", roles = {"USER"})
+		void t1() throws Exception {
+			RegisterCardRequest request = new RegisterCardRequest(
+				billingKey, cardCompany, cardNumberMasked, cardName
+			);
 
-	@Test
-	@DisplayName("카드 등록 - 성공")
-	void register_returnsOk_andCallsService() throws Exception {
-		// given
-		User user = Mockito.mock(User.class);
-		when(user.getId()).thenReturn(1L);
-		when(userService.findUserByEmail("test@example.com")).thenReturn(user);
+			jsonContent = objectMapper.writeValueAsString(request);
 
-		UserDetails principal = org.springframework.security.core.userdetails.User
-			.withUsername("test@example.com")
-			.password("pw")
-			.authorities("ROLE_USER")
-			.build();
+			ResultActions resultActions = mockMvc.perform(
+					post("/api/v1/user/me/paymentMethods")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(jsonContent)
+				)
+				.andDo(print());
 
-		Authentication auth = new UsernamePasswordAuthenticationToken(
-			principal, null, principal.getAuthorities()
-		);
-		SecurityContextHolder.getContext().setAuthentication(auth);
+			resultActions
+				.andExpect(handler().handlerType(UserController.class))
+				.andExpect(handler().methodName("register"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.code").value("SUCCESS"))
+				.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
 
-		String registerPath = findPath(PaymentMethodController.class, "register");
+			PaymentMethod paymentMethod = paymentMethodRepository.findByBillingKey(billingKey).get();
 
-		// when & then
-		mockMvc.perform(
-				post(registerPath)
+			resultActions
+				.andExpect(jsonPath("$.data.id").value(paymentMethod.getId()))
+				.andExpect(jsonPath("$.data.billingKey").value(billingKey))
+				.andExpect(jsonPath("$.data.cardCompany").value(cardCompany.toString()))
+				.andExpect(jsonPath("$.data.cardNumberMasked").value(cardNumberMasked))
+				.andExpect(jsonPath("$.data.createdAt").isNotEmpty());
+
+			assertThat(paymentMethod.getBillingKey()).isEqualTo(billingKey);
+			assertThat(paymentMethod.getCardCompany()).isEqualTo(cardCompany);
+			assertThat(paymentMethod.getCardNumberMasked()).isEqualTo(cardNumberMasked);
+		}
+
+		@Test
+		@DisplayName("카드 등록 - 실패 - 로그인 없음")
+		void t1_1() throws Exception {
+			RegisterCardRequest request = new RegisterCardRequest(
+				billingKey, cardCompany, cardNumberMasked, cardName
+			);
+
+			jsonContent = objectMapper.writeValueAsString(request);
+
+			ResultActions resultActions = mockMvc.perform(
+					post("/api/v1/user/me/paymentMethods")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(jsonContent)
+				)
+				.andDo(print());
+
+			resultActions
+				.andExpect(handler().handlerType(UserController.class))
+				.andExpect(handler().methodName("register"))
+				.andExpect(status().is(401))
+				.andExpect(jsonPath("$.code").value("USER_UNAUTHORIZED"))
+				.andExpect(jsonPath("$.httpStatus").value("401"))
+				.andExpect(jsonPath("$.message").value("로그인이 필요합니다."));
+		}
+
+		@Test
+		@DisplayName("카드 등록 - 실패 - billingKey 없음")
+		@WithMockUser(username = "user1@example.com", roles = {"USER"})
+		void t1_2() throws Exception {
+			RegisterCardRequest request = new RegisterCardRequest(
+				"", cardCompany, cardNumberMasked, cardName
+			);
+
+			jsonContent = objectMapper.writeValueAsString(request);
+
+			ResultActions resultActions = mockMvc.perform(
+					post("/api/v1/user/me/paymentMethods")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(jsonContent)
+				)
+				.andDo(print());
+
+			resultActions
+				.andExpect(handler().handlerType(UserController.class))
+				.andExpect(handler().methodName("register"))
+				.andExpect(status().is(400))
+				.andExpect(jsonPath("$.code").value("USER_PAYMENT_METHOD_INVALID_BILLING_KEY"))
+				.andExpect(jsonPath("$.httpStatus").value("400"))
+				.andExpect(jsonPath("$.message").value("잘못된 billingKey 입니다."));
+		}
+
+		@Test
+		@DisplayName("카드 등록 - 실패 - cardCompany 없음")
+		@WithMockUser(username = "user1@example.com", roles = {"USER"})
+		void t1_3() throws Exception {
+			RegisterCardRequest request = new RegisterCardRequest(
+				billingKey, null, cardNumberMasked, cardName
+			);
+
+			jsonContent = objectMapper.writeValueAsString(request);
+
+			ResultActions resultActions = mockMvc.perform(
+					post("/api/v1/user/me/paymentMethods")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(jsonContent)
+				)
+				.andDo(print());
+
+			resultActions
+				.andExpect(handler().handlerType(UserController.class))
+				.andExpect(handler().methodName("register"))
+				.andExpect(status().is(400))
+				.andExpect(jsonPath("$.code").value("USER_PAYMENT_METHOD_INVALID_CARD_COMPANY"))
+				.andExpect(jsonPath("$.httpStatus").value("400"))
+				.andExpect(jsonPath("$.message").value("잘못된 cardCompany 입니다."));
+		}
+
+		@Test
+		@DisplayName("카드 등록 - 실패 - cardNumberMasked 없음")
+		@WithMockUser(username = "user1@example.com", roles = {"USER"})
+		void t1_4() throws Exception {
+			RegisterCardRequest request = new RegisterCardRequest(
+				billingKey, cardCompany, "", cardName
+			);
+
+			jsonContent = objectMapper.writeValueAsString(request);
+
+			ResultActions resultActions = mockMvc.perform(
+					post("/api/v1/user/me/paymentMethods")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(jsonContent)
+				)
+				.andDo(print());
+
+			resultActions
+				.andExpect(handler().handlerType(UserController.class))
+				.andExpect(handler().methodName("register"))
+				.andExpect(status().is(400))
+				.andExpect(jsonPath("$.code").value("USER_PAYMENT_METHOD_INVALID_CARD_NUMBER_MASKED"))
+				.andExpect(jsonPath("$.httpStatus").value("400"))
+				.andExpect(jsonPath("$.message").value("잘못된 cardNumberMasked 입니다."));
+		}
+
+		@Test
+		@DisplayName("카드 등록 - 실패 - cardName 없음")
+		@WithMockUser(username = "user1@example.com", roles = {"USER"})
+		void t1_5() throws Exception {
+			RegisterCardRequest request = new RegisterCardRequest(
+				billingKey, cardCompany, cardNumberMasked, ""
+			);
+
+			jsonContent = objectMapper.writeValueAsString(request);
+
+			ResultActions resultActions = mockMvc.perform(
+					post("/api/v1/user/me/paymentMethods")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(jsonContent)
+				)
+				.andDo(print());
+
+			resultActions
+				.andExpect(handler().handlerType(UserController.class))
+				.andExpect(handler().methodName("register"))
+				.andExpect(status().is(400))
+				.andExpect(jsonPath("$.code").value("USER_PAYMENT_METHOD_INVALID_CARD_NAME"))
+				.andExpect(jsonPath("$.httpStatus").value("400"))
+				.andExpect(jsonPath("$.message").value("잘못된 cardName 입니다."));
+		}
+
+		@Test
+		@DisplayName("카드 등록 - 실패 - 이미 등록됨")
+		@WithMockUser(username = "user1@example.com", roles = {"USER"})
+		void t1_6() throws Exception {
+			RegisterCardRequest request = new RegisterCardRequest(
+				billingKey, cardCompany, cardNumberMasked, cardName
+			);
+
+			jsonContent = objectMapper.writeValueAsString(request);
+
+			mockMvc.perform(
+				post("/api/v1/user/me/paymentMethods")
 					.contentType(MediaType.APPLICATION_JSON)
-					.content("""
-						{
-							"billingKey": "bill_123",
-							"cardCompany": "SAMSUNG",
-							"cardNumberMasked": "1234-****-****-5678",
-							"cardName": "MyCard"
-						}
-						""")
-			)
-			.andExpect(status().isOk());
+					.content(jsonContent)
+			);
 
-		verify(paymentMethodService, times(1))
-			.registerCard(eq(1L), any());
+			ResultActions resultActions = mockMvc.perform(
+					post("/api/v1/user/me/paymentMethods")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(jsonContent)
+				)
+				.andDo(print());
+
+			resultActions
+				.andExpect(handler().handlerType(UserController.class))
+				.andExpect(handler().methodName("register"))
+				.andExpect(status().is(409))
+				.andExpect(jsonPath("$.code").value("USER_PAYMENT_METHOD_ALREADY_EXISTS"))
+				.andExpect(jsonPath("$.httpStatus").value("409"))
+				.andExpect(jsonPath("$.message").value("이미 등록된 카드입니다."));
+		}
 	}
 
-	@Test
-	@DisplayName("카드 등록 - Body 없으면 400")
-	void register_withoutBody_returnsBadRequest() throws Exception {
-		// given (로그인만)
-		User user = Mockito.mock(User.class);
-		when(user.getId()).thenReturn(1L);
-		when(userService.findUserByEmail("test@example.com")).thenReturn(user);
+	@Nested
+	class CardList {
+		@Test
+		@DisplayName("카드 목록 조회 - 성공")
+		@WithMockUser(username = "user1@example.com", roles = {"USER"})
+		void t2() throws Exception {
 
-		UserDetails principal = org.springframework.security.core.userdetails.User
-			.withUsername("test@example.com")
-			.password("pw")
-			.authorities("ROLE_USER")
-			.build();
+			ResultActions resultActions = mockMvc
+				.perform(
+					get("/api/v1/user/me/paymentMethods")
+				)
+				.andDo(print());
 
-		Authentication auth = new UsernamePasswordAuthenticationToken(
-			principal, null, principal.getAuthorities()
-		);
-		SecurityContextHolder.getContext().setAuthentication(auth);
+			resultActions
+				.andExpect(handler().handlerType(UserController.class))
+				.andExpect(handler().methodName("cardList"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.code").value("SUCCESS"))
+				.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
 
-		String registerPath = findPath(PaymentMethodController.class, "register");
+			List<PaymentMethod> paymentMethods = paymentMethodRepository.findByUserId(1L);
 
-		// when & then
-		mockMvc.perform(
-				post(registerPath)
-					.contentType(MediaType.APPLICATION_JSON)
-			)
-			.andExpect(status().isBadRequest());
-
-		verifyNoInteractions(paymentMethodService);
-	}
-
-	@Test
-	@DisplayName("카드 목록 조회 - 성공")
-	void list_returnsOk_andCallsService() throws Exception {
-		// given
-		User user = Mockito.mock(User.class);
-		when(user.getId()).thenReturn(1L);
-		when(userService.findUserByEmail("test@example.com")).thenReturn(user);
-
-		when(paymentMethodService.getCards(1L))
-			.thenReturn(List.of(
-				new CardResponse(10L, CardCompany.SAMSUNG, "1234-****-****-5678", "MyCard")
-			));
-
-		UserDetails principal = org.springframework.security.core.userdetails.User
-			.withUsername("test@example.com")
-			.password("pw")
-			.authorities("ROLE_USER")
-			.build();
-
-		Authentication auth = new UsernamePasswordAuthenticationToken(
-			principal, null, principal.getAuthorities()
-		);
-		SecurityContextHolder.getContext().setAuthentication(auth);
-
-		String listPath = findPath(PaymentMethodController.class, "list");
-
-		// when & then
-		mockMvc.perform(get(listPath))
-			.andExpect(status().isOk());
-
-		verify(paymentMethodService, times(1)).getCards(1L);
-	}
-
-	@Test
-	@DisplayName("카드 삭제 - 성공")
-	void delete_returnsOk_andCallsService() throws Exception {
-		// given
-		Long cardId = 10L;
-
-		User user = Mockito.mock(User.class);
-		when(user.getId()).thenReturn(1L);
-		when(userService.findUserByEmail("test@example.com")).thenReturn(user);
-
-		UserDetails principal = org.springframework.security.core.userdetails.User
-			.withUsername("test@example.com")
-			.password("pw")
-			.authorities("ROLE_USER")
-			.build();
-
-		Authentication auth = new UsernamePasswordAuthenticationToken(
-			principal, null, principal.getAuthorities()
-		);
-		SecurityContextHolder.getContext().setAuthentication(auth);
-
-		String deletePath = findPath(PaymentMethodController.class, "delete");
-
-		// when & then
-		mockMvc.perform(delete(deletePath, cardId))
-			.andExpect(status().isOk());
-
-		verify(paymentMethodService, times(1)).deleteCard(1L, cardId);
-	}
-
-	private String findPath(Class<?> controllerType, String methodName) {
-		for (var entry : handlerMapping.getHandlerMethods().entrySet()) {
-			var info = entry.getKey();
-			var handlerMethod = entry.getValue();
-
-			if (!controllerType.isAssignableFrom(handlerMethod.getBeanType())) {
-				continue;
+			for (int i = 0; i < paymentMethods.size(); i++) {
+				resultActions
+					.andExpect(jsonPath("$.data.registerCardResponses[0].id".formatted(i))
+						.value(paymentMethods.get(i).getId()))
+					.andExpect(jsonPath("$.data.registerCardResponses[0].cardCompany".formatted(i))
+						.value(paymentMethods.get(i).getCardCompany().toString()))
+					.andExpect(jsonPath("$.data.registerCardResponses[0].cardNumberMasked".formatted(i))
+						.value(paymentMethods.get(i).getCardNumberMasked()))
+					.andExpect(jsonPath("$.data.registerCardResponses[0].createdAt".formatted(i))
+						.isNotEmpty());
 			}
-
-			if (!handlerMethod.getMethod().getName().equals(methodName)) {
-				continue;
-			}
-
-			if (info.getPathPatternsCondition() != null
-				&& !info.getPathPatternsCondition().getPatterns().isEmpty()) {
-				return info.getPathPatternsCondition().getPatterns()
-					.iterator().next().getPatternString();
-			}
-
-			if (info.getPatternsCondition() != null
-				&& !info.getPatternsCondition().getPatterns().isEmpty()) {
-				return info.getPatternsCondition().getPatterns()
-					.iterator().next();
-			}
-
-			throw new IllegalStateException("RequestMappingInfo에 path 패턴이 없습니다.");
 		}
 
-		throw new IllegalStateException(
-			"매핑을 찾을 수 없습니다: " + controllerType.getSimpleName() + "#" + methodName
-		);
-	}
+		@Test
+		@DisplayName("카드 목록 조회 - 실패 -로그인 없음")
+		void t2_1() throws Exception {
 
-	@TestConfiguration
-	static class MockBeans {
+			ResultActions resultActions = mockMvc
+				.perform(
+					get("/api/v1/user/me/paymentMethods")
+				)
+				.andDo(print());
 
-		@Bean
-		PaymentMethodService paymentMethodService() {
-			return Mockito.mock(PaymentMethodService.class);
-		}
-
-		@Bean
-		UserService userService() {
-			return Mockito.mock(UserService.class);
-		}
-
-		@Bean
-		JwtProvider jwtProvider() {
-			return Mockito.mock(JwtProvider.class);
+			resultActions
+				.andExpect(handler().handlerType(UserController.class))
+				.andExpect(handler().methodName("cardList"))
+				.andExpect(status().is(401))
+				.andExpect(jsonPath("$.code").value("USER_UNAUTHORIZED"))
+				.andExpect(jsonPath("$.httpStatus").value("401"))
+				.andExpect(jsonPath("$.message").value("로그인이 필요합니다."));
 		}
 	}
 
-	@TestConfiguration
-	static class LoginUserResolverTestConfig implements WebMvcConfigurer {
+	@Nested
+	class CardDelete {
+		Long cardId = 1L;
+		@Test
+		@DisplayName("카드 삭제 - 성공")
+		@WithMockUser(username = "user1@example.com", roles = {"USER"})
+		void t2() throws Exception {
+			RegisterCardRequest request = new RegisterCardRequest(
+				"billingKey", CardCompany.HYUNDAI, "cardNumberMasked", "cardName"
+			);
 
-		private final UserService userService;
+			paymentMethodService.registerCard(1L, request);
+			PaymentMethod paymentMethod = paymentMethodRepository.findById(cardId).get();
 
-		LoginUserResolverTestConfig(UserService userService) {
-			this.userService = userService;
+			ResultActions resultActions = mockMvc
+				.perform(
+					delete("/api/v1/user/me/paymentMethods/%d".formatted(cardId))
+				)
+				.andDo(print());
+
+			resultActions
+				.andExpect(handler().handlerType(UserController.class))
+				.andExpect(handler().methodName("delete"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.code").value("SUCCESS"))
+				.andExpect(jsonPath("$.message").value("요청을 성공적으로 처리했습니다."));
+
+			boolean exist = paymentMethodRepository.findByBillingKey(billingKey).isPresent();
+
+			assertThat(exist).isEqualTo(false);
 		}
 
-		@Bean
-		LoginUserArgumentResolver loginUserArgumentResolver() {
-			return new LoginUserArgumentResolver(userService);
-		}
+		@Test
+		@DisplayName("카드 삭제 - 실패 -로그인 없음")
+		void t2_1() throws Exception {
 
-		@Override
-		public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
-			resolvers.add(loginUserArgumentResolver());
+			ResultActions resultActions = mockMvc
+				.perform(
+					delete("/api/v1/user/me/paymentMethods/%d".formatted(cardId))
+				)
+				.andDo(print());
+
+			resultActions
+				.andExpect(handler().handlerType(UserController.class))
+				.andExpect(handler().methodName("delete"))
+				.andExpect(status().is(401))
+				.andExpect(jsonPath("$.code").value("USER_UNAUTHORIZED"))
+				.andExpect(jsonPath("$.httpStatus").value("401"))
+				.andExpect(jsonPath("$.message").value("로그인이 필요합니다."));
 		}
 	}
+
+
+
+
 }

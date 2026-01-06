@@ -41,7 +41,8 @@ public class AuctionDetailResponse {
 	public static AuctionDetailResponse from(
 		final AuctionDetailDto dto,
 		final Boolean isBookmarked,
-		final List<BidHistoryResponse> bidHistory
+		final List<BidHistoryResponse> bidHistory,
+		final List<String> imageUrls
 	) {
 		long remainingSeconds = ChronoUnit.SECONDS.between(
 			LocalDateTime.now(),
@@ -69,7 +70,7 @@ public class AuctionDetailResponse {
 				: dto.getStartPrice())
 			.totalBidCount(dto.getTotalBidCount() != null ? dto.getTotalBidCount() : 0)
 			.remainingTimeSeconds(Math.max(0, remainingSeconds))
-			.imageUrls(dto.getImageUrls())
+			.imageUrls(imageUrls)
 			.isBookmarked(isBookmarked)
 			.bidHistory(bidHistory)
 			.build();

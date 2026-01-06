@@ -24,12 +24,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -38,14 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@SpringBootTest
-@AutoConfigureMockMvc
 @Transactional
-@ActiveProfiles("test")
-@TestPropertySource(properties = {
-	"spring.cloud.aws.region.static=us-east-1", // AWS Region 설정 (오류 방지)
-	"spring.cloud.aws.s3.enabled=false"         // 실제 S3 빈 생성 방지
-})
 @DisplayName("경매 컨트롤러 통합 테스트")
 class AuctionControllerIntegrationTest extends BaseIntegrationTest {
 
@@ -285,6 +274,20 @@ class AuctionControllerIntegrationTest extends BaseIntegrationTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.content.length()").value(3))
 				.andExpect(jsonPath("$.data.totalElements").value(3));
+		}
+
+		@Nested
+		@DisplayName("홈 화면 조회 API")
+		class Home {
+			@Test
+			@DisplayName("성공: 홈 화면 데이터(마감 임박, 인기 경매)를 조회해야 한다")
+			void getHomeData_success() throws Exception {
+				mockMvc.perform(get("/api/v1/auctions/home"))
+					.andDo(print())
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.data.endingSoon").isArray())
+					.andExpect(jsonPath("$.data.popular").isArray());
+			}
 		}
 	}
 }

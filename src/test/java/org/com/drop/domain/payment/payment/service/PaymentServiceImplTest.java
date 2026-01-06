@@ -120,15 +120,12 @@ class PaymentServiceImplTest extends RedissonIntegrationTest {
 		User seller = createDummyUser("판매자1");
 
 		Product product = productRepository.save(
-			Product.builder()
-				.seller(seller)
-				.name("Test Product")
-				.description("Test Description")
-				.category(GAME)
-				.subcategory(ETC)
-				.createdAt(LocalDateTime.now())
-				.bookmarkCount(0)
-				.build()
+			new Product(
+				seller,
+				"Test Product",
+				"Test Description",
+				GAME,
+				ETC)
 		);
 		Auction auction = createLiveAuction(product);
 
@@ -145,6 +142,7 @@ class PaymentServiceImplTest extends RedissonIntegrationTest {
 			Payment.builder()
 				.winnersId(winnerId)
 				.sellersId(10L)
+				.methodId(1L)
 				.status(PaymentStatus.REQUESTED)
 				.net(1000L)
 				.requestedAt(LocalDateTime.now())

@@ -22,11 +22,15 @@ import org.com.drop.domain.auction.bid.dto.request.BidRequestDto;
 import org.com.drop.domain.auction.bid.entity.Bid;
 import org.com.drop.domain.auction.bid.repository.BidRepository;
 import org.com.drop.domain.auction.bid.service.BidService;
+import org.com.drop.domain.auction.bid.service.WinnerService;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
+import org.com.drop.domain.notification.entity.Notification;
+import org.com.drop.domain.notification.repository.NotificationRepository;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.domain.user.service.UserService;
+import org.com.drop.domain.winner.repository.WinnerRepository;
 import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
 import org.com.drop.scheduler.AuctionScheduler;
@@ -38,7 +42,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.Commit;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
@@ -54,7 +62,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @ExtendWith(MockitoExtension.class)
 public class BidIntegrationTest extends BaseIntegrationTest {
 
-	@Autowired MockMvc mockMvc;
+	@Autowired
+	MockMvc mockMvc;
 
 	ObjectMapper objectMapper = new ObjectMapper();
 
@@ -69,12 +78,19 @@ public class BidIntegrationTest extends BaseIntegrationTest {
 	AuctionRepository auctionRepository;
 	@Autowired
 	ProductRepository productRepository;
+	@Autowired
+	NotificationRepository notificationRepository;
+	@Autowired
+	WinnerRepository winnerRepository;
 
 	@Autowired
 	BidService bidService;
 
 	@Autowired
 	private AuctionScheduler auctionScheduler;
+
+	@Autowired
+	WinnerService winnerService;
 
 	private User createUser(String email, String nickname) {
 		return userRepository.save(User.builder()
@@ -109,6 +125,17 @@ public class BidIntegrationTest extends BaseIntegrationTest {
 			.build());
 	}
 
+	private Auction createAuctionForNoti(Product product, int startPrice, int step) {
+		return auctionRepository.save(Auction.builder()
+			.product(product)
+			.startPrice(startPrice)
+			.minBidStep(step)
+			.startAt(LocalDateTime.now())
+			.endAt(LocalDateTime.now().minusDays(1))
+			.status(Auction.AuctionStatus.LIVE)
+			.build());
+	}
+
 	private Auction createscheduledAuction(Product product, int startPrice, int step) {
 		return auctionRepository.save(Auction.builder()
 			.product(product)
@@ -119,7 +146,6 @@ public class BidIntegrationTest extends BaseIntegrationTest {
 			.status(Auction.AuctionStatus.SCHEDULED)
 			.build());
 	}
-
 
 	@Test
 	@DisplayName("시작가 보다 높은 금액으로 입찰하면 db에 저장 - 성공")
@@ -132,7 +158,6 @@ public class BidIntegrationTest extends BaseIntegrationTest {
 		String bidderEmail = "bidder@test.com";
 		User bidder = createUser(bidderEmail, "입찰자");
 		BidRequestDto biddto = new BidRequestDto(1500L);
-
 
 		//when
 		ResultActions result = mockMvc.perform(
@@ -149,7 +174,6 @@ public class BidIntegrationTest extends BaseIntegrationTest {
 			.andExpect(jsonPath("$.data.currentHighestBid").value(1500))
 			.andExpect(jsonPath("$.data.isHighestBidder").value(true))
 			.andExpect(jsonPath("$.data.bidTime").exists());
-
 
 		//then
 		Bid savedBid = bidRepository.findAll().get(0);
@@ -264,7 +288,7 @@ public class BidIntegrationTest extends BaseIntegrationTest {
 
 		CountDownLatch ready = new CountDownLatch(threads);
 		CountDownLatch start = new CountDownLatch(1);
-		CountDownLatch done  = new CountDownLatch(threads);
+		CountDownLatch done = new CountDownLatch(threads);
 
 		List<Throwable> errors = Collections.synchronizedList(new ArrayList<>());
 
@@ -308,7 +332,7 @@ public class BidIntegrationTest extends BaseIntegrationTest {
 
 		assertThat(errors).hasSize(1);
 		assertThat(errors.get(0)).isInstanceOf(ServiceException.class);
-		ServiceException se = (ServiceException) errors.get(0);
+		ServiceException se = (ServiceException)errors.get(0);
 		assertThat(se.getErrorCode()).isEqualTo(ErrorCode.AUCTION_BID_AMOUNT_TOO_LOW);
 	}
 
@@ -319,7 +343,6 @@ public class BidIntegrationTest extends BaseIntegrationTest {
 			throw new RuntimeException(e);
 		}
 	}
-
 
 	@Test
 	@Disabled
@@ -366,4 +389,53 @@ public class BidIntegrationTest extends BaseIntegrationTest {
 		assertThat(findAuction.getCurrentPrice()).isEqualTo(1100L);
 	}
 
+	@Test
+	@DisplayName("경매 낙찰 성공하면 판매자와 구매자에게 알림이 발송된다")
+	void finalizeAuction_success_test() {
+		//given
+		winnerRepository.deleteAllInBatch();
+		notificationRepository.deleteAllInBatch();
+		bidRepository.deleteAllInBatch();
+		auctionRepository.deleteAllInBatch();
+
+		User seller = createUser("seller@email.com", "판매자");
+		User bidder = createUser("buyer@email.com", "구매자");
+
+		Product product = createProduct(seller);
+		Auction auction = createAuctionForNoti(product, 1000, 100);
+
+		bidRepository.save(Bid.builder()
+			.auction(auction)
+			.bidder(bidder)
+			.bidAmount(50000L)
+			.createdAt(LocalDateTime.now())
+			.build());
+
+		//when
+		winnerService.finalizeAuction(auction.getId());
+
+		//then
+		List<Notification> notifications = notificationRepository.findAll();
+		System.out.println(">>> 저장된 알림 총 개수: " + notifications.size());
+		for (Notification n : notifications) {
+			System.out.println(">>> 알림 ID: " + n.getId());
+			System.out.println(">>> 수신자 ID: " + n.getUser().getId());
+			System.out.println(">>> 메시지: " + n.getMessage());
+			System.out.println("------------------------------");
+		}
+
+		assertThat(notifications).hasSize(2);
+
+		Notification buyerNoti = notifications.stream()
+			.filter(n -> n.getUser().getId().equals(bidder.getId()))
+			.findFirst()
+			.orElseThrow(() -> new AssertionError("구매자 알림이 없습니다."));
+		assertThat(buyerNoti.getMessage()).contains("경매가 낙찰되었습니다.");
+
+		Notification sellerNoti = notifications.stream()
+			.filter(n -> n.getUser().getId().equals(seller.getId()))
+			.findFirst()
+			.orElseThrow(() -> new AssertionError("판매자 알림이 없습니다."));
+		assertThat(sellerNoti.getMessage()).contains("경매가 낙찰되었습니다.");
+	}
 }
