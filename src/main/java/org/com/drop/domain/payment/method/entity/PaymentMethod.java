@@ -1,4 +1,4 @@
-package org.com.drop.domain.payment.method.domain;
+package org.com.drop.domain.payment.method.entity;
 
 import java.time.LocalDateTime;
 
@@ -15,7 +15,6 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -54,8 +53,7 @@ public class PaymentMethod {
 	@Column(name = "updated_at", nullable = false)
 	private LocalDateTime updatedAt;
 
-	@Builder
-	private PaymentMethod(
+	public PaymentMethod(
 		Long userId,
 		CardCompany cardCompany,
 		String customerKey,

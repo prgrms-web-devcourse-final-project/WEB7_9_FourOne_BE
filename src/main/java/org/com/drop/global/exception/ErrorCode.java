@@ -60,6 +60,11 @@ public enum ErrorCode {
 	USER_HAS_ACTIVE_AUCTIONS("1111", HttpStatus.BAD_REQUEST, "현재 진행 중인 경매 또는 미완료된 거래가 있어 탈퇴할 수 없습니다."),
 	USER_INVALID_STATUS_PARAMUSER_HAS_ACTIVE_AUCTIONS("1112", HttpStatus.BAD_REQUEST, "status 값이 enum에 없습니다."),
 	USER_PAGE_OUT_OF_RANGE("1113", HttpStatus.BAD_REQUEST, "요청한 page가 totalPages를 초과합니다."),
+	USER_PAYMENT_METHOD_ALREADY_EXISTS("1114", HttpStatus.CONFLICT, "이미 등록된 카드입니다."),
+	USER_PAYMENT_METHOD_INVALID_BILLING_KEY("1115", HttpStatus.BAD_REQUEST, "잘못된 billingKey 입니다."),
+	USER_PAYMENT_METHOD_INVALID_CARD_COMPANY("1116", HttpStatus.BAD_REQUEST, "잘못된 cardCompany 입니다."),
+	USER_PAYMENT_METHOD_INVALID_CARD_NUMBER_MASKED("1117", HttpStatus.BAD_REQUEST, "잘못된 cardNumberMasked 입니다."),
+	USER_PAYMENT_METHOD_INVALID_CARD_NAME("1118", HttpStatus.BAD_REQUEST, "잘못된 cardName 입니다."),
 
 	//products
 	PRODUCT_NOT_FOUND("1200", HttpStatus.NOT_FOUND, "요청하신 상품 ID를 찾을 수 없습니다."),
@@ -89,7 +94,6 @@ public enum ErrorCode {
 	PAY_ALREADY_PROCESSED("1307", HttpStatus.CONFLICT, "이미 처리된 결제 입니다."),
 	PAY_ALREADY_CANCELED_PAYMENT("1308", HttpStatus.CONFLICT, "이미 취소된 결제입니다."),
 	PAY_NOT_FOUND_METHOD("1309", HttpStatus.NOT_FOUND, "지원되지 않는 결제 수단입니다."),
-	USER_PAYMENT_METHOD_ALREADY_EXISTS("1114", HttpStatus.CONFLICT, "이미 등록된 카드입니다."),
 	PAY_ALREADY_IN_PROGRESS("1310", HttpStatus.CONFLICT, "이미 결제가 진행 중입니다. 잠시 후 다시 시도해주세요."),
 	PAY_PROCESSING_INTERRUPTED("1311", HttpStatus.INTERNAL_SERVER_ERROR, "결제 처리 중 시스템에 의해 중단되었습니다."),
 	PAY_PROCESSING_ERROR("1312", HttpStatus.INTERNAL_SERVER_ERROR, "결제 처리 중 오류가 발생했습니다."),

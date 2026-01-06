@@ -5,3 +5,4 @@ public interface SettlementReleaseService {
 
 	void releaseAutomatically();
 }
+
