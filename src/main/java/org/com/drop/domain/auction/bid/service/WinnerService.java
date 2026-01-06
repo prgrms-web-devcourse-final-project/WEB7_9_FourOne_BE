@@ -39,7 +39,6 @@ public class WinnerService {
 		}
 
 		if (auction.getEndAt().isAfter(now)) {
-			System.out.println("DEBUG: 아직 종료 시간이 안 됨. EndAt: " + auction.getEndAt() + ", Now: " + now);
 			return;
 		}
 
@@ -53,7 +52,6 @@ public class WinnerService {
 
 
 		if (winnerRepository.existsByAuction_Id(auctionId)) {
-			System.out.println("DEBUG: 이미 낙찰 처리가 된 경매입니다.");
 			return;
 		}
 
