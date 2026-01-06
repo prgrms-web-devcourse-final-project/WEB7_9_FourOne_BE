@@ -125,10 +125,10 @@ public class AuctionController {
 	) {
 		log.debug(
 			"경매 목록 조회 - sortType={}, category={}, keyword={}, cursor={}",
-			request.getSortType(),
-			request.getCategory(),
-			request.getKeyword(),
-			request.getCursor()
+			request.sortType(),
+			request.category(),
+			request.keyword(),
+			request.cursor()
 		);
 
 		AuctionCursorResponse response =
@@ -246,7 +246,10 @@ public class AuctionController {
 		@PathVariable Long auctionId,
 		@LoginUser(required = false) User user
 	) {
-		log.debug("SSE 입찰 스트림 시작 - auctionId={}", auctionId);
+		log.debug("SSE 입찰 스트림 시작 - auctionId: {}, userId: {}",
+			auctionId, user != null ? user.getId() : "anonymous");
+
+		auctionListService.getAuctionDetail(auctionId, user);
 
 		return sseService.subscribe(auctionId);
 	}

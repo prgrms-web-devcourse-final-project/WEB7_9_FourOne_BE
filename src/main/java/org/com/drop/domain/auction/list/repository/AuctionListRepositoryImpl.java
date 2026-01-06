@@ -1,6 +1,7 @@
 package org.com.drop.domain.auction.list.repository;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,7 +51,7 @@ public class AuctionListRepositoryImpl implements AuctionListRepositoryCustom {
 
 	@Override
 	public List<AuctionItemDto> searchAuctions(AuctionSearchRequest request) {
-		Cursor cursor = CursorPaginationUtil.decodeCursor(request.getCursor());
+		Cursor cursor = CursorPaginationUtil.decodeCursor(request.cursor());
 
 		// 1. 첫 번째 이미지 URL
 		Expression<String> firstImageUrl = new CaseBuilder()
@@ -117,14 +118,14 @@ public class AuctionListRepositoryImpl implements AuctionListRepositoryCustom {
 			.where(
 				product.deletedAt.isNull(),
 				auction.deletedAt.isNull(),
-				statusEq(request.getStatus()),
-				categoryEq(request.getCategory()),
-				subCategoryEq(request.getSubCategory()),
-				keywordContains(request.getKeyword()),
-				cursorCondition(cursor, request.getSortType(), popularityScore)
+				statusEq(request.status()),
+				categoryEq(request.category()),
+				subCategoryEq(request.subCategory()),
+				keywordContains(request.keyword()),
+				cursorCondition(cursor, request.sortType(), popularityScore)
 			)
-			.orderBy(getOrderSpecifier(request.getSortType(), popularityScore))
-			.limit(request.getSize() + 1L); // hasNext 확인을 위해 +1
+			.orderBy(getOrderSpecifier(request.sortType(), popularityScore))
+			.limit(request.size() + 1L);
 
 		return query.fetch();
 	}
@@ -138,21 +139,26 @@ public class AuctionListRepositoryImpl implements AuctionListRepositoryCustom {
 
 		switch (sortType) {
 			case POPULAR:
-				// 인기순은 점수와 ID를 커서로 사용
-				return CursorPaginationUtil.encodePopularCursor(lastItem.getScore(), lastItem.getAuctionId());
+				return CursorPaginationUtil.encodePopularCursor(
+					lastItem.getScore(),
+					lastItem.getAuctionId()
+				);
 			case CLOSING:
-				// 마감임박순은 종료 시간과 ID를 커서로 사용
-				return CursorPaginationUtil.encodeCursor(lastItem.getEndAt(), lastItem.getAuctionId());
+				return CursorPaginationUtil.encodeCursor(
+					lastItem.getEndAt(),
+					lastItem.getAuctionId()
+				);
 			case NEWEST:
 			default:
-				// 최신순은 생성 시간과 ID를 커서로 사용
-				return CursorPaginationUtil.encodeCursor(lastItem.getCreatedAt(), lastItem.getAuctionId());
+				return CursorPaginationUtil.encodeCursor(
+					lastItem.getCreatedAt(),
+					lastItem.getAuctionId()
+				);
 		}
 	}
 
 	@Override
 	public Optional<AuctionDetailDto> findAuctionDetailById(Long auctionId) {
-		// 이미지 URL 리스트 조회
 		List<String> imageUrls = queryFactory
 			.select(productImage.imageUrl)
 			.from(productImage)
@@ -162,7 +168,6 @@ public class AuctionListRepositoryImpl implements AuctionListRepositoryCustom {
 			.orderBy(productImage.id.asc())
 			.fetch();
 
-		// 최고 입찰가
 		NumberTemplate<Integer> currentHighestBid = Expressions.numberTemplate(
 			Integer.class,
 			"COALESCE(({0}), {1})",
@@ -173,7 +178,6 @@ public class AuctionListRepositoryImpl implements AuctionListRepositoryCustom {
 			auction.startPrice
 		);
 
-		// 총 입찰 수
 		NumberTemplate<Integer> totalBidCount = Expressions.numberTemplate(
 			Integer.class,
 			"COALESCE(({0}), 0)",
@@ -255,46 +259,9 @@ public class AuctionListRepositoryImpl implements AuctionListRepositoryCustom {
 		LocalDateTime sixHoursLater = now.plusHours(6);
 		int actualLimit = limit > 0 ? limit : DEFAULT_LIMIT;
 
-		// 첫 번째 이미지 URL
-		Expression<String> firstImageUrl = new CaseBuilder()
-			.when(JPAExpressions
-				.select(productImage.id.count())
-				.from(productImage)
-				.where(productImage.product.eq(product))
-				.gt(0L))
-			.then(Expressions.stringTemplate(
-				"({0})",
-				JPAExpressions
-					.select(productImage.imageUrl)
-					.from(productImage)
-					.where(productImage.product.eq(product))
-					.orderBy(productImage.id.asc())
-					.limit(1)
-			))
-			.otherwise("");
-
-		// 최고 입찰가
-		NumberExpression<Integer> currentHighestBid = Expressions.numberTemplate(
-			Integer.class,
-			"COALESCE(({0}), {1})",
-			JPAExpressions
-				.select(bid.bidAmount.max().intValue())
-				.from(bid)
-				.where(bid.auction.eq(auction)),
-			auction.startPrice
-		);
-
-		// 입찰 수
-		NumberExpression<Integer> bidCount = Expressions.numberTemplate(
-			Integer.class,
-			"COALESCE(({0}), 0)",
-			JPAExpressions
-				.select(bid.count().intValue())
-				.from(bid)
-				.where(bid.auction.eq(auction))
-		);
-
-		// 인기 점수
+		Expression<String> firstImageUrl = createFirstImageUrlExpression();
+		NumberExpression<Integer> currentHighestBid = createCurrentHighestBidExpression();
+		NumberExpression<Integer> bidCount = createBidCountExpression();
 		NumberExpression<Integer> score = product.bookmarkCount.add(bidCount);
 
 		return queryFactory
@@ -332,46 +299,9 @@ public class AuctionListRepositoryImpl implements AuctionListRepositoryCustom {
 	public List<AuctionItemDto> findPopularAuctions(int limit) {
 		int actualLimit = limit > 0 ? limit : DEFAULT_LIMIT;
 
-		// 첫 번째 이미지 URL
-		Expression<String> firstImageUrl = new CaseBuilder()
-			.when(JPAExpressions
-				.select(productImage.id.count())
-				.from(productImage)
-				.where(productImage.product.eq(product))
-				.gt(0L))
-			.then(Expressions.stringTemplate(
-				"({0})",
-				JPAExpressions
-					.select(productImage.imageUrl)
-					.from(productImage)
-					.where(productImage.product.eq(product))
-					.orderBy(productImage.id.asc())
-					.limit(1)
-			))
-			.otherwise("");
-
-		// 입찰 수
-		NumberExpression<Integer> bidCount = Expressions.numberTemplate(
-			Integer.class,
-			"COALESCE(({0}), 0)",
-			JPAExpressions
-				.select(bid.count().intValue())
-				.from(bid)
-				.where(bid.auction.eq(auction))
-		);
-
-		// 최고 입찰가
-		NumberExpression<Integer> currentHighestBid = Expressions.numberTemplate(
-			Integer.class,
-			"COALESCE(({0}), {1})",
-			JPAExpressions
-				.select(bid.bidAmount.max().intValue())
-				.from(bid)
-				.where(bid.auction.eq(auction)),
-			auction.startPrice
-		);
-
-		// 인기 점수
+		Expression<String> firstImageUrl = createFirstImageUrlExpression();
+		NumberExpression<Integer> currentHighestBid = createCurrentHighestBidExpression();
+		NumberExpression<Integer> bidCount = createBidCountExpression();
 		NumberExpression<Integer> popularityScore = product.bookmarkCount.add(bidCount);
 
 		return queryFactory
@@ -423,50 +353,80 @@ public class AuctionListRepositoryImpl implements AuctionListRepositoryCustom {
 			.fetch();
 	}
 
+	/**
+	 * 특정 사용자가 찜한 모든 상품 ID 조회 (Batch Fetch)
+	 */
 	@Override
-	public boolean isBookmarked(Long productId, Long userId) {
+	public List<Long> findBookmarkedProductIdsByUserId(Long userId) {
 		if (userId == null) {
-			return false;
+			return Collections.emptyList();
 		}
 
-		Integer count = queryFactory
-			.selectOne()
+		return queryFactory
+			.select(bookMark.product.id)
 			.from(bookMark)
-			.where(
-				bookMark.product.id.eq(productId),
-				bookMark.user.id.eq(userId)
-			)
-			.fetchFirst();
+			.where(bookMark.user.id.eq(userId))
+			.fetch();
+	}
 
-		return count != null;
+	// ==================== Common Expression Methods ====================
+
+	private Expression<String> createFirstImageUrlExpression() {
+		return new CaseBuilder()
+			.when(JPAExpressions
+				.select(productImage.id.count())
+				.from(productImage)
+				.where(productImage.product.eq(product))
+				.gt(0L))
+			.then(Expressions.stringTemplate(
+				"({0})",
+				JPAExpressions
+					.select(productImage.imageUrl)
+					.from(productImage)
+					.where(productImage.product.eq(product))
+					.orderBy(productImage.id.asc())
+					.limit(1)
+			))
+			.otherwise("");
+	}
+
+	private NumberExpression<Integer> createCurrentHighestBidExpression() {
+		return Expressions.numberTemplate(
+			Integer.class,
+			"COALESCE(({0}), {1})",
+			JPAExpressions
+				.select(bid.bidAmount.max().intValue())
+				.from(bid)
+				.where(bid.auction.eq(auction)),
+			auction.startPrice
+		);
+	}
+
+	private NumberExpression<Integer> createBidCountExpression() {
+		return Expressions.numberTemplate(
+			Integer.class,
+			"COALESCE(({0}), 0)",
+			JPAExpressions
+				.select(bid.count().intValue())
+				.from(bid)
+				.where(bid.auction.eq(auction))
+		);
 	}
 
 	// ==================== Helper Methods ====================
 
-	/**
-	 * 상태 조건 (null이면 조건 제외)
-	 */
 	private BooleanExpression statusEq(AuctionStatus status) {
 		return status != null ? auction.status.eq(status) : null;
 	}
 
-	/**
-	 * 카테고리 조건 (null이면 조건 제외)
-	 */
 	private BooleanExpression categoryEq(Category category) {
 		return category != null ? product.category.eq(category) : null;
 	}
 
-	/**
-	 * 서브카테고리 조건 (null이면 조건 제외)
-	 */
 	private BooleanExpression subCategoryEq(SubCategory subCategory) {
 		return subCategory != null ? product.subcategory.eq(subCategory) : null;
 	}
 
-	/**
-	 * 키워드 검색 조건 (null이면 조건 제외)
-	 */
 	private BooleanExpression keywordContains(String keyword) {
 		if (keyword == null || keyword.isBlank()) {
 			return null;
@@ -487,9 +447,6 @@ public class AuctionListRepositoryImpl implements AuctionListRepositoryCustom {
 		return builder.hasValue() ? Expressions.asBoolean(builder.getValue()) : null;
 	}
 
-	/**
-	 * 커서 페이징 조건
-	 */
 	private BooleanExpression cursorCondition(
 		Cursor cursor,
 		SortType sortType,
@@ -500,27 +457,18 @@ public class AuctionListRepositoryImpl implements AuctionListRepositoryCustom {
 		}
 
 		if (sortType == SortType.POPULAR && cursor.isPopularCursor()) {
-			// 인기순: 점수 + ID 기준
-			// 내림차순 정렬이므로, 커서보다 작은 점수이거나 점수가 같으면 ID가 작은 것
 			return popularityScore.lt(cursor.score())
 				.or(popularityScore.eq(cursor.score()).and(auction.id.lt(cursor.id())));
 		} else if (sortType == SortType.CLOSING && cursor.isTimestampCursor()) {
-			// 마감임박순: endAt + ID 기준 (오름차순)
-			// 커서보다 큰 endAt이거나 같으면 ID가 큰 것
 			return auction.endAt.gt(cursor.timestamp())
 				.or(auction.endAt.eq(cursor.timestamp()).and(auction.id.gt(cursor.id())));
 		} else if (sortType == SortType.NEWEST && cursor.isTimestampCursor()) {
-			// 최신순: createdAt + ID 기준 (내림차순)
-			// 커서보다 작은 createdAt이거나 같으면 ID가 작은 것
 			return product.createdAt.lt(cursor.timestamp())
 				.or(product.createdAt.eq(cursor.timestamp()).and(auction.id.lt(cursor.id())));
 		}
 		return null;
 	}
 
-	/**
-	 * 정렬 조건
-	 */
 	private OrderSpecifier<?>[] getOrderSpecifier(
 		SortType sortType,
 		NumberExpression<Integer> popularityScore

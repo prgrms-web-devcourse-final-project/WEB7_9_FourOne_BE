@@ -9,17 +9,14 @@ import org.com.drop.domain.auction.list.dto.SortType;
 import org.com.drop.domain.auction.list.dto.request.AuctionSearchRequest;
 import org.com.drop.domain.auction.product.entity.Product;
 
-import lombok.Builder;
-import lombok.Getter;
-
 /**
  * 경매 목록 QueryDSL 커스텀 레포지토리 인터페이스
  */
 public interface AuctionListRepositoryCustom {
 
-	List<AuctionItemDto> searchAuctions(AuctionSearchRequest request);
+	// ==================== 조회 메서드 ====================
 
-	String getNextCursor(List<AuctionItemDto> results, int size, SortType sortType);
+	List<AuctionItemDto> searchAuctions(AuctionSearchRequest request);
 
 	Optional<AuctionDetailDto> findAuctionDetailById(Long auctionId);
 
@@ -29,23 +26,32 @@ public interface AuctionListRepositoryCustom {
 
 	List<BidHistoryDto> findBidHistory(Long auctionId, int limit);
 
-	boolean isBookmarked(Long productId, Long userId);
-
-	/**
-	 * 현재 최고 입찰가 조회
-	 */
 	Optional<CurrentHighestBidDto> findCurrentHighestBid(Long auctionId);
 
-	/**
-	 * 경매 시작가 조회
-	 */
 	Optional<Integer> findAuctionStartPrice(Long auctionId);
+
+	// ==================== 커서 및 페이징 ====================
+
+	String getNextCursor(List<AuctionItemDto> results, int size, SortType sortType);
+
+	// ==================== 찜 관련 메서드 ====================
+
+	/**
+	 * 특정 사용자가 찜한 모든 상품 ID 목록 조회 (배치 조회)
+	 * 성능 최적화를 위한 배치 쿼리
+	 *
+	 * @param userId 사용자 ID
+	 * @return 찜한 상품 ID 목록
+	 */
+	List<Long> findBookmarkedProductIdsByUserId(Long userId);
+
+	// ==================== 내부 DTO 클래스들 ====================
 
 	/**
 	 * 경매 아이템 DTO
 	 */
-	@Getter
-	@Builder
+	@lombok.Getter
+	@lombok.Builder
 	@lombok.AllArgsConstructor
 	class AuctionItemDto {
 		private final Long auctionId;
@@ -67,8 +73,8 @@ public interface AuctionListRepositoryCustom {
 	/**
 	 * 경매 상세 DTO
 	 */
-	@Getter
-	@Builder
+	@lombok.Getter
+	@lombok.Builder
 	@lombok.AllArgsConstructor
 	class AuctionDetailDto {
 		private final Long auctionId;
@@ -94,8 +100,8 @@ public interface AuctionListRepositoryCustom {
 	/**
 	 * 입찰 내역 DTO
 	 */
-	@Getter
-	@Builder
+	@lombok.Getter
+	@lombok.Builder
 	class BidHistoryDto {
 		private final Long bidId;
 		private final String bidderNickname;
@@ -106,8 +112,8 @@ public interface AuctionListRepositoryCustom {
 	/**
 	 * 현재 최고 입찰가 DTO
 	 */
-	@Getter
-	@Builder
+	@lombok.Getter
+	@lombok.Builder
 	@lombok.AllArgsConstructor
 	class CurrentHighestBidDto {
 		private final Integer currentHighestBid;
