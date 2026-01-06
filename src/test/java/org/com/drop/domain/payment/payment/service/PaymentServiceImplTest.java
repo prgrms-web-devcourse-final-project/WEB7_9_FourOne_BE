@@ -25,7 +25,6 @@ import org.com.drop.domain.user.repository.UserRepository;
 import org.com.drop.domain.winner.domain.Winner;
 import org.com.drop.domain.winner.repository.WinnerRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -40,7 +39,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
-@Disabled //카드 등록 때문인지 NULL not allowed for column "customer_key"; SQL statement: 오류 뜹니다.
 class PaymentServiceImplTest extends RedissonIntegrationTest {
 
 	@Autowired

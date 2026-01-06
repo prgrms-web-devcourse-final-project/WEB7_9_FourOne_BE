@@ -316,6 +316,11 @@ class PaymentMethodControllerTest {
 		@DisplayName("카드 삭제 - 성공")
 		@WithMockUser(username = "user1@example.com", roles = {"USER"})
 		void t2() throws Exception {
+			RegisterCardRequest request = new RegisterCardRequest(
+				"billingKey", CardCompany.HYUNDAI, "cardNumberMasked", "cardName"
+			);
+
+			paymentMethodService.registerCard(1L, request);
 			PaymentMethod paymentMethod = paymentMethodRepository.findById(cardId).get();
 
 			ResultActions resultActions = mockMvc
