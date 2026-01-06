@@ -27,7 +27,7 @@ public class PaymentMethodService {
 		}
 
 		String customerKey =
-			customerKeyGenerator.generate("user:" + userId + request.billingKey());
+			customerKeyGenerator.generate("user:" + userId);
 
 		PaymentMethod method = new PaymentMethod(
 			userId,
