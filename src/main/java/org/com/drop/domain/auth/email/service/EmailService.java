@@ -56,8 +56,8 @@ public class EmailService {
 			+ "</body></html>";
 	}
 
-	private void fallbackSendEmail(String toEmail, String code, Throwable t) {
-		log.error("Email Circuit Open! 이메일 서버 연결 실패: {}", t.getMessage());
+	private void fallbackSendEmail(String toEmail, String code, Throwable throwable) {
+		log.error("Email Circuit Open! 이메일 서버 연결 실패: {}", throwable.getMessage());
 		throw ErrorCode.AUTH_EMAIL_SEND_FAILED
 			.serviceException("이메일 서버 점검 중입니다. 잠시 후 다시 시도해주세요.");
 	}

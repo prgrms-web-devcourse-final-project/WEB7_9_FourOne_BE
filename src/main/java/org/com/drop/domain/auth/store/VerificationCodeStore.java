@@ -54,14 +54,14 @@ public class VerificationCodeStore {
 		redisTemplate.delete(VERIFIED_EMAIL_PREFIX + email);
 	}
 
-	private void fallbackRedisError(String email, String value, Throwable t) {
-		log.error("VerificationCodeStore Redis 장애 (Void): {}", t.getMessage());
+	private void fallbackRedisError(String email, String value, Throwable throwable) {
+		log.error("VerificationCodeStore Redis 장애 (Void): {}", throwable.getMessage());
 		throw ErrorCode.SYSTEM_ERROR.serviceException("현재 인증 시스템을 이용할 수 없습니다.");
 	}
 
 	// getCode 처럼 리턴 타입이 String인 메서드용
-	private String fallbackRedisGetError(String email, Throwable t) {
-		log.error("VerificationCodeStore Redis 장애 (Get): {}", t.getMessage());
+	private String fallbackRedisGetError(String email, Throwable throwable) {
+		log.error("VerificationCodeStore Redis 장애 (Get): {}", throwable.getMessage());
 		throw ErrorCode.SYSTEM_ERROR.serviceException("인증 확인 중 오류가 발생했습니다.");
 	}
 }
