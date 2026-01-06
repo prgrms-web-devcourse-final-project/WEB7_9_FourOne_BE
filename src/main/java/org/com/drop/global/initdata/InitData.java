@@ -14,6 +14,9 @@ import org.com.drop.domain.auction.product.qna.service.QnAService;
 import org.com.drop.domain.auction.product.repository.ProductImageRepository;
 import org.com.drop.domain.auction.product.repository.ProductRepository;
 import org.com.drop.domain.notification.service.NotificationService;
+import org.com.drop.domain.payment.method.dto.RegisterCardRequest;
+import org.com.drop.domain.payment.method.service.PaymentMethodService;
+import org.com.drop.domain.payment.payment.domain.CardCompany;
 import org.com.drop.domain.user.entity.User;
 import org.com.drop.domain.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +41,7 @@ public class InitData {
 	private final QnAService qnAService;
 	private final GuideRepository  guideRepository;
 	private final NotificationService notificationService;
+	private final PaymentMethodService paymentMethodService;
 	@Autowired
 	@Lazy
 	private InitData self;
@@ -129,5 +133,11 @@ public class InitData {
 		guideRepository.save(new Guide("안내사항2"));
 		notificationService.addNotification(user1, "테스트 알림1");
 		notificationService.addNotification(user1, "테스트 알림2");
+
+		RegisterCardRequest request = new RegisterCardRequest(
+			"billingKey", CardCompany.HYUNDAI, "cardNumberMasked", "cardName"
+		);
+
+		paymentMethodService.registerCard(1L, request);
 	}
 }

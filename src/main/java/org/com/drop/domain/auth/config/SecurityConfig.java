@@ -43,7 +43,8 @@ public class SecurityConfig {
 					"/api/v1/auth/email/send-code",
 					"/api/v1/auth/refresh",
 					"/api/v1/admin/help/**",
-					"/actuator/**"
+					"/actuator/**",
+					"/api/v1/user/me/paymentMethods/**"
 				).permitAll()
 				.requestMatchers("/api/v1/auth/logout").authenticated()
 				.requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
