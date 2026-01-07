@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.repository.AuctionRepository;
+import org.com.drop.domain.auction.list.service.BookmarkCacheService;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
 import org.com.drop.domain.auction.product.dto.ProductSearchResponse;
 import org.com.drop.domain.auction.product.entity.BookMark;
@@ -32,10 +33,12 @@ import lombok.RequiredArgsConstructor;
 public class ProductService {
 
 	private final ProductRepository productRepository;
-	private final ProductImageRepository  productImageRepository;
+	private final ProductImageRepository productImageRepository;
 	private final AuctionRepository auctionRepository;
 	private final BookmarkRepository bookmarkRepository;
 	private final AmazonS3Client amazonS3Client;
+	private final BookmarkCacheService bookmarkCacheService;
+
 	public void validUser(Long sellerId, User actor) {
 		if (!sellerId.equals(actor.getId())) {
 			throw ErrorCode.USER_INACTIVE_USER
@@ -135,7 +138,6 @@ public class ProductService {
 		while (current != null) {
 			sortedUrls.add(amazonS3Client.getPresignedUrl(current.getImageUrl()));
 			current = current.getTrailImg();
-
 		}
 
 		return sortedUrls;
@@ -193,6 +195,16 @@ public class ProductService {
 		product.increaseBookmarkCount();
 		productRepository.save(product);
 
+		// Redis 캐시 동기화 추가
+		try {
+			bookmarkCacheService.addBookmark(actor.getId(), productId);
+		} catch (Exception e) {
+			// 캐시 업데이트 실패는 로깅만 하고 계속 진행
+			// 데이터 일관성을 위해 캐시 무효화
+			bookmarkCacheService.invalidateUserBookmarkCache(actor.getId());
+			// 다음 조회 시 DB에서 다시 로드될 것임
+		}
+
 		return bookmark;
 	}
 
@@ -205,8 +217,17 @@ public class ProductService {
 
 		product.decreaseBookmarkCount();
 		productRepository.save(product);
-	}
 
+		// Redis 캐시 동기화 추가
+		try {
+			bookmarkCacheService.removeBookmark(actor.getId(), productId);
+		} catch (Exception e) {
+			// 캐시 업데이트 실패는 로깅만 하고 계속 진행
+			// 데이터 일관성을 위해 캐시 무효화
+			bookmarkCacheService.invalidateUserBookmarkCache(actor.getId());
+			// 다음 조회 시 DB에서 다시 로드될 것임
+		}
+	}
 
 	public BookMark findBookmarkById(Product product, User actor) {
 		return bookmarkRepository.findByProductAndUser(product, actor)

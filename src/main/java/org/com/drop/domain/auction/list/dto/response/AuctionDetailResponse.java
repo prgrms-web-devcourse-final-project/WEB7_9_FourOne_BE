@@ -7,36 +7,32 @@ import java.util.List;
 import org.com.drop.domain.auction.bid.dto.response.BidHistoryResponse;
 import org.com.drop.domain.auction.list.repository.AuctionListRepositoryCustom.AuctionDetailDto;
 
-import lombok.Builder;
-import lombok.Getter;
-
 /**
  * 경매 상세 응답 DTO
  */
-@Getter
-@Builder
-public class AuctionDetailResponse {
-	private final Long auctionId;
-	private final Long productId;
-	private final Long sellerId;
-	private final String sellerNickname;
-	private final String name;
-	private final String description;
-	private final String category;
-	private final String subCategory;
-	private final String status;
-	private final Integer startPrice;
-	private final Integer buyNowPrice;
-	private final Integer minBidStep;
-	private final LocalDateTime startAt;
-	private final LocalDateTime endAt;
-	private final LocalDateTime createdAt;
-	private final Integer currentHighestBid;
-	private final Integer totalBidCount;
-	private final Long remainingTimeSeconds;
-	private final List<String> imageUrls;
-	private final Boolean isBookmarked;
-	private final List<BidHistoryResponse> bidHistory;
+public record AuctionDetailResponse(
+	Long auctionId,
+	Long productId,
+	Long sellerId,
+	String sellerNickname,
+	String name,
+	String description,
+	String category,
+	String subCategory,
+	String status,
+	Integer startPrice,
+	Integer buyNowPrice,
+	Integer minBidStep,
+	LocalDateTime startAt,
+	LocalDateTime endAt,
+	LocalDateTime createdAt,
+	Integer currentHighestBid,
+	Integer totalBidCount,
+	Long remainingTimeSeconds,
+	List<String> imageUrls,
+	Boolean isBookmarked,
+	List<BidHistoryResponse> bidHistory
+) {
 
 	public static AuctionDetailResponse from(
 		final AuctionDetailDto dto,
@@ -49,30 +45,30 @@ public class AuctionDetailResponse {
 			dto.getEndAt()
 		);
 
-		return AuctionDetailResponse.builder()
-			.auctionId(dto.getAuctionId())
-			.productId(dto.getProductId())
-			.sellerId(dto.getSellerId())
-			.sellerNickname(dto.getSellerNickname())
-			.name(dto.getName())
-			.description(dto.getDescription())
-			.category(dto.getCategory().name())
-			.subCategory(dto.getSubCategory() != null ? dto.getSubCategory().name() : null)
-			.status(dto.getStatus().name())
-			.startPrice(dto.getStartPrice())
-			.buyNowPrice(dto.getBuyNowPrice())
-			.minBidStep(dto.getMinBidStep())
-			.startAt(dto.getStartAt())
-			.endAt(dto.getEndAt())
-			.createdAt(dto.getCreatedAt())
-			.currentHighestBid(dto.getCurrentHighestBid() != null
+		return new AuctionDetailResponse(
+			dto.getAuctionId(),
+			dto.getProductId(),
+			dto.getSellerId(),
+			dto.getSellerNickname(),
+			dto.getName(),
+			dto.getDescription(),
+			dto.getCategory().name(),
+			dto.getSubCategory() != null ? dto.getSubCategory().name() : null,
+			dto.getStatus().name(),
+			dto.getStartPrice(),
+			dto.getBuyNowPrice(),
+			dto.getMinBidStep(),
+			dto.getStartAt(),
+			dto.getEndAt(),
+			dto.getCreatedAt(),
+			dto.getCurrentHighestBid() != null
 				? dto.getCurrentHighestBid()
-				: dto.getStartPrice())
-			.totalBidCount(dto.getTotalBidCount() != null ? dto.getTotalBidCount() : 0)
-			.remainingTimeSeconds(Math.max(0, remainingSeconds))
-			.imageUrls(imageUrls)
-			.isBookmarked(isBookmarked)
-			.bidHistory(bidHistory)
-			.build();
+				: dto.getStartPrice(),
+			dto.getTotalBidCount() != null ? dto.getTotalBidCount() : 0,
+			Math.max(0, remainingSeconds),
+			imageUrls,
+			isBookmarked,
+			bidHistory
+		);
 	}
 }

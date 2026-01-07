@@ -6,8 +6,10 @@ import static org.mockito.Mockito.*;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.com.drop.domain.auction.auction.entity.Auction;
 import org.com.drop.domain.auction.auction.entity.Auction.AuctionStatus;
@@ -24,6 +26,7 @@ import org.com.drop.domain.auction.list.repository.AuctionListRepository;
 import org.com.drop.domain.auction.list.repository.AuctionListRepositoryCustom;
 import org.com.drop.domain.auction.product.entity.Product;
 import org.com.drop.domain.user.entity.User;
+import org.com.drop.global.aws.AmazonS3Client;
 import org.com.drop.global.exception.ServiceException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,6 +49,12 @@ class AuctionListServiceTest {
 	@Mock
 	private BidRepository bidRepository;
 
+	@Mock
+	private AmazonS3Client amazonS3Client;
+
+	@Mock
+	private BookmarkCacheService bookmarkCacheService;
+
 	@InjectMocks
 	private AuctionListService auctionListService;
 
@@ -61,141 +70,146 @@ class AuctionListServiceTest {
 			.nickname("testUser")
 			.build();
 
-		itemDto = AuctionListRepositoryCustom.AuctionItemDto.builder()
-			.auctionId(1L)
-			.productId(1L)
-			.name("테스트 상품")
-			.imageUrl("test.jpg")
-			.status(AuctionStatus.LIVE)
-			.category(Product.Category.STARGOODS)
-			.subCategory(Product.SubCategory.ACC)
-			.currentHighestBid(10000)
-			.startPrice(5000)
-			.endAt(LocalDateTime.now().plusHours(1))
-			.bookmarkCount(5)
-			.bidCount(3)
-			.createdAt(LocalDateTime.now())
-			.score(8)
-			.build();
+		itemDto = new AuctionListRepositoryCustom.AuctionItemDto(
+			1L,
+			1L,
+			"테스트 상품",
+			"test.jpg",
+			AuctionStatus.LIVE,
+			Product.Category.STARGOODS,
+			Product.SubCategory.ACC,
+			5000,
+			10000,
+			LocalDateTime.now().plusHours(1),
+			5,
+			3,
+			LocalDateTime.now(),
+			8
+		);
 
-		detailDto = AuctionListRepositoryCustom.AuctionDetailDto.builder()
-			.auctionId(1L)
-			.productId(1L)
-			.sellerId(2L)
-			.sellerNickname("판매자")
-			.name("테스트 상품")
-			.description("상품 설명")
-			.category(Product.Category.STARGOODS)
-			.subCategory(Product.SubCategory.ACC)
-			.status(AuctionStatus.LIVE)
-			.startPrice(5000)
-			.buyNowPrice(20000)
-			.minBidStep(1000)
-			.startAt(LocalDateTime.now().minusHours(1))
-			.endAt(LocalDateTime.now().plusHours(1))
-			.createdAt(LocalDateTime.now())
-			.currentHighestBid(10000)
-			.totalBidCount(3)
-			.imageUrls(Arrays.asList("img1.jpg", "img2.jpg"))
-			.build();
+		detailDto = new AuctionListRepositoryCustom.AuctionDetailDto(
+			1L,
+			1L,
+			2L,
+			"판매자",
+			"테스트 상품",
+			"상품 설명",
+			Product.Category.STARGOODS,
+			Product.SubCategory.ACC,
+			AuctionStatus.LIVE,
+			5000,
+			20000,
+			1000,
+			LocalDateTime.now().minusHours(1),
+			LocalDateTime.now().plusHours(1),
+			LocalDateTime.now(),
+			10000,
+			3,
+			Arrays.asList("img1.jpg", "img2.jpg")
+		);
 
-		highestBidDto = AuctionListRepositoryCustom.CurrentHighestBidDto.builder()
-			.currentHighestBid(15000)
-			.bidderNickname("입찰자")
-			.bidTime(LocalDateTime.now())
-			.build();
+		highestBidDto = new AuctionListRepositoryCustom.CurrentHighestBidDto(
+			15000,
+			"입찰자",
+			LocalDateTime.now()
+		);
 	}
 
 	@Test
 	@DisplayName("경매 목록 조회 - 성공 (로그인 사용자)")
 	void getAuctions_success_withUser() {
-		// given
-		AuctionSearchRequest request = AuctionSearchRequest.builder()
-			.size(20)
-			.build();
+		// given: Record 생성자로 객체 생성 (Builder 사용 X)
+		AuctionSearchRequest request = new AuctionSearchRequest(
+			null, null, null, null, SortType.NEWEST, null, 20
+		);
 		List<AuctionListRepositoryCustom.AuctionItemDto> dtos = Arrays.asList(itemDto);
 
 		when(auctionListRepository.searchAuctions(request)).thenReturn(dtos);
 		when(auctionListRepository.getNextCursor(dtos, 20, SortType.NEWEST)).thenReturn(null);
-		when(auctionListRepository.isBookmarked(eq(1L), eq(1L))).thenReturn(true);
+
+		// Redis 캐시 Mocking (찜한 상품 ID 목록 반환)
+		when(bookmarkCacheService.getBookmarkedProductIds(1L)).thenReturn(Set.of(1L));
 
 		// when
 		AuctionCursorResponse response = auctionListService.getAuctions(request, testUser);
 
 		// then
 		assertThat(response).isNotNull();
-		assertThat(response.getItems()).hasSize(1);
-		assertThat(response.getItems().get(0).getAuctionId()).isEqualTo(1L);
-		assertThat(response.getItems().get(0).getIsBookmarked()).isTrue();
-		assertThat(response.getCursor()).isNull();
-		assertThat(response.isHasNext()).isFalse();
+		assertThat(response.items()).hasSize(1);
+		assertThat(response.items().get(0).auctionId()).isEqualTo(1L);
+		assertThat(response.items().get(0).isBookmarked()).isTrue(); // 찜 여부 확인
+		assertThat(response.cursor()).isNull();
+		assertThat(response.hasNext()).isFalse();
 
-		verify(auctionListRepository).isBookmarked(eq(1L), eq(1L));
+		// 캐시 서비스 호출 검증
+		verify(bookmarkCacheService).getBookmarkedProductIds(1L);
 	}
 
 	@Test
 	@DisplayName("경매 목록 조회 - 성공 (비로그인 사용자)")
 	void getAuctions_success_anonymous() {
 		// given
-		AuctionSearchRequest request = AuctionSearchRequest.builder()
-			.size(20)
-			.build();
+		AuctionSearchRequest request = new AuctionSearchRequest(
+			null, null, null, null, SortType.NEWEST, null, 20
+		);
 		List<AuctionListRepositoryCustom.AuctionItemDto> dtos = Arrays.asList(itemDto);
 
 		when(auctionListRepository.searchAuctions(request)).thenReturn(dtos);
 		when(auctionListRepository.getNextCursor(dtos, 20, SortType.NEWEST)).thenReturn(null);
-		// 비로그인 사용자는 isBookmarked 호출 안함
+		// 비로그인 시 캐시 조회 X
 
 		// when
 		AuctionCursorResponse response = auctionListService.getAuctions(request, null);
 
 		// then
 		assertThat(response).isNotNull();
-		assertThat(response.getItems()).hasSize(1);
-		assertThat(response.getItems().get(0).getIsBookmarked()).isFalse();
-		verify(auctionListRepository, never()).isBookmarked(anyLong(), anyLong());
+		assertThat(response.items()).hasSize(1);
+		assertThat(response.items().get(0).isBookmarked()).isFalse(); // 비로그인은 항상 false
+		verify(bookmarkCacheService, never()).getBookmarkedProductIds(any());
 	}
 
 	@Test
 	@DisplayName("경매 목록 조회 - hasNext true")
 	void getAuctions_hasNext_true() {
-		// given
-		AuctionSearchRequest request = AuctionSearchRequest.builder()
-			.size(1)
-			.build();
+		// given (size=1)
+		AuctionSearchRequest request = new AuctionSearchRequest(
+			null, null, null, null, SortType.NEWEST, null, 1
+		);
 
-		// 2개의 항목 반환 (size보다 1개 더 많음 -> 다음 페이지 존재)
-		AuctionListRepositoryCustom.AuctionItemDto itemDto2 = AuctionListRepositoryCustom.AuctionItemDto.builder()
-			.auctionId(2L)
-			.productId(2L)
-			.name("테스트 상품2")
-			.imageUrl("test2.jpg")
-			.status(AuctionStatus.LIVE)
-			.category(Product.Category.STARGOODS)
-			.subCategory(Product.SubCategory.ACC)
-			.currentHighestBid(20000)
-			.startPrice(10000)
-			.endAt(LocalDateTime.now().plusHours(2))
-			.bookmarkCount(3)
-			.bidCount(2)
-			.createdAt(LocalDateTime.now())
-			.score(5)
-			.build();
+		AuctionListRepositoryCustom.AuctionItemDto itemDto2 = new AuctionListRepositoryCustom.AuctionItemDto(
+			2L,
+			2L,
+			"테스트 상품2",
+			"test2.jpg",
+			AuctionStatus.LIVE,
+			Product.Category.STARGOODS,
+			Product.SubCategory.ACC,
+			10000,
+			20000,
+			LocalDateTime.now().plusHours(2),
+			3,
+			2,
+			LocalDateTime.now(),
+			5
+		);
 
+		// size(1)보다 1개 더 많은 2개 반환 -> 다음 페이지 존재
 		List<AuctionListRepositoryCustom.AuctionItemDto> dtos = Arrays.asList(itemDto, itemDto2);
 
 		when(auctionListRepository.searchAuctions(request)).thenReturn(dtos);
 		when(auctionListRepository.getNextCursor(dtos, 1, SortType.NEWEST)).thenReturn("encodedCursor");
-		when(auctionListRepository.isBookmarked(eq(1L), eq(1L))).thenReturn(false);
+
+		// 캐시 조회 (찜 내역 없음)
+		when(bookmarkCacheService.getBookmarkedProductIds(1L)).thenReturn(Collections.emptySet());
 
 		// when
 		AuctionCursorResponse response = auctionListService.getAuctions(request, testUser);
 
 		// then
 		assertThat(response).isNotNull();
-		assertThat(response.isHasNext()).isTrue();
-		assertThat(response.getCursor()).isEqualTo("encodedCursor");
-		assertThat(response.getItems()).hasSize(1); // 요청한 size(1)만큼만 반환
+		assertThat(response.hasNext()).isTrue();
+		assertThat(response.cursor()).isEqualTo("encodedCursor");
+		assertThat(response.items()).hasSize(1); // 요청한 size(1)만큼만 반환
 	}
 
 	@Test
@@ -206,8 +220,9 @@ class AuctionListServiceTest {
 
 		when(auctionListRepository.findAuctionDetailById(auctionId))
 			.thenReturn(Optional.of(detailDto));
-		when(auctionListRepository.isBookmarked(eq(1L), eq(1L)))
-			.thenReturn(false);
+
+		// 캐시 조회 (찜 내역 없음)
+		when(bookmarkCacheService.getBookmarkedProductIds(1L)).thenReturn(Collections.emptySet());
 
 		Bid bid = Bid.builder()
 			.id(1L)
@@ -218,6 +233,7 @@ class AuctionListServiceTest {
 			.isAuto(false)
 			.build();
 		Page<Bid> bidPage = new PageImpl<>(List.of(bid));
+
 		when(bidRepository.findAllByAuctionId(eq(auctionId), any(PageRequest.class)))
 			.thenReturn(bidPage);
 
@@ -226,14 +242,14 @@ class AuctionListServiceTest {
 
 		// then
 		assertThat(response).isNotNull();
-		assertThat(response.getAuctionId()).isEqualTo(1L);
-		assertThat(response.getName()).isEqualTo("테스트 상품");
-		assertThat(response.getCurrentHighestBid()).isEqualTo(10000);
-		assertThat(response.getTotalBidCount()).isEqualTo(3);
-		assertThat(response.getImageUrls()).hasSize(2);
-		assertThat(response.getIsBookmarked()).isFalse();
-		assertThat(response.getBidHistory()).hasSize(1);
-		assertThat(response.getBidHistory().get(0).bidAmount()).isEqualTo(10000);
+		assertThat(response.auctionId()).isEqualTo(1L);
+		assertThat(response.name()).isEqualTo("테스트 상품");
+		assertThat(response.currentHighestBid()).isEqualTo(10000);
+		assertThat(response.totalBidCount()).isEqualTo(3);
+		assertThat(response.imageUrls()).hasSize(2);
+		assertThat(response.isBookmarked()).isFalse();
+		assertThat(response.bidHistory()).hasSize(1);
+		assertThat(response.bidHistory().get(0).bidAmount()).isEqualTo(10000);
 	}
 
 	@Test
@@ -265,9 +281,8 @@ class AuctionListServiceTest {
 
 		// then
 		assertThat(response).isNotNull();
-		assertThat(response.getCurrentHighestBid()).isEqualTo(15000);
-		// 닉네임 마스킹 검증: "입찰자" -> "입찰***"
-		assertThat(response.getBidderNickname()).isEqualTo("입찰***");
+		assertThat(response.currentHighestBid()).isEqualTo(15000);
+		assertThat(response.bidderNickname()).isEqualTo("입찰***");
 	}
 
 	@Test
@@ -285,8 +300,8 @@ class AuctionListServiceTest {
 
 		// then
 		assertThat(response).isNotNull();
-		assertThat(response.getCurrentHighestBid()).isEqualTo(5000);
-		assertThat(response.getBidderNickname()).isNull();
+		assertThat(response.currentHighestBid()).isEqualTo(5000);
+		assertThat(response.bidderNickname()).isNull();
 	}
 
 	@Test
@@ -314,17 +329,19 @@ class AuctionListServiceTest {
 
 		when(auctionListRepository.findEndingSoonAuctions(10)).thenReturn(endingSoon);
 		when(auctionListRepository.findPopularAuctions(10)).thenReturn(popular);
-		when(auctionListRepository.isBookmarked(eq(1L), eq(1L))).thenReturn(true);
+
+		// 캐시 조회 (찜 내역 있음)
+		when(bookmarkCacheService.getBookmarkedProductIds(1L)).thenReturn(Set.of(1L));
 
 		// when
 		AuctionHomeResponse response = auctionListService.getHomeAuctions(testUser);
 
 		// then
 		assertThat(response).isNotNull();
-		assertThat(response.getEndingSoon()).hasSize(1);
-		assertThat(response.getPopular()).hasSize(1);
-		assertThat(response.getEndingSoon().get(0).getIsBookmarked()).isTrue();
-		assertThat(response.getPopular().get(0).getIsBookmarked()).isTrue();
+		assertThat(response.endingSoon()).hasSize(1);
+		assertThat(response.popular()).hasSize(1);
+		assertThat(response.endingSoon().get(0).isBookmarked()).isTrue();
+		assertThat(response.popular().get(0).isBookmarked()).isTrue();
 	}
 
 	@Test
@@ -352,6 +369,8 @@ class AuctionListServiceTest {
 			.build();
 
 		Page<Bid> bids = new PageImpl<>(List.of(bid1, bid2));
+
+		// [수정] findAllByAuctionId로 검증
 		when(bidRepository.findAllByAuctionId(eq(auctionId), any(PageRequest.class)))
 			.thenReturn(bids);
 
@@ -360,12 +379,8 @@ class AuctionListServiceTest {
 
 		// then
 		assertThat(response).hasSize(2);
-
-		// BidHistoryResponse.from()이 닉네임 마스킹을 적용하는지 확인
-		// user1 -> "us***", user2 -> "us***"
 		assertThat(response.get(0).bidder()).isEqualTo("us***");
 		assertThat(response.get(1).bidder()).isEqualTo("us***");
-
 		assertThat(response.get(0).bidAmount()).isEqualTo(10000);
 		assertThat(response.get(1).bidAmount()).isEqualTo(9000);
 	}

@@ -1,6 +1,8 @@
 package org.com.drop.domain.auction.list.service;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.com.drop.domain.auction.bid.dto.response.BidHistoryResponse;
@@ -20,6 +22,7 @@ import org.com.drop.global.exception.ErrorCode;
 import org.com.drop.global.exception.ServiceException;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +30,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 경매 목록 서비스
+ * 경매 목록 서비스 (Redis 적용 및 성능 최적화)
  */
 @Slf4j
 @Service
@@ -37,11 +40,13 @@ public class AuctionListService {
 
 	private static final int BID_HISTORY_LIMIT = 10;
 	private static final int HOME_LIMIT = 10;
-	private static final String DEFAULT_IMAGE_URL = "https://drop-auction-bucket.s3.amazonaws.com/default/auction-default.jpg";
+	private static final String DEFAULT_IMAGE_URL =
+		"https://drop-auction-bucket.s3.amazonaws.com/default/auction-default.jpg";
 
 	private final AuctionListRepository auctionListRepository;
 	private final BidRepository bidRepository;
 	private final AmazonS3Client amazonS3Client;
+	private final BookmarkCacheService bookmarkCacheService;
 
 	/**
 	 * 경매 목록 조회 (커서 기반 무한 스크롤)
@@ -50,24 +55,28 @@ public class AuctionListService {
 		final AuctionSearchRequest request,
 		final User user
 	) {
-		log.debug("경매 목록 조회 - 정렬: {}, 카테고리: {}, 키워드: {}, 커서: {}",
-			request.getSortType(), request.getCategory(), request.getKeyword(), request.getCursor());
+		log.debug("경매 목록 조회 - 정렬: {}, 카테고리: {}, 키워드: {}",
+			request.sortType(), request.category(), request.keyword());
 
+		// 1. DB 목록 조회
 		List<AuctionListRepositoryCustom.AuctionItemDto> dtos =
 			auctionListRepository.searchAuctions(request);
 
-		boolean hasNext = dtos.size() > request.getSize();
+		boolean hasNext = dtos.size() > request.size();
 		List<AuctionListRepositoryCustom.AuctionItemDto> resultDtos = hasNext
-			? dtos.subList(0, request.getSize())
+			? dtos.subList(0, request.size())
 			: dtos;
 
-		// SortType을 전달하여 다음 커서 생성
-		String nextCursor = auctionListRepository.getNextCursor(dtos, request.getSize(), request.getSortType());
+		// 2. 사용자의 찜 목록 로드 (Redis 우선, DB 폴백)
+		Set<Long> bookmarkedProductIds = loadUserBookmarks(user);
 
+		// 3. DTO 변환 및 찜 여부 매핑
+		String nextCursor = auctionListRepository.getNextCursor(
+			dtos, request.size(), request.sortType());
 		List<AuctionItemResponse> items = resultDtos.stream()
 			.map(dto -> AuctionItemResponse.from(
 				dto,
-				getIsBookmarked(dto.getProductId(), user),
+				bookmarkedProductIds.contains(dto.getProductId()),
 				getImageUrlWithPresignedUrl(dto.getImageUrl())
 			))
 			.collect(Collectors.toList());
@@ -89,19 +98,21 @@ public class AuctionListService {
 					"경매를 찾을 수 없습니다. auctionId: %d", auctionId
 				));
 
-		// BidRepository에서 입찰 내역 조회
+		// PageRequest를 사용하여 DB에서 최신순으로 10개만 조회
 		List<Bid> bids = bidRepository.findAllByAuctionId(
 			auctionId,
-			PageRequest.of(0, BID_HISTORY_LIMIT)
+			PageRequest.of(0, BID_HISTORY_LIMIT, Sort.by(Sort.Direction.DESC, "createdAt"))
 		).getContent();
 
 		List<BidHistoryResponse> bidHistory = bids.stream()
 			.map(BidHistoryResponse::from)
 			.collect(Collectors.toList());
 
-		Boolean isBookmarked = getIsBookmarked(dto.getProductId(), user);
+		// 사용자 찜 목록 로드
+		Set<Long> bookmarkedProductIds = loadUserBookmarks(user);
+		Boolean isBookmarked = bookmarkedProductIds.contains(dto.getProductId());
 
-		// 이미지 URL들을 Presigned URL로 변환
+		// 이미지 URL 변환
 		List<String> imageUrls = dto.getImageUrls().stream()
 			.map(this::getImageUrlWithPresignedUrl)
 			.collect(Collectors.toList());
@@ -116,7 +127,6 @@ public class AuctionListService {
 		AuctionListRepositoryCustom.CurrentHighestBidDto highestBidDto =
 			auctionListRepository.findCurrentHighestBid(auctionId)
 				.orElseGet(() -> {
-					// 최고 입찰이 없으면 경매 시작가 조회
 					Integer startPrice = auctionListRepository.findAuctionStartPrice(auctionId)
 						.orElseThrow(() -> new ServiceException(
 							ErrorCode.AUCTION_NOT_FOUND,
@@ -130,23 +140,22 @@ public class AuctionListService {
 						.build();
 				});
 
-		// 마스킹 처리
-		String bidderNickname = highestBidDto.getBidderNickname();
-		String maskedNickname = (bidderNickname != null) ? maskNickname(bidderNickname) : null;
+		String maskedNickname = maskNickname(highestBidDto.getBidderNickname());
 
-		return AuctionBidUpdate.builder()
-			.currentHighestBid(highestBidDto.getCurrentHighestBid())
-			.bidderNickname(maskedNickname)
-			.build();
+		return new AuctionBidUpdate(
+			highestBidDto.getCurrentHighestBid(),
+			maskedNickname
+		);
 	}
 
 	/**
 	 * 입찰 내역 조회
 	 */
 	public List<BidHistoryResponse> getBidHistory(Long auctionId, int size) {
+		// PageRequest를 사용하여 필요한 개수만큼 최신순 조회
 		List<Bid> bids = bidRepository.findAllByAuctionId(
 			auctionId,
-			PageRequest.of(0, size)
+			PageRequest.of(0, size, Sort.by(Sort.Direction.DESC, "createdAt"))
 		).getContent();
 
 		return bids.stream()
@@ -159,28 +168,54 @@ public class AuctionListService {
 	 */
 	@Cacheable(value = "homeAuctions", key = "#user?.id ?: 'anonymous'")
 	public AuctionHomeResponse getHomeAuctions(final User user) {
+		// 사용자 찜 목록 로드
+		Set<Long> bookmarkedProductIds = loadUserBookmarks(user);
+
+		// 마감 임박 경매 조회 및 매핑
 		List<AuctionItemResponse> endingSoon =
 			auctionListRepository.findEndingSoonAuctions(HOME_LIMIT).stream()
 				.map(dto -> AuctionItemResponse.from(
 					dto,
-					getIsBookmarked(dto.getProductId(), user),
+					bookmarkedProductIds.contains(dto.getProductId()),
 					getImageUrlWithPresignedUrl(dto.getImageUrl())
 				))
 				.collect(Collectors.toList());
 
+		// 인기 경매 조회 및 매핑
 		List<AuctionItemResponse> popular =
 			auctionListRepository.findPopularAuctions(HOME_LIMIT).stream()
 				.map(dto -> AuctionItemResponse.from(
 					dto,
-					getIsBookmarked(dto.getProductId(), user),
+					bookmarkedProductIds.contains(dto.getProductId()),
 					getImageUrlWithPresignedUrl(dto.getImageUrl())
 				))
 				.collect(Collectors.toList());
 
-		return AuctionHomeResponse.builder()
-			.endingSoon(endingSoon)
-			.popular(popular)
-			.build();
+		return new AuctionHomeResponse(endingSoon, popular);
+	}
+
+	/**
+	 * 사용자의 찜한 상품 ID 목록 로드 (Cache-Aside Pattern)
+	 */
+	private Set<Long> loadUserBookmarks(User user) {
+		if (user == null) {
+			return Collections.emptySet();
+		}
+
+		// 1. Redis 조회
+		Set<Long> cachedBookmarks = bookmarkCacheService.getBookmarkedProductIds(user.getId());
+		if (cachedBookmarks != null) {
+			return cachedBookmarks;
+		}
+
+		// 2. DB 조회 (배치 조회)
+		List<Long> dbBookmarks =
+			auctionListRepository.findBookmarkedProductIdsByUserId(user.getId());
+
+		// 3. Redis 적재
+		bookmarkCacheService.cacheUserBookmarks(user.getId(), dbBookmarks);
+
+		return Set.copyOf(dbBookmarks);
 	}
 
 	/**
@@ -192,25 +227,14 @@ public class AuctionListService {
 		}
 
 		try {
-			// S3 객체 키인 경우 Presigned URL 생성
 			if (!imageKey.startsWith("http")) {
 				return amazonS3Client.getPresignedUrl(imageKey);
 			}
-			// 이미 URL인 경우 그대로 반환
 			return imageKey;
 		} catch (Exception e) {
 			log.warn("Presigned URL 생성 실패, 기본 이미지로 대체: {}", imageKey, e);
 			return DEFAULT_IMAGE_URL;
 		}
-	}
-
-	/**
-	 * 찜 여부 확인 (로그인하지 않은 경우 false)
-	 */
-	private Boolean getIsBookmarked(final Long productId, final User user) {
-		return user != null
-			? auctionListRepository.isBookmarked(productId, user.getId())
-			: false;
 	}
 
 	/**
@@ -220,7 +244,6 @@ public class AuctionListService {
 		if (nickname == null || nickname.length() <= 2) {
 			return nickname;
 		}
-		// 앞 2글자 + *** 형식으로 마스킹
 		return nickname.substring(0, 2) + "***";
 	}
 }

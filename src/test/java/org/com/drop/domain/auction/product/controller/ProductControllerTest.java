@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.com.drop.BaseIntegrationTest;
+import org.com.drop.domain.auction.list.service.BookmarkCacheService;
 import org.com.drop.domain.auction.product.dto.ProductCreateRequest;
 import org.com.drop.domain.auction.product.entity.BookMark;
 import org.com.drop.domain.auction.product.entity.Product;
@@ -67,6 +68,9 @@ public class ProductControllerTest extends BaseIntegrationTest {
 
 	@MockitoBean
 	AmazonS3Client amazonS3Client;
+
+	@MockitoBean
+	BookmarkCacheService bookmarkCacheService;
 
 	@Autowired
 	private MockMvc mvc;
