@@ -41,10 +41,12 @@ public class BookmarkCacheService {
 				return null;
 			}
 
-			return productIds.stream()
+			Set<Long> result = productIds.stream()
 				.filter(id -> !EMPTY_MARKER.equals(id))
 				.map(Long::valueOf)
 				.collect(Collectors.toSet());
+
+			return result.isEmpty() ? null : result;
 		} catch (DataAccessException e) {
 			log.warn("Redis 조회 실패, DB로 폴백 - userId: {}", userId, e);
 			return null;
@@ -61,6 +63,9 @@ public class BookmarkCacheService {
 		try {
 			String key = USER_BOOKMARK_KEY_PREFIX + userId;
 
+			// 기존 데이터 삭제 후 새로 저장
+			redisTemplate.delete(key);
+
 			if (productIds.isEmpty()) {
 				redisTemplate.opsForSet().add(key, EMPTY_MARKER);
 			} else {
@@ -74,6 +79,8 @@ public class BookmarkCacheService {
 			log.debug("Redis 유저 찜 목록 캐싱 완료 - userId: {}, count: {}", userId, productIds.size());
 		} catch (DataAccessException e) {
 			log.error("Redis 캐싱 실패 - userId: {}", userId, e);
+
+			invalidateUserBookmarkCache(userId);
 		}
 	}
 
@@ -86,12 +93,15 @@ public class BookmarkCacheService {
 	public void addBookmark(Long userId, Long productId) {
 		try {
 			String key = USER_BOOKMARK_KEY_PREFIX + userId;
-			if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
-				redisTemplate.opsForSet().add(key, productId.toString());
-			}
+
+			redisTemplate.opsForSet().remove(key, EMPTY_MARKER);
+
+			redisTemplate.opsForSet().add(key, productId.toString());
+
+			redisTemplate.expire(key, CACHE_TTL_HOURS, TimeUnit.HOURS);
 		} catch (DataAccessException e) {
-			log.warn("Redis 찜 추가 실패 - userId: {}, productId: {}",
-				userId, productId, e);
+			log.warn("Redis 찜 추가 실패 - userId: {}, productId: {}", userId, productId, e);
+			invalidateUserBookmarkCache(userId);
 		}
 	}
 
@@ -104,12 +114,26 @@ public class BookmarkCacheService {
 	public void removeBookmark(Long userId, Long productId) {
 		try {
 			String key = USER_BOOKMARK_KEY_PREFIX + userId;
-			if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
-				redisTemplate.opsForSet().remove(key, productId.toString());
+
+			Long removedCount = redisTemplate.opsForSet().remove(key, productId.toString());
+
+			if (removedCount != null && removedCount > 0) {
+				log.debug("Redis 북마크 삭제 성공 - userId: {}, productId: {}, removedCount: {}",
+					userId, productId, removedCount);
+
+				Long size = redisTemplate.opsForSet().size(key);
+
+				if (size != null && size == 0) {
+					redisTemplate.opsForSet().add(key, EMPTY_MARKER);
+				}
+
+				redisTemplate.expire(key, CACHE_TTL_HOURS, TimeUnit.HOURS);
+			} else {
+				log.debug("삭제할 북마크가 Redis에 없음 - userId: {}, productId: {}", userId, productId);
 			}
 		} catch (DataAccessException e) {
-			log.warn("Redis 찜 해제 실패 - userId: {}, productId: {}",
-				userId, productId, e);
+			log.error("Redis 북마크 삭제 실패 - userId: {}, productId: {}", userId, productId, e);
+			invalidateUserBookmarkCache(userId);
 		}
 	}
 
@@ -125,6 +149,19 @@ public class BookmarkCacheService {
 			log.debug("사용자 찜 캐시 무효화 - userId: {}", userId);
 		} catch (DataAccessException e) {
 			log.warn("Redis 캐시 삭제 실패 - userId: {}", userId, e);
+		}
+	}
+
+	/**
+	 * 캐시가 존재하는지 확인
+	 */
+	public boolean hasCache(Long userId) {
+		try {
+			String key = USER_BOOKMARK_KEY_PREFIX + userId;
+			return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+		} catch (DataAccessException e) {
+			log.warn("Redis 캐시 확인 실패 - userId: {}", userId, e);
+			return false;
 		}
 	}
 }
