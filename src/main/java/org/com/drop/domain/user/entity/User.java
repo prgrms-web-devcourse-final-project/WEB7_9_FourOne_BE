@@ -2,8 +2,12 @@ package org.com.drop.domain.user.entity;
 
 import java.time.LocalDateTime;
 
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
@@ -17,17 +21,16 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "users", indexes = {@Index(name = "idx_user_email", columnList = "email")}, uniqueConstraints = {
 	@UniqueConstraint(name = "uq_user_email", columnNames = "email"),
 	@UniqueConstraint(name = "uq_user_nickname", columnNames = "nickname")})
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class User {
 
 	@Id
@@ -41,7 +44,7 @@ public class User {
 	private String nickname;
 
 	@Column(nullable = false)
-	private String password;   // 암호화 저장
+	private String password;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
@@ -49,6 +52,7 @@ public class User {
 
 	private String userProfile;
 
+	@CreatedDate
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;
 
@@ -58,10 +62,27 @@ public class User {
 
 	private String kakaoId;  // 소셜로그인 전용
 
+	@Builder.Default
+	@Column(nullable = false, columnDefinition = "integer default 0")
+	private Integer penaltyCount = 0;
+
 	@Column
 	private LocalDateTime deletedAt; // soft-delete 용
 
 	public enum LoginType { LOCAL, KAKAO }
 
 	public enum UserRole { USER, ADMIN }
+
+	public void markAsDeleted() {
+		this.deletedAt = LocalDateTime.now();
+	}
+
+	public void updateProfile(String nickname, String userProfile) {
+		if (nickname != null) {
+			this.nickname = nickname;
+		}
+		if (userProfile != null) {
+			this.userProfile = userProfile;
+		}
+	}
 }

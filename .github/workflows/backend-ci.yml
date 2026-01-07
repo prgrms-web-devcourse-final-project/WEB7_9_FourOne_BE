@@ -1,609 +1,624 @@
 name: DROP Backend CI
 
 on:
-    pull_request:
-        paths:
-            - "**"
-            - ".github/**"
-        branches: [ main, dev ]
-    push:
-        branches: [ main, dev ]
+  pull_request:
+    paths:
+      - "**"
+      - ".github/**"
+    branches: [ main, dev ]
+  push:
+    branches: [ main, dev ]
 
 permissions:
-    contents: read
-    checks: write
-    pull-requests: write
+  contents: read
+  checks: write
+  pull-requests: write
 
 jobs:
-    backend-test:
-        runs-on: ubuntu-latest
+  backend-test:
+    runs-on: ubuntu-latest
+    env:
+      SPRING_PROFILES_ACTIVE: test
+      SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+      SPRING_DATASOURCE_USERNAME: sa
+      SPRING_DATASOURCE_PASSWORD: ""
+      INCLUDE_INTEGRATION: false
 
+    services:
+      redis:
+        image: redis:7.2
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create env file from GitHub Secret
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env.properties
+
+      - name: Ensure base commit is fetched (PR only)
+        if: github.event_name == 'pull_request'
+        run: |
+          BASE_SHA='${{ github.event.pull_request.base.sha }}'
+          if ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+            git fetch --no-tags --prune origin "$BASE_SHA":"refs/remotes/origin/base-sha"
+          fi
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build without tests
+        run: ./gradlew build -x test --no-daemon
+
+      - name: Run Unit Tests
+        run: ./gradlew test -Dspring.config.import=optional:file:.env.properties --no-daemon
+
+      - name: Run Full Tests (Unit + Integration)
+        run: ./gradlew fullTest -Dspring.config.import=optional:file:.env.properties --no-daemon
+
+
+      - name: Generate JaCoCo Unit Test Report
+        if: always()
+        run: ./gradlew jacocoTestReport --no-daemon
+
+      - name: Generate JaCoCo Full Test Report
+        if: always()
+        run: ./gradlew clean jacocoFullTestReport --rerun-tasks --no-daemon
+
+      # 테스트 결과 파싱
+      - name: Parse test results
+        if: always()
+        id: test_results
+        run: |
+          # fullTest 결과 우선 사용
+          TEST_DIR="build/test-results/fullTest"
+          
+          if [ -d "$TEST_DIR" ]; then
+            TOTAL=0
+            FAILURES=0
+            SKIPPED=0
+          
+            # XML 파일 파싱
+            for xml_file in "$TEST_DIR"/TEST-*.xml; do
+              if [ -f "$xml_file" ]; then
+                tests=$(grep -o 'tests="[0-9]*"' "$xml_file" | head -1 | grep -o '[0-9]*' || echo "0")
+                failures=$(grep -o 'failures="[0-9]*"' "$xml_file" | head -1 | grep -o '[0-9]*' || echo "0")
+                skipped=$(grep -o 'skipped="[0-9]*"' "$xml_file" | head -1 | grep -o '[0-9]*' || echo "0")
+          
+                TOTAL=$((TOTAL + tests))
+                FAILURES=$((FAILURES + failures))
+                SKIPPED=$((SKIPPED + skipped))
+              fi
+            done
+          
+            PASSED=$((TOTAL - FAILURES - SKIPPED))
+          
+            echo "Test Results: Total=$TOTAL, Passed=$PASSED, Failed=$FAILURES, Skipped=$SKIPPED"
+            echo "total=$TOTAL" >> $GITHUB_OUTPUT
+            echo "passed=$PASSED" >> $GITHUB_OUTPUT
+            echo "failed=$FAILURES" >> $GITHUB_OUTPUT
+            echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
+          else
+            echo "No test results found"
+            echo "total=0" >> $GITHUB_OUTPUT
+            echo "passed=0" >> $GITHUB_OUTPUT
+            echo "failed=0" >> $GITHUB_OUTPUT
+            echo "skipped=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish Unit Test Results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: |
+            build/test-results/test/*.xml
+          check_run: true
+          comment_mode: always
+
+      - name: Publish Full Test Results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: |
+            build/test-results/fullTest/*.xml
+          check_run: true
+          comment_mode: always
+
+      - name: Upload failed-tests.txt (if exists)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-tests
+          path: build/reports/tests/failed-tests.txt
+          if-no-files-found: ignore
+
+      - name: Upsert PR comment with failed tests
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'build/reports/tests/failed-tests.txt';
+            const MARK = '<!-- FAILED-TESTS-SUMMARY -->';
+            
+            function buildBody(textBlock) {
+              return [
+                MARK,
+                '### ❌ Failed Tests (from Gradle summary)',
+                '',
+                '<details><summary>Expand</summary>',
+                '',
+                '```text',
+                textBlock,
+                '```',
+                '',
+                '</details>'
+              ].join('\n');
+            }
+            
+            if (!context.payload.pull_request) {
+              core.info('Not a PR event, skip commenting');
+              return;
+            }
+            
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              per_page: 100
+            });
+            
+            if (!fs.existsSync(path)) {
+              const existing = comments.find(c => c.user.type === 'Bot' && c.body.includes(MARK));
+              if (existing) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existing.id
+                });
+              }
+              return;
+            }
+            
+            const content = fs.readFileSync(path, 'utf8').trim();
+            if (!content || content === 'No failures 🎉') {
+              const existing = comments.find(c => c.user.type === 'Bot' && c.body.includes(MARK));
+              if (existing) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existing.id
+                });
+              }
+              return;
+            }
+            
+            const body = buildBody(content);
+            const existing = comments.find(c => c.user.type === 'Bot' && c.body.includes(MARK));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body
+              });
+            }
+
+      - name: Upload JaCoCo Unit Test HTML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-unit-html
+          path: build/reports/jacoco/html
+          if-no-files-found: warn
+
+      - name: Upload JaCoCo Full Test HTML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-full-html
+          path: build/reports/jacocoFull/html
+          if-no-files-found: warn
+
+      - name: Upload JaCoCo XML Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-xml-reports
+          path: |
+            build/reports/jacoco/xml/jacocoTestReport.xml
+            build/reports/jacocoFull/xml/jacocoFullTestReport.xml
+          if-no-files-found: warn
+
+      - name: Install xmllint
+        if: always()
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+
+      - name: Compute coverage percentage
+        if: always() && github.event_name == 'pull_request'
+        id: coverage
+        run: |
+          # JaCoCo XML 리포트 찾기 (fullTest 우선)
+          XML="build/reports/jacocoFull/xml/jacocoFullTestReport.xml"
+          if [ ! -f "$XML" ]; then
+            XML="build/reports/jacoco/xml/jacocoTestReport.xml"
+          fi
+          
+          if [ -f "$XML" ]; then
+            echo "Using coverage XML: $XML"
+          
+            # LINE 커버리지 계산
+            COVERED=$(xmllint --xpath "string(sum(//counter[@type='LINE']/@covered))" "$XML" 2>/dev/null || echo "0")
+            MISSED=$(xmllint --xpath "string(sum(//counter[@type='LINE']/@missed))" "$XML" 2>/dev/null || echo "0")
+          
+            # 숫자 변환
+            COVERED=${COVERED%.*}
+            MISSED=${MISSED%.*}
+          
+            if [ "$COVERED" -eq 0 ] && [ "$MISSED" -eq 0 ]; then
+              PCT="0"
+            else
+              TOTAL=$((COVERED + MISSED))
+              PCT=$(awk "BEGIN { printf \"%.2f\", ($COVERED/$TOTAL)*100 }")
+            fi
+          
+            echo "Coverage: $COVERED covered, $MISSED missed = $PCT%"
+            echo "pct=$PCT" >> $GITHUB_OUTPUT
+            echo "covered=$COVERED" >> $GITHUB_OUTPUT
+            echo "missed=$MISSED" >> $GITHUB_OUTPUT
+          else
+            echo "No coverage XML found"
+            echo "pct=0" >> $GITHUB_OUTPUT
+            echo "covered=0" >> $GITHUB_OUTPUT
+            echo "missed=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build detailed coverage markdown
+        if: always() && github.event_name == 'pull_request'
+        id: coverage_details
+        continue-on-error: true
+        run: |
+          # 리포트 경로 결정
+          XML="build/reports/jacocoFull/xml/jacocoFullTestReport.xml"
+          if [ ! -f "$XML" ]; then
+            ALT="build/reports/jacoco/xml/jacocoTestReport.xml"
+            if [ -f "$ALT" ]; then
+              XML="$ALT"
+            else
+              echo "details=No coverage report found." >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+          echo "Using coverage XML: $XML"
+          
+          export XML_PATH="$XML"
+          
+          # PR 변경 파일 수집 (Java 파일만)
+          BASE_SHA='${{ github.event.pull_request.base.sha }}'
+          HEAD_SHA='${{ github.sha }}'
+          
+          # 베이스 커밋 확인
+          if ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+            git fetch --no-tags --prune origin "$BASE_SHA":"refs/remotes/origin/base-sha" || true
+          fi
+          
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" \
+            | grep -E '^src/main/java/.*\.java$' > /tmp/changed-java.txt || true
+          
+          echo "Changed Java files:"
+          cat /tmp/changed-java.txt || true
+          echo
+          
+          python3 <<EOF > /tmp/coverage_details.md
+          import os
+          import sys
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          
+          # XML 경로를 명령줄 인자나 환경변수로 받기
+          xml_path = os.environ.get('XML_PATH') or sys.argv[1] if len(sys.argv) > 1 else None
+          
+          if not xml_path or not os.path.exists(xml_path):
+              print("### 📊 코드 커버리지 리포트")
+              print("> 리포트를 생성할 수 없습니다. XML 파일이 없습니다.")
+              sys.exit(0)
+          
+          try:
+              root = ET.parse(xml_path).getroot()
+          
+              def sum_counter(node, ctype):
+                  for c in node.findall("counter"):
+                      if c.get("type") == ctype:
+                          return int(c.get("covered", "0")), int(c.get("missed", "0"))
+                  return 0, 0
+          
+              # 전체 커버리지
+              tot_cov, tot_miss = sum_counter(root, "LINE")
+              tot_pct = (tot_cov / (tot_cov + tot_miss) * 100) if (tot_cov + tot_miss) else 0.0
+          
+            # 패키지별 커버리지
+              pkg_rows = []
+              for p in root.findall("package"):
+                  pcov, pmiss = sum_counter(p, "LINE")
+                  if pcov + pmiss == 0:
+                      for c in p.findall("class"):
+                          cc, cm = sum_counter(c, "LINE")
+                          pcov += cc; pmiss += cm
+                  ppct = (pcov / (pcov + pmiss) * 100) if (pcov + pmiss) else 0.0
+                  pkg_rows.append((p.get("name","(default)"), pcov, pmiss, ppct))
+              pkg_rows.sort(key=lambda r: r[3])
+          
+              # 클래스별 커버리지
+              class_rows = []
+              for p in root.findall("package"):
+                  for c in p.findall("class"):
+                      cc, cm = sum_counter(c, "LINE")
+                      total = cc + cm
+                      pct = (cc/total*100) if total else 0.0
+                      cname = c.get("name","(unknown)").replace("/", ".")
+                      class_rows.append((cname, cc, cm, pct, total))
+              class_rows.sort(key=lambda r: (r[3], -r[4]))
+          
+              # 변경 파일 매핑
+              changed_rows = []
+              changed_file_list = Path("/tmp/changed-java.txt")
+              if changed_file_list.exists():
+                  for line in changed_file_list.read_text().splitlines():
+                      line = line.strip()
+                      if not line: continue
+                      if line.startswith("src/main/java/"):
+                          rel = line[len("src/main/java/"):]
+                          if rel.endswith(".java"):
+                              rel = rel[:-5]
+                          fqn = rel.replace("/", ".")
+          
+                          matches = [r for r in class_rows if r[0].startswith(fqn)]
+                          if matches:
+                              cov = sum(m[1] for m in matches)
+                              miss = sum(m[2] for m in matches)
+                              total = cov + miss
+                              pct = (cov/total*100) if total else 0.0
+                              changed_rows.append((line, fqn, cov, miss, pct, total))
+                          else:
+                              changed_rows.append((line, fqn, 0, 0, 0.0, 0))
+                  changed_rows.sort(key=lambda r: (r[4], -r[5]))
+          
+              def fmt_pct(x): return f"{x:.2f}%"
+          
+              print("### 📊 코드 커버리지 리포트\\n")
+              print(f"**전체 라인 커버리지:** {fmt_pct(tot_pct)} ({tot_cov} covered / {tot_cov+tot_miss} lines)\\n")
+          
+              if pkg_rows:
+                  print("<details><summary><b>패키지별 커버리지 (낮은 순)</b></summary>\\n")
+                  print("| 패키지 | 라인 % | 커버됨 | 놓침 |")
+                  print("|---|---:|---:|---:|")
+                  for (name, cov, miss, pct) in pkg_rows:
+                      print(f"| \`{name}\` | {fmt_pct(pct)} | {cov} | {miss} |")
+                  print("\\n</details>\\n")
+          
+              print("<details open><summary><b>커버리지가 낮은 클래스 (Top 15)</b></summary>\\n")
+              print("| 클래스 | 라인 % | 커버됨 | 놓침 |")
+              print("|---|---:|---:|---:|")
+              for (cname, cov, miss, pct, total) in class_rows[:15]:
+                  print(f"| \`{cname}\` | {fmt_pct(pct)} | {cov} | {miss} |")
+              print("\\n</details>\\n")
+          
+              if changed_rows:
+                  print("<details open><summary><b>이 PR에서 변경된 파일들</b></summary>\\n")
+                  print("| 파일 (PR) | 클래스 | 라인 % | 커버됨 | 놓침 |")
+                  print("|---|---|---:|---:|---:|")
+                  for (src, fqn, cov, miss, pct, total) in changed_rows:
+                      print(f"| \`{src}\` | \`{fqn}\` | {fmt_pct(pct)} | {cov} | {miss} |")
+                  print("\\n</details>\\n")
+              else:
+                  print("> 이 PR에는 Java 소스 파일 변경이 없습니다.\\n")
+          
+          except Exception as e:
+              print(f"### 📊 코드 커버리지 리포트")
+              print(f"> 오류 발생: {e}")
+              print("> 기본 리포트만 표시됩니다.")
+              EOF
+          
+            {
+                echo 'details<<EOF'
+                cat /tmp/coverage_details.md
+                echo 'EOF'
+            } >> $GITHUB_OUTPUT
+
+      - name: Upsert PR coverage comment
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
         env:
-            SPRING_PROFILES_ACTIVE: test
-            SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
-            SPRING_DATASOURCE_USERNAME: sa
-            SPRING_DATASOURCE_PASSWORD: ""
-            INCLUDE_INTEGRATION: false
+          PCT: ${{ steps.coverage.outputs.pct }}
+          COVERED: ${{ steps.coverage.outputs.covered }}
+          MISSED: ${{ steps.coverage.outputs.missed }}
+          DETAILS: ${{ steps.coverage_details.outputs.details }}
+        with:
+          script: |
+            const MARK = '<!-- JACOCO-COVERAGE-REPORT -->';
+            const pct = process.env.PCT || '0';
+            const covered = process.env.COVERED || '0';
+            const missed = process.env.MISSED || '0';
+            const details = process.env.DETAILS || '';
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            
+            const body = `${MARK}
+            ## 🧪 코드 커버리지 리포트
+            
+            ### 📈 전체 통계
+            **라인 커버리지:** ${pct}% (${covered} lines covered / ${parseInt(covered) + parseInt(missed)} total)
+            
+            ${details}
+            
+            ### 🔗 리포트 보기
+            - **HTML 리포트**: [jacoco-full-html 아티팩트](${runUrl})
+            - **테스트 결과**: [테스트 리포트](${runUrl})
+            - **실패 테스트**: PR 코멘트 확인
+            
+            > *🤖 이 리포트는 DROP CI에 의해 자동 생성되었습니다.*`;
+            
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              per_page: 100
+            });
+            
+            const existing = comments.find(c => c.user.type === 'Bot' && c.body.includes(MARK));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body
+              });
+            }
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
+      # Slack 알림 (테스트 결과와 커버리지 포함)
+      - name: Slack 알림 (성공)
+        if: success()
+        uses: slackapi/slack-github-action@v1
+        continue-on-error: true
+        with:
+          payload: |
+            {
+              "text": "✅ Backend CI 성공 - ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nAuthor: ${{ github.actor }}\nTests: ✅ ${{ steps.test_results.outputs.passed || 0 }} passed\nCoverage: ${{ steps.coverage.outputs.pct || 0 }}%",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "✅ Backend CI 성공",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch/PR*\n${{ github.ref_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author*\n${{ github.actor }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Tests*\n✅ ${{ steps.test_results.outputs.passed || 0 }} passed\n❌ ${{ steps.test_results.outputs.failed || 0 }} failed\n⏭️ ${{ steps.test_results.outputs.skipped || 0 }} skipped"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Coverage*\n${{ steps.coverage.outputs.pct || 0 }}%"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🔗 <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|로그 확인하기>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
-            - name: Ensure base commit is fetched (PR only)
-              if: github.event_name == 'pull_request'
-              run: |
-                  BASE_SHA='${{ github.event.pull_request.base.sha }}'
-                  if ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
-                    git fetch --no-tags --prune origin "$BASE_SHA":"refs/remotes/origin/base-sha"
-                  fi
-
-            - name: Set up Java 21
-              uses: actions/setup-java@v4
-              with:
-                  distribution: temurin
-                  java-version: 21
-
-            - name: Cache Gradle packages
-              uses: actions/cache@v3
-              with:
-                  path: |
-                      ~/.gradle/caches
-                      ~/.gradle/wrapper
-                  key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-                  restore-keys: ${{ runner.os }}-gradle-
-
-            - name: Grant execute permission for gradlew
-              run: chmod +x gradlew
-
-            - name: Build without tests
-              run: ./gradlew build -x test --no-daemon
-
-            - name: Run Unit Tests
-              run: ./gradlew clean test --no-daemon
-
-            - name: Run Full Tests (Unit + Integration)
-              run: ./gradlew clean fullTest --no-daemon
-
-            - name: Generate JaCoCo Unit Test Report
-              if: always()
-              run: ./gradlew jacocoTestReport --no-daemon
-
-            - name: Generate JaCoCo Full Test Report
-              if: always()
-              run: ./gradlew clean jacocoFullTestReport --rerun-tasks --no-daemon
-
-            # 테스트 결과 파싱
-            - name: Parse test results
-              if: always()
-              id: test_results
-              run: |
-                  # fullTest 결과 우선 사용
-                  TEST_DIR="build/test-results/fullTest"
-                  
-                  if [ -d "$TEST_DIR" ]; then
-                    TOTAL=0
-                    FAILURES=0
-                    SKIPPED=0
-                  
-                    # XML 파일 파싱
-                    for xml_file in "$TEST_DIR"/TEST-*.xml; do
-                      if [ -f "$xml_file" ]; then
-                        tests=$(grep -o 'tests="[0-9]*"' "$xml_file" | head -1 | grep -o '[0-9]*' || echo "0")
-                        failures=$(grep -o 'failures="[0-9]*"' "$xml_file" | head -1 | grep -o '[0-9]*' || echo "0")
-                        skipped=$(grep -o 'skipped="[0-9]*"' "$xml_file" | head -1 | grep -o '[0-9]*' || echo "0")
-                  
-                        TOTAL=$((TOTAL + tests))
-                        FAILURES=$((FAILURES + failures))
-                        SKIPPED=$((SKIPPED + skipped))
-                      fi
-                    done
-                  
-                    PASSED=$((TOTAL - FAILURES - SKIPPED))
-                  
-                    echo "Test Results: Total=$TOTAL, Passed=$PASSED, Failed=$FAILURES, Skipped=$SKIPPED"
-                    echo "total=$TOTAL" >> $GITHUB_OUTPUT
-                    echo "passed=$PASSED" >> $GITHUB_OUTPUT
-                    echo "failed=$FAILURES" >> $GITHUB_OUTPUT
-                    echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
-                  else
-                    echo "No test results found"
-                    echo "total=0" >> $GITHUB_OUTPUT
-                    echo "passed=0" >> $GITHUB_OUTPUT
-                    echo "failed=0" >> $GITHUB_OUTPUT
-                    echo "skipped=0" >> $GITHUB_OUTPUT
-                  fi
-
-            - name: Publish Unit Test Results
-              if: always()
-              uses: EnricoMi/publish-unit-test-result-action@v2
-              with:
-                  files: |
-                      build/test-results/test/*.xml
-                  check_run: true
-                  comment_mode: always
-
-            - name: Publish Full Test Results
-              if: always()
-              uses: EnricoMi/publish-unit-test-result-action@v2
-              with:
-                  files: |
-                      build/test-results/fullTest/*.xml
-                  check_run: true
-                  comment_mode: always
-
-            - name: Upload failed-tests.txt (if exists)
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: failed-tests
-                  path: build/reports/tests/failed-tests.txt
-                  if-no-files-found: ignore
-
-            - name: Upsert PR comment with failed tests
-              if: always()
-              uses: actions/github-script@v7
-              with:
-                  script: |
-                      const fs = require('fs');
-                      const path = 'build/reports/tests/failed-tests.txt';
-                      const MARK = '<!-- FAILED-TESTS-SUMMARY -->';
-                      
-                      function buildBody(textBlock) {
-                        return [
-                          MARK,
-                          '### ❌ Failed Tests (from Gradle summary)',
-                          '',
-                          '<details><summary>Expand</summary>',
-                          '',
-                          '```text',
-                          textBlock,
-                          '```',
-                          '',
-                          '</details>'
-                        ].join('\n');
-                      }
-                      
-                      if (!context.payload.pull_request) {
-                        core.info('Not a PR event, skip commenting');
-                        return;
-                      }
-                      
-                      const { data: comments } = await github.rest.issues.listComments({
-                        owner: context.repo.owner,
-                        repo: context.repo.repo,
-                        issue_number: context.payload.pull_request.number,
-                        per_page: 100
-                      });
-                      
-                      if (!fs.existsSync(path)) {
-                        const existing = comments.find(c => c.user.type === 'Bot' && c.body.includes(MARK));
-                        if (existing) {
-                          await github.rest.issues.deleteComment({
-                            owner: context.repo.owner,
-                            repo: context.repo.repo,
-                            comment_id: existing.id
-                          });
-                        }
-                        return;
-                      }
-                      
-                      const content = fs.readFileSync(path, 'utf8').trim();
-                      if (!content || content === 'No failures 🎉') {
-                        const existing = comments.find(c => c.user.type === 'Bot' && c.body.includes(MARK));
-                        if (existing) {
-                          await github.rest.issues.deleteComment({
-                            owner: context.repo.owner,
-                            repo: context.repo.repo,
-                            comment_id: existing.id
-                          });
-                        }
-                        return;
-                      }
-                      
-                      const body = buildBody(content);
-                      const existing = comments.find(c => c.user.type === 'Bot' && c.body.includes(MARK));
-                      if (existing) {
-                        await github.rest.issues.updateComment({
-                          owner: context.repo.owner,
-                          repo: context.repo.repo,
-                          comment_id: existing.id,
-                          body
-                        });
-                      } else {
-                        await github.rest.issues.createComment({
-                          owner: context.repo.owner,
-                          repo: context.repo.repo,
-                          issue_number: context.payload.pull_request.number,
-                          body
-                        });
-                      }
-
-            - name: Upload JaCoCo Unit Test HTML
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: jacoco-unit-html
-                  path: build/reports/jacoco/html
-                  if-no-files-found: warn
-
-            - name: Upload JaCoCo Full Test HTML
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: jacoco-full-html
-                  path: build/reports/jacocoFull/html
-                  if-no-files-found: warn
-
-            - name: Upload JaCoCo XML Reports
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: jacoco-xml-reports
-                  path: |
-                      build/reports/jacoco/xml/jacocoTestReport.xml
-                      build/reports/jacocoFull/xml/jacocoFullTestReport.xml
-                  if-no-files-found: warn
-
-            - name: Install xmllint
-              if: always()
-              run: sudo apt-get update && sudo apt-get install -y libxml2-utils
-
-            - name: Compute coverage percentage
-              if: always() && github.event_name == 'pull_request'
-              id: coverage
-              run: |
-                  # JaCoCo XML 리포트 찾기 (fullTest 우선)
-                  XML="build/reports/jacocoFull/xml/jacocoFullTestReport.xml"
-                  if [ ! -f "$XML" ]; then
-                    XML="build/reports/jacoco/xml/jacocoTestReport.xml"
-                  fi
-                  
-                  if [ -f "$XML" ]; then
-                    echo "Using coverage XML: $XML"
-                  
-                    # LINE 커버리지 계산
-                    COVERED=$(xmllint --xpath "string(sum(//counter[@type='LINE']/@covered))" "$XML" 2>/dev/null || echo "0")
-                    MISSED=$(xmllint --xpath "string(sum(//counter[@type='LINE']/@missed))" "$XML" 2>/dev/null || echo "0")
-                  
-                    # 숫자 변환
-                    COVERED=${COVERED%.*}
-                    MISSED=${MISSED%.*}
-                  
-                    if [ "$COVERED" -eq 0 ] && [ "$MISSED" -eq 0 ]; then
-                      PCT="0"
-                    else
-                      TOTAL=$((COVERED + MISSED))
-                      PCT=$(awk "BEGIN { printf \"%.2f\", ($COVERED/$TOTAL)*100 }")
-                    fi
-                  
-                    echo "Coverage: $COVERED covered, $MISSED missed = $PCT%"
-                    echo "pct=$PCT" >> $GITHUB_OUTPUT
-                    echo "covered=$COVERED" >> $GITHUB_OUTPUT
-                    echo "missed=$MISSED" >> $GITHUB_OUTPUT
-                  else
-                    echo "No coverage XML found"
-                    echo "pct=0" >> $GITHUB_OUTPUT
-                    echo "covered=0" >> $GITHUB_OUTPUT
-                    echo "missed=0" >> $GITHUB_OUTPUT
-                  fi
-
-            -   name: Build detailed coverage markdown
-                if: always() && github.event_name == 'pull_request'
-                id: coverage_details
-                continue-on-error: true
-                run: |
-                    # 리포트 경로 결정
-                    XML="build/reports/jacocoFull/xml/jacocoFullTestReport.xml"
-                    if [ ! -f "$XML" ]; then
-                      ALT="build/reports/jacoco/xml/jacocoTestReport.xml"
-                      if [ -f "$ALT" ]; then
-                        XML="$ALT"
-                      else
-                        echo "details=No coverage report found." >> $GITHUB_OUTPUT
-                        exit 0
-                      fi
-                    fi
-                    echo "Using coverage XML: $XML"
-                    
-                    export XML_PATH="$XML"
-                    
-                    # PR 변경 파일 수집 (Java 파일만)
-                    BASE_SHA='${{ github.event.pull_request.base.sha }}'
-                    HEAD_SHA='${{ github.sha }}'
-                    
-                    # 베이스 커밋 확인
-                    if ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
-                      git fetch --no-tags --prune origin "$BASE_SHA":"refs/remotes/origin/base-sha" || true
-                    fi
-                    
-                    git diff --name-only "$BASE_SHA" "$HEAD_SHA" \
-                      | grep -E '^src/main/java/.*\.java$' > /tmp/changed-java.txt || true
-                    
-                    echo "Changed Java files:"
-                    cat /tmp/changed-java.txt || true
-                    echo
-                    
-                    python3 <<EOF > /tmp/coverage_details.md
-                    import os
-                    import sys
-                    import xml.etree.ElementTree as ET
-                    from pathlib import Path
-                  
-                    # XML 경로를 명령줄 인자나 환경변수로 받기
-                    xml_path = os.environ.get('XML_PATH') or sys.argv[1] if len(sys.argv) > 1 else None
-
-                    if not xml_path or not os.path.exists(xml_path):
-                        print("### 📊 코드 커버리지 리포트")
-                        print("> 리포트를 생성할 수 없습니다. XML 파일이 없습니다.")
-                        sys.exit(0)
-                    
-                    try:
-                        root = ET.parse(xml_path).getroot()
-    
-                        def sum_counter(node, ctype):
-                            for c in node.findall("counter"):
-                                if c.get("type") == ctype:
-                                    return int(c.get("covered", "0")), int(c.get("missed", "0"))
-                            return 0, 0
-    
-                        # 전체 커버리지
-                        tot_cov, tot_miss = sum_counter(root, "LINE")
-                        tot_pct = (tot_cov / (tot_cov + tot_miss) * 100) if (tot_cov + tot_miss) else 0.0
-                      
-                      # 패키지별 커버리지
-                        pkg_rows = []
-                        for p in root.findall("package"):
-                            pcov, pmiss = sum_counter(p, "LINE")
-                            if pcov + pmiss == 0:
-                                for c in p.findall("class"):
-                                    cc, cm = sum_counter(c, "LINE")
-                                    pcov += cc; pmiss += cm
-                            ppct = (pcov / (pcov + pmiss) * 100) if (pcov + pmiss) else 0.0
-                            pkg_rows.append((p.get("name","(default)"), pcov, pmiss, ppct))
-                        pkg_rows.sort(key=lambda r: r[3])
-    
-                        # 클래스별 커버리지
-                        class_rows = []
-                        for p in root.findall("package"):
-                            for c in p.findall("class"):
-                                cc, cm = sum_counter(c, "LINE")
-                                total = cc + cm
-                                pct = (cc/total*100) if total else 0.0
-                                cname = c.get("name","(unknown)").replace("/", ".")
-                                class_rows.append((cname, cc, cm, pct, total))
-                        class_rows.sort(key=lambda r: (r[3], -r[4]))
-    
-                        # 변경 파일 매핑
-                        changed_rows = []
-                        changed_file_list = Path("/tmp/changed-java.txt")
-                        if changed_file_list.exists():
-                            for line in changed_file_list.read_text().splitlines():
-                                line = line.strip()
-                                if not line: continue
-                                if line.startswith("src/main/java/"):
-                                    rel = line[len("src/main/java/"):]
-                                    if rel.endswith(".java"):
-                                        rel = rel[:-5]
-                                    fqn = rel.replace("/", ".")
-                                    
-                                    matches = [r for r in class_rows if r[0].startswith(fqn)]
-                                    if matches:
-                                        cov = sum(m[1] for m in matches)
-                                        miss = sum(m[2] for m in matches)
-                                        total = cov + miss
-                                        pct = (cov/total*100) if total else 0.0
-                                        changed_rows.append((line, fqn, cov, miss, pct, total))
-                                    else:
-                                        changed_rows.append((line, fqn, 0, 0, 0.0, 0))
-                            changed_rows.sort(key=lambda r: (r[4], -r[5]))
-    
-                        def fmt_pct(x): return f"{x:.2f}%"
-    
-                        print("### 📊 코드 커버리지 리포트\\n")
-                        print(f"**전체 라인 커버리지:** {fmt_pct(tot_pct)} ({tot_cov} covered / {tot_cov+tot_miss} lines)\\n")
-    
-                        if pkg_rows:
-                            print("<details><summary><b>패키지별 커버리지 (낮은 순)</b></summary>\\n")
-                            print("| 패키지 | 라인 % | 커버됨 | 놓침 |")
-                            print("|---|---:|---:|---:|")
-                            for (name, cov, miss, pct) in pkg_rows:
-                                print(f"| \`{name}\` | {fmt_pct(pct)} | {cov} | {miss} |")
-                            print("\\n</details>\\n")
-    
-                        print("<details open><summary><b>커버리지가 낮은 클래스 (Top 15)</b></summary>\\n")
-                        print("| 클래스 | 라인 % | 커버됨 | 놓침 |")
-                        print("|---|---:|---:|---:|")
-                        for (cname, cov, miss, pct, total) in class_rows[:15]:
-                            print(f"| \`{cname}\` | {fmt_pct(pct)} | {cov} | {miss} |")
-                        print("\\n</details>\\n")
-    
-                        if changed_rows:
-                            print("<details open><summary><b>이 PR에서 변경된 파일들</b></summary>\\n")
-                            print("| 파일 (PR) | 클래스 | 라인 % | 커버됨 | 놓침 |")
-                            print("|---|---|---:|---:|---:|")
-                            for (src, fqn, cov, miss, pct, total) in changed_rows:
-                                print(f"| \`{src}\` | \`{fqn}\` | {fmt_pct(pct)} | {cov} | {miss} |")
-                            print("\\n</details>\\n")
-                        else:
-                            print("> 이 PR에는 Java 소스 파일 변경이 없습니다.\\n")
-    
-                    except Exception as e:
-                        print(f"### 📊 코드 커버리지 리포트")
-                        print(f"> 오류 발생: {e}")
-                        print("> 기본 리포트만 표시됩니다.")
-                        EOF
-                      
-                      {
-                          echo 'details<<EOF'
-                          cat /tmp/coverage_details.md
-                          echo 'EOF'
-                      } >> $GITHUB_OUTPUT
-
-            - name: Upsert PR coverage comment
-              if: always() && github.event_name == 'pull_request'
-              uses: actions/github-script@v7
-              env:
-                  PCT: ${{ steps.coverage.outputs.pct }}
-                  COVERED: ${{ steps.coverage.outputs.covered }}
-                  MISSED: ${{ steps.coverage.outputs.missed }}
-                  DETAILS: ${{ steps.coverage_details.outputs.details }}
-              with:
-                  script: |
-                      const MARK = '<!-- JACOCO-COVERAGE-REPORT -->';
-                      const pct = process.env.PCT || '0';
-                      const covered = process.env.COVERED || '0';
-                      const missed = process.env.MISSED || '0';
-                      const details = process.env.DETAILS || '';
-                      const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-                      
-                      const body = `${MARK}
-                      ## 🧪 코드 커버리지 리포트
-                      
-                      ### 📈 전체 통계
-                      **라인 커버리지:** ${pct}% (${covered} lines covered / ${parseInt(covered) + parseInt(missed)} total)
-                      
-                      ${details}
-                      
-                      ### 🔗 리포트 보기
-                      - **HTML 리포트**: [jacoco-full-html 아티팩트](${runUrl})
-                      - **테스트 결과**: [테스트 리포트](${runUrl})
-                      - **실패 테스트**: PR 코멘트 확인
-                      
-                      > *🤖 이 리포트는 DROP CI에 의해 자동 생성되었습니다.*`;
-                      
-                      const { data: comments } = await github.rest.issues.listComments({
-                        owner: context.repo.owner,
-                        repo: context.repo.repo,
-                        issue_number: context.payload.pull_request.number,
-                        per_page: 100
-                      });
-                      
-                      const existing = comments.find(c => c.user.type === 'Bot' && c.body.includes(MARK));
-                      if (existing) {
-                        await github.rest.issues.updateComment({
-                          owner: context.repo.owner,
-                          repo: context.repo.repo,
-                          comment_id: existing.id,
-                          body
-                        });
-                      } else {
-                        await github.rest.issues.createComment({
-                          owner: context.repo.owner,
-                          repo: context.repo.repo,
-                          issue_number: context.payload.pull_request.number,
-                          body
-                        });
-                      }
-
-            # Slack 알림 (테스트 결과와 커버리지 포함)
-            - name: Slack 알림 (성공)
-              if: success()
-              uses: slackapi/slack-github-action@v1
-              continue-on-error: true
-              with:
-                  payload: |
-                      {
-                        "text": "✅ Backend CI 성공 - ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nAuthor: ${{ github.actor }}\nTests: ✅ ${{ steps.test_results.outputs.passed || 0 }} passed\nCoverage: ${{ steps.coverage.outputs.pct || 0 }}%",
-                        "blocks": [
-                          {
-                            "type": "header",
-                            "text": {
-                              "type": "plain_text",
-                              "text": "✅ Backend CI 성공",
-                              "emoji": true
-                            }
-                          },
-                          {
-                            "type": "section",
-                            "fields": [
-                              {
-                                "type": "mrkdwn",
-                                "text": "*Branch/PR*\n${{ github.ref_name }}"
-                              },
-                              {
-                                "type": "mrkdwn",
-                                "text": "*Author*\n${{ github.actor }}"
-                              }
-                            ]
-                          },
-                          {
-                            "type": "section",
-                            "fields": [
-                              {
-                                "type": "mrkdwn",
-                                "text": "*Tests*\n✅ ${{ steps.test_results.outputs.passed || 0 }} passed\n❌ ${{ steps.test_results.outputs.failed || 0 }} failed\n⏭️ ${{ steps.test_results.outputs.skipped || 0 }} skipped"
-                              },
-                              {
-                                "type": "mrkdwn",
-                                "text": "*Coverage*\n${{ steps.coverage.outputs.pct || 0 }}%"
-                              }
-                            ]
-                          },
-                          {
-                            "type": "section",
-                            "text": {
-                              "type": "mrkdwn",
-                              "text": "🔗 <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|로그 확인하기>"
-                            }
-                          }
-                        ]
-                      }
-              env:
-                  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-            - name: Slack 알림 (실패)
-              if: failure()
-              uses: slackapi/slack-github-action@v1
-              continue-on-error: true
-              with:
-                  payload: |
-                      {
-                        "text": "❌ Backend CI 실패 - ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nAuthor: ${{ github.actor }}\nTests: ✅ ${{ steps.test_results.outputs.passed || 0 }} passed, ❌ ${{ steps.test_results.outputs.failed || 0 }} failed\nView: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-                        "blocks": [
-                          {
-                            "type": "header",
-                            "text": {
-                              "type": "plain_text",
-                              "text": "❌ Backend CI 실패",
-                              "emoji": true
-                            }
-                          },
-                          {
-                            "type": "section",
-                            "fields": [
-                              {
-                                "type": "mrkdwn",
-                                "text": "*Branch/PR*\n${{ github.ref_name }}"
-                              },
-                              {
-                                "type": "mrkdwn",
-                                "text": "*Author*\n${{ github.actor }}"
-                              }
-                            ]
-                          },
-                          {
-                            "type": "section",
-                            "fields": [
-                              {
-                                "type": "mrkdwn",
-                                "text": "*Tests*\n✅ ${{ steps.test_results.outputs.passed || 0 }} passed\n❌ ${{ steps.test_results.outputs.failed || 0 }} failed"
-                              },
-                              {
-                                "type": "mrkdwn",
-                                "text": "*Coverage*\n${{ steps.coverage.outputs.pct || 0 }}%"
-                              }
-                            ]
-                          },
-                          {
-                            "type": "section",
-                            "text": {
-                              "type": "mrkdwn",
-                              "text": "🔗 <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|로그 확인하기>"
-                            }
-                          }
-                        ]
-                      }
-              env:
-                  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Slack 알림 (실패)
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        continue-on-error: true
+        with:
+          payload: |
+            {
+              "text": "❌ Backend CI 실패 - ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nAuthor: ${{ github.actor }}\nTests: ✅ ${{ steps.test_results.outputs.passed || 0 }} passed, ❌ ${{ steps.test_results.outputs.failed || 0 }} failed\nView: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "❌ Backend CI 실패",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch/PR*\n${{ github.ref_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author*\n${{ github.actor }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Tests*\n✅ ${{ steps.test_results.outputs.passed || 0 }} passed\n❌ ${{ steps.test_results.outputs.failed || 0 }} failed"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Coverage*\n${{ steps.coverage.outputs.pct || 0 }}%"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🔗 <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|로그 확인하기>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

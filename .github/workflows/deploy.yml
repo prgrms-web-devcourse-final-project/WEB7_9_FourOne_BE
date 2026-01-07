@@ -1,0 +1,174 @@
+name: deploy
+env:
+  IMAGE_NAME: drop
+
+on:
+  push:
+    paths:
+      - ".github/workflows/**"
+      - "src/**"
+      - "build.gradle.kts"
+      - "Dockerfile"
+    branches:
+      - release
+
+# 권한 최소화/명시화
+permissions:
+  contents: write # 태그/릴리즈
+  packages: write # GHCR 푸시
+
+jobs:
+  makeTagAndRelease:
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.create_tag.outputs.new_tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create Tag
+        id: create_tag
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        with:
+          tag_name: ${{ steps.create_tag.outputs.new_tag }}
+          release_name: Release ${{ steps.create_tag.outputs.new_tag }}
+          body: ${{ steps.create_tag.outputs.changelog }}
+          draft: false
+          prerelease: false
+
+  buildImageAndPush:
+    name: 도커 이미지 빌드와 푸시
+    needs: makeTagAndRelease
+    runs-on: ubuntu-latest
+    outputs:
+      owner_lc: ${{ steps.export_owner.outputs.owner_lc }}
+      image_name: ${{ steps.export_image.outputs.image_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Docker Buildx 설치
+        uses: docker/setup-buildx-action@v2
+      - name: 레지스트리 로그인
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: set lower case owner name
+        id: export_owner
+        run: |
+          OWNER_LC="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "owner_lc=$OWNER_LC" >> $GITHUB_OUTPUT
+
+      - name: export image name
+        id: export_image
+        run: echo "image_name=drop" >> $GITHUB_OUTPUT
+
+      - name: Create env file
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env.properties
+
+      - name: 빌드 앤 푸시
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ steps.export_owner.outputs.owner_lc }}/${{ steps.export_image.outputs.image_name }}:${{ needs.makeTagAndRelease.outputs.tag_name }},
+            ghcr.io/${{ steps.export_owner.outputs.owner_lc }}/${{ steps.export_image.outputs.image_name }}:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [ buildImageAndPush ]
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: AWS SSM Send-Command
+        uses: peterkimzz/aws-ssm-send-command@master
+        id: ssm
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          instance-ids: ${{ secrets.INSTANCE_ID }}
+          working-directory: /
+          comment: Deploy
+          command: |
+            set -euxo pipefail
+            # 1. 네트워크 및 변수 설정
+            docker network create drop-net 2> /dev/null || true
+            
+            if ! docker network inspect drop-net | grep -q "npm_1"; then
+            docker network connect drop-net npm_1 || true
+            fi
+  
+            # 현재 실행 중인 컨테이너 확인 (8081이 있으면 8082를 타겟으로, 없으면 8081을 타겟으로)
+            if [ "$(docker ps -q -f name=dropapp_8081)" ]; then
+            TARGET_PORT=8082
+            TARGET_NAME="dropapp_8082"
+            OLD_NAME="dropapp_8081"
+            else
+            TARGET_PORT=8081
+            TARGET_NAME="dropapp_8081"
+            OLD_NAME="dropapp_8082"
+            fi
+  
+            # 만약 초기 상태라 'dropapp'이라는 이름의 컨테이너가 있다면 OLD_NAME에 추가
+            if [ "$(docker ps -q -f name=dropapp)" ]; then
+            INITIAL_DROP="dropapp"
+            else
+            INITIAL_DROP=""
+            fi
+
+            echo "Deploying to $TARGET_NAME (Port: $TARGET_PORT)..."
+
+            # 2. 이미지 가져오기
+            docker pull ghcr.io/prgrms-web-devcourse-final-project/drop:latest
+            
+            docker rm -f $TARGET_NAME 2> /dev/null || true
+  
+            # 3. 새 컨테이너 실행 (시크릿 값들은 그대로 유지)
+            docker run -d \
+            --name $TARGET_NAME \
+            --network drop-net \
+            --restart unless-stopped \
+            ${{ secrets.DOCKER_RUN }}
+            -p "$TARGET_PORT":8080 \
+            ghcr.io/prgrms-web-devcourse-final-project/drop:latest
+  
+            # 4. 새 서버 헬스 체크 (최대 2분 대기)
+            echo "Waiting for $TARGET_NAME to be ready..."
+            for i in {1..24}; do
+            # Spring Actuator가 있다면 /actuator/health, 없다면 / 등 메인 경로 사용
+            if curl -s http://localhost:$TARGET_PORT/actuator/health | grep -q '"status":"UP"'; then
+            echo "Health check success!"
+            break
+            fi
+  
+            if [ $i -eq 24 ]; then
+            echo "Health check failed. Stopping $TARGET_NAME"
+            docker stop $TARGET_NAME && docker rm $TARGET_NAME
+            exit 1
+            fi
+            sleep 5
+            done
+            
+            # 5. HAProxy가 새 컨테이너를 인식하고 트래픽을 전환할 시간을 줍니다.
+            echo "Waiting for HAProxy to switch traffic..."
+            sleep 30
+  
+            # 5. 구버전 삭제 (기존 dropapp 및 이전 버전 컨테이너)
+            echo "Removing old containers..."
+            docker rm -f $OLD_NAME 2> /dev/null || true
+            docker rm -f $INITIAL_DROP 2> /dev/null || true
+  
+            echo "Deployment Finished!"
+            docker ps -a
